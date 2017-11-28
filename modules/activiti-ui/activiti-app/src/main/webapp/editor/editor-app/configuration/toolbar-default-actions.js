@@ -331,7 +331,8 @@ angular.module('activitiModeler').controller('SaveModelCtrl', [ '$rootScope', '$
 
     $scope.saveAndClose = function () {
     	$scope.save(function() {
-    		$location.path('/processes');
+            // $location.path('/processes');
+            window.location.href = 'http://' + $location.host() + ':' + $location.port() + KISBPM.URL.afterClose;
     	});
     };
     

@@ -213,10 +213,11 @@ activitiModeler
             suffix: '.json'
         });
 
-        $translateProvider.registerAvailableLanguageKeys(['en'], {
-            'en_*': 'en',
-            'en-*': 'en'
-        });
+        // $translateProvider.registerAvailableLanguageKeys(['en'], {
+        //     'en_*': 'en',
+        //     'en-*': 'en'
+        // });
+        $translateProvider.preferredLanguage('zh-cn');
         
   }])
   .run(['$rootScope', '$timeout', '$modal', '$translate', '$location', '$window', 'appResourceRoot',
@@ -403,21 +404,29 @@ activitiModeler
             };
 
             var redirectToLogin = function(data) {
-                var absUrl = $location.absUrl();
-                var index = absUrl.indexOf(fixedUrlPart);
-                var newUrl;
-                if (data !== null && data !== undefined && data.isFromLogout !== undefined && data.isFromLogout === true) {
-                    newUrl = absUrl.substring(0, index) + '/#login';
-                    if (ACTIVITI.CONFIG.loginUrl) {
-                        newUrl = ACTIVITI.CONFIG.loginUrl.replace("{url}", $location.absUrl());
-                    }
-                } else {
-                    newUrl = absUrl.substring(0, index) + '/#login?redirectUrl=' + encodeURIComponent($location.absUrl());
-                    if (ACTIVITI.CONFIG.loginUrl) {
-                        newUrl = ACTIVITI.CONFIG.loginUrl.replace("{url}", encodeURIComponent($location.absUrl()));
-                    }
-                }
-                $window.location.href = newUrl;
+                // var absUrl = $location.absUrl();
+                // var index = absUrl.indexOf(fixedUrlPart);
+                // var newUrl;
+                // if (data !== null && data !== undefined && data.isFromLogout !== undefined && data.isFromLogout === true) {
+                //     newUrl = absUrl.substring(0, index) + '/#login';
+                //     if (ACTIVITI.CONFIG.loginUrl) {
+                //         newUrl = ACTIVITI.CONFIG.loginUrl.replace("{url}", $location.absUrl());
+                //     }
+                // } else {
+                //     newUrl = absUrl.substring(0, index) + '/#login?redirectUrl=' + encodeURIComponent($location.absUrl());
+                //     if (ACTIVITI.CONFIG.loginUrl) {
+                //         newUrl = ACTIVITI.CONFIG.loginUrl.replace("{url}", encodeURIComponent($location.absUrl()));
+                //     }
+                // }
+                // $window.location.href = newUrl;
+                $timeout(function() {
+                    AuthenticationSharedService.login({
+                        username: 'admin',
+                        password: 'test',
+                        success: function () {},
+                        error: function() {}
+                    });
+                });
             };
 
 
