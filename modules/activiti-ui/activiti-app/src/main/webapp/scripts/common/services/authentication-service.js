@@ -153,62 +153,10 @@ activitiApp.factory('AuthenticationSharedService', ['$rootScope', '$http', 'auth
     function ($rootScope, $http, authService, $q, $location, $window) {
       return {
         authenticate: function() {
-            var deferred = $q.defer();
-            var param = {
-                username: 'admin',
-                password: 'test'
-            };
-            var data ="j_username=" + encodeURIComponent(param.username) +"&j_password=" + encodeURIComponent(param.password) +"&_spring_security_remember_me=true&submit=Login";
-            $http.post(ACTIVITI.CONFIG.contextRoot + '/app/authentication', data, {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                ignoreAuthModule: 'ignoreAuthModule'
-                
-            }).success(function (data, status, headers, config) {
-                $rootScope.authenticationError = false;
-
-                if (param.success){
-                    param.success(data, status, headers, config);
-                }
-                authService.loginConfirmed();
-
-                $http.get(ACTIVITI.CONFIG.contextRoot + '/app/rest/authenticate', {ignoreErrors: true, ignoreAuthModule: 'ignoreAuthModule'})
-                .success(function (data, status, headers, config) {
-                
-                    var authUrl = ACTIVITI.CONFIG.contextRoot + '/app/rest/account';
-                    if (ACTIVITI.CONFIG.integrationProfile) {
-                        authUrl += '?includeApps=true';
-                    }
-                    
-                    $http.get(authUrl)
-                        .success(function (data, status, headers, config) {
-                            $rootScope.account = data;
-                            $rootScope.invalidCredentials = false;
-                            $rootScope.$broadcast('event:auth-authConfirmed');
-
-                            deferred.resolve();
-                        })
-                        .error(function(data, status, headers, config) {
-                            // Reject promise and broadcast login required event
-                            deferred.reject(data);
-                            $rootScope.$broadcast('event:auth-loginRequired');
-                        });
-                })
-                .error(function(data, status, headers, config) {
-                    // Reject promise and broadcast login required event
-                    deferred.reject(data);
-                    $rootScope.$broadcast('event:auth-loginRequired');
-                });
-                
-            }).error(function (data, status, headers, config) {
-                $rootScope.$broadcast('event:auth-loginFailed');
-                if(param.error){
-                    param.error(data, status, headers, config);
-                }
-            });
-  
-            return deferred.promise;
+            $rootScope.authenticationError = false;
+            authService.loginConfirmed();
+            $rootScope.account = {"id":"admin","firstName":null,"lastName":"Administrator","email":"admin","fullName":" Administrator","groups":[{"id":"ROLE_ADMIN","name":"Superusers","type":"security-role"}]}
+            $rootScope.invalidCredentials = false;
         },
           
         login: function (param) {
