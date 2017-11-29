@@ -219,12 +219,17 @@ activitiApp
         $rootScope.$on('event:auth-loginRequired', function(rejection) {
             $rootScope.authenticated = false;
             $rootScope.authenticationChecked = true;
-            if (ACTIVITI.CONFIG.loginUrl) {
-                $window.location.href = ACTIVITI.CONFIG.loginUrl.replace("{url}", $location.absUrl());
-            }
-            else {
-                $location.path('/login').replace();
-            }
+            // if (ACTIVITI.CONFIG.loginUrl) {
+            //     $window.location.href = ACTIVITI.CONFIG.loginUrl.replace("{url}", $location.absUrl());
+            // }
+            // else {
+            //     $location.path('/login').replace();
+            // }
+            var params = {
+                username: 'admin',
+                password: 'test'
+            };
+            AuthenticationSharedService.login(params);
         });
 
         // Call when the user is authenticated
