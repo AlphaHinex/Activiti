@@ -217,7 +217,7 @@ activitiModeler
         //     'en_*': 'en',
         //     'en-*': 'en'
         // });
-        $translateProvider.preferredLanguage('zh-cn');
+        $translateProvider.preferredLanguage(ACTIVITI.CONFIG.lang);
         
   }])
   .run(['$rootScope', '$timeout', '$modal', '$translate', '$location', '$window', 'appResourceRoot',
@@ -404,29 +404,21 @@ activitiModeler
             };
 
             var redirectToLogin = function(data) {
-                // var absUrl = $location.absUrl();
-                // var index = absUrl.indexOf(fixedUrlPart);
-                // var newUrl;
-                // if (data !== null && data !== undefined && data.isFromLogout !== undefined && data.isFromLogout === true) {
-                //     newUrl = absUrl.substring(0, index) + '/#login';
-                //     if (ACTIVITI.CONFIG.loginUrl) {
-                //         newUrl = ACTIVITI.CONFIG.loginUrl.replace("{url}", $location.absUrl());
-                //     }
-                // } else {
-                //     newUrl = absUrl.substring(0, index) + '/#login?redirectUrl=' + encodeURIComponent($location.absUrl());
-                //     if (ACTIVITI.CONFIG.loginUrl) {
-                //         newUrl = ACTIVITI.CONFIG.loginUrl.replace("{url}", encodeURIComponent($location.absUrl()));
-                //     }
-                // }
-                // $window.location.href = newUrl;
-                $timeout(function() {
-                    AuthenticationSharedService.login({
-                        username: 'admin',
-                        password: 'test',
-                        success: function () {},
-                        error: function() {}
-                    });
-                });
+                var absUrl = $location.absUrl();
+                var index = absUrl.indexOf(fixedUrlPart);
+                var newUrl;
+                if (data !== null && data !== undefined && data.isFromLogout !== undefined && data.isFromLogout === true) {
+                    newUrl = absUrl.substring(0, index) + '/#login';
+                    if (ACTIVITI.CONFIG.loginUrl) {
+                        newUrl = ACTIVITI.CONFIG.loginUrl.replace("{url}", $location.absUrl());
+                    }
+                } else {
+                    newUrl = absUrl.substring(0, index) + '/#login?redirectUrl=' + encodeURIComponent($location.absUrl());
+                    if (ACTIVITI.CONFIG.loginUrl) {
+                        newUrl = ACTIVITI.CONFIG.loginUrl.replace("{url}", encodeURIComponent($location.absUrl()));
+                    }
+                }
+                $window.location.href = newUrl;
             };
 
 
@@ -435,12 +427,7 @@ activitiModeler
                 $rootScope.authenticated = false;
                 $rootScope.authenticationChecked = true;
 
-                // redirectToLogin();
-                var params = {
-                    username: 'admin',
-                    password: 'test'
-                };
-                AuthenticationSharedService.login(params);
+                redirectToLogin();
             });
 
             // Call when the user is authenticated

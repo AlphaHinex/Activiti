@@ -13,8 +13,7 @@
 
 // Create custom functions for the KIS-editor
 KISBPM.TOOLBAR.ACTIONS.closeEditor =  function(services) {
-    // services.$location.path("/processes");
-    window.location.href = 'http://' + services.$location.host() + ':' + services.$location.port() + KISBPM.URL.afterClose;
+    KISBPM.TOOLBAR.ACTIONS.customClose(services.$location);
 };
 
 KISBPM.TOOLBAR.ACTIONS.navigateToProcess = function(processId) {
@@ -34,6 +33,10 @@ KISBPM.TOOLBAR_CONFIG.secondaryItems.push(
         "action" : "KISBPM.TOOLBAR.ACTIONS.closeEditor"
     }
 );
+
+KISBPM.TOOLBAR.ACTIONS.customClose =  function(loc) {
+    loc.path('/processes');
+};
 
 
 

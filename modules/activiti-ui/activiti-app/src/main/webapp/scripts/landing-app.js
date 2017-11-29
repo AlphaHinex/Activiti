@@ -225,11 +225,6 @@ activitiApp
             // else {
             //     $location.path('/login').replace();
             // }
-            var params = {
-                username: 'admin',
-                password: 'test'
-            };
-            AuthenticationSharedService.login(params);
         });
 
         // Call when the user is authenticated

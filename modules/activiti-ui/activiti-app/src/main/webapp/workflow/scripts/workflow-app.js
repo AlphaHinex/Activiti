@@ -392,12 +392,7 @@ activitiApp
               $rootScope.authenticated = false;
               $rootScope.authenticationChecked = true;
 
-            //   redirectToLogin();
-            var params = {
-                username: 'admin',
-                password: 'test'
-            };
-            AuthenticationSharedService.login(params);
+              redirectToLogin();
           });
 
           // Call when the user is authenticated
