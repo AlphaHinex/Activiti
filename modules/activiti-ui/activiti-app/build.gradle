@@ -21,6 +21,7 @@ task pack(type: Jar) {
     metaInf {
         into 'resources'
         from 'src/main/webapp'
+        exclude 'scripts/app-cfg.js'
     }
     manifest {
         attributes('Created-By': 'Gradle',
