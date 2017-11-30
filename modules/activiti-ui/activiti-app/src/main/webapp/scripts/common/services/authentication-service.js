@@ -154,9 +154,11 @@ activitiApp.factory('AuthenticationSharedService', ['$rootScope', '$http', 'auth
       return {
         authenticate: function() {
             $rootScope.authenticationError = false;
-            authService.loginConfirmed();
+            var updater = function(config) {return config;};
+            httpBuffer.retryAll(updater);
             $rootScope.account = {"id":"admin","firstName":null,"lastName":"Administrator","email":"admin","fullName":" Administrator","groups":[{"id":"ROLE_ADMIN","name":"Superusers","type":"security-role"}]}
             $rootScope.invalidCredentials = false;
+            $rootScope.$broadcast('event:auth-authConfirmed');
         },
           
         login: function (param) {

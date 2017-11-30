@@ -432,24 +432,20 @@ activitiModeler
 
             // Call when the user is authenticated
            $rootScope.$on('event:auth-authConfirmed', function() {
-        	   $rootScope.authenticated = true;
-               Account.get().then(function () {
+        	    $rootScope.authenticated = true;
+                if ($rootScope.account && $rootScope.account.type && $rootScope.account.type != 'enterprise' &&
+                        ($location.path() == '/stencils' || $location.path().indexOf('/stencils/') >= 0)) {
 
-            	   if ($rootScope.account && $rootScope.account.type && $rootScope.account.type != 'enterprise' &&
-                		   ($location.path() == '/stencils' || $location.path().indexOf('/stencils/') >= 0)) {
+                    $location.path('/processes');
 
-                	   $location.path('/processes');
-
-           		   } else if ($location.path() == '' || $location.path() == '#') {
-                	   $location.path('/processes');
-                   }
-               });
+                } else if ($location.path() == '' || $location.path() == '#') {
+                    $location.path('/processes');
+                }
             });
 
             // Call when the user logs in
             $rootScope.$on('event:auth-loginConfirmed', function() {
                 $rootScope.authenticated = true;
-                $rootScope.account = Account.get();
                 $location.path('/processes');
             });
 
