@@ -12,7 +12,7 @@ ACTIVITI.CONFIG = {
 	'onPremise' : true,
 	'contextRoot' : '/activiti-app',
 	'webContextRoot' : '/activiti-app',
-	'lang': 'zh-cn'
+	'lang': 'en'
 };
 /*
  * Copyright 2005-2015 Alfresco Software, Ltd. All rights reserved.
