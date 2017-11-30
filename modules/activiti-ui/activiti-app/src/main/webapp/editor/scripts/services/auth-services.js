@@ -38,8 +38,8 @@ function wireServices(angularModule) {
 	]);
   
   // Add authentication factories
-  angularModule.factory('AuthenticationSharedService', ['$rootScope', '$http', 'authService', '$q',
-    function ($rootScope, $http, authService, $q) {
+  angularModule.factory('AuthenticationSharedService', ['$rootScope', '$http', 'authService', '$q', 'httpBuffer',
+    function ($rootScope, $http, authService, $q, httpBuffer) {
       return {
         authenticate: function() {
             $rootScope.authenticationError = false;

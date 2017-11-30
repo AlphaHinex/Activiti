@@ -149,8 +149,8 @@
 /* Services */
 
 // Add authentication factories
-activitiApp.factory('AuthenticationSharedService', ['$rootScope', '$http', 'authService', '$q', '$location', '$window',
-    function ($rootScope, $http, authService, $q, $location, $window) {
+activitiApp.factory('AuthenticationSharedService', ['$rootScope', '$http', 'authService', '$q', '$location', '$window', 'httpBuffer',
+    function ($rootScope, $http, authService, $q, $location, $window, httpBuffer) {
       return {
         authenticate: function() {
             $rootScope.authenticationError = false;
