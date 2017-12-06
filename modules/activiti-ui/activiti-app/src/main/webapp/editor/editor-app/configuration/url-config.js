@@ -14,8 +14,6 @@ var KISBPM = KISBPM || {};
 
 KISBPM.URL = {
 
-    afterClose: '/#/workflow/designer',
-
     getModel: function(modelId) {
         return ACTIVITI.CONFIG.contextRoot + '/app/rest/models/' + modelId + '/editor/json?version=' + Date.now();
     },
