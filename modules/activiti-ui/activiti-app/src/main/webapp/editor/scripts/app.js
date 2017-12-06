@@ -213,10 +213,11 @@ activitiModeler
             suffix: '.json'
         });
 
-        // $translateProvider.registerAvailableLanguageKeys(['en'], {
-        //     'en_*': 'en',
-        //     'en-*': 'en'
-        // });
+        $translateProvider.registerAvailableLanguageKeys(['en'], {
+            'en_*': 'en',
+            'en-*': 'en'
+        });
+        
         $translateProvider.preferredLanguage(ACTIVITI.CONFIG.lang);
         
   }])
