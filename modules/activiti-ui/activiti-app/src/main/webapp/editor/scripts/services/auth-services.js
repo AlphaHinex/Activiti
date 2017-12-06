@@ -46,7 +46,6 @@ function wireServices(angularModule) {
             $http.get(ACTIVITI.CONFIG.contextRoot + '/app/rest/authenticate', {ignoreErrors: true, ignoreAuthModule: 'ignoreAuthModule'})
             .success(function (data, status, headers, config) {
                 $rootScope.account = data;
-                
                 $rootScope.$broadcast('event:auth-authConfirmed');
 
                 deferred.resolve();
