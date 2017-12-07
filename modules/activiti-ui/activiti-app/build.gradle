@@ -22,6 +22,8 @@ task pack(type: Jar) {
         into 'resources'
         from 'src/main/webapp'
         exclude 'scripts/app-cfg.js'
+        exclude 'editor/editor-app/configuration/toolbar-custom-actions.js'
+        exclude 'editor/editor-app/configuration/kis-toolbar-custom-actions.js'
     }
     manifest {
         attributes('Created-By': 'Gradle',
