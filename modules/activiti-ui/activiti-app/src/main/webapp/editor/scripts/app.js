@@ -213,9 +213,11 @@ activitiModeler
             suffix: '.json'
         });
 
-        $translateProvider.registerAvailableLanguageKeys(['en'], {
+        $translateProvider.registerAvailableLanguageKeys(['en', 'zh'], {
             'en_*': 'en',
-            'en-*': 'en'
+            'en-*': 'en',
+            'zh_*': 'zh',
+            'zh-*': 'zh'
         });
         
         $translateProvider.preferredLanguage(ACTIVITI.CONFIG.lang);
@@ -395,7 +397,7 @@ activitiModeler
             if (proposedLanguage !== 'de' && proposedLanguage !== 'en' && proposedLanguage !== 'es' && proposedLanguage !== 'fr'
                 && proposedLanguage !== 'it' && proposedLanguage !== 'ja') {
               
-                $translate.use('en');
+                $translate.use(ACTIVITI.CONFIG.lang);
             }
 
             var fixedUrlPart = '/editor/';
