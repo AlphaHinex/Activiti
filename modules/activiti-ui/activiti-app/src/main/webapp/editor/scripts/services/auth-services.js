@@ -42,21 +42,21 @@ function wireServices(angularModule) {
     function ($rootScope, $http, authService, $q) {
       return {
         authenticate: function() {
-            var deferred = $q.defer();
-            $http.get(ACTIVITI.CONFIG.contextRoot + '/app/rest/authenticate', {ignoreErrors: true, ignoreAuthModule: 'ignoreAuthModule'})
-            .success(function (data, status, headers, config) {
-                $rootScope.account = data;
-                $rootScope.$broadcast('event:auth-authConfirmed');
-
-                deferred.resolve();
-            })
-            .error(function(data, status, headers, config) {
+          var deferred = $q.defer();
+          $http.get(ACTIVITI.CONFIG.contextRoot + '/app/rest/authenticate', {ignoreErrors: true, ignoreAuthModule: 'ignoreAuthModule'})
+              .success(function (data, status, headers, config) {
+                  $rootScope.account = data;
+                  $rootScope.$broadcast('event:auth-authConfirmed');
+                  
+                  deferred.resolve();
+              })
+              .error(function(data, status, headers, config) {
                 // Reject promise and broadcast login required event
                 deferred.reject(data);
                 $rootScope.$broadcast('event:auth-loginRequired');
-            });
-
-            return deferred.promise;
+              });
+          
+          return deferred.promise;
         },
           login: function (param) {
               var data ="j_username=" + encodeURIComponent(param.username) +"&j_password=" + encodeURIComponent(param.password) +"&_spring_security_remember_me=true&submit=Login";

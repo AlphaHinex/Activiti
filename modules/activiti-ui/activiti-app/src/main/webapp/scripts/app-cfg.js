@@ -11,9 +11,7 @@ var ACTIVITI = ACTIVITI || {};
 ACTIVITI.CONFIG = {
 	'onPremise' : true,
 	'contextRoot' : '/activiti-app',
-	'webContextRoot' : '/activiti-app',
-	'lang': 'en',
-	'loginUrl': 'http://localhost:9000'
+	'webContextRoot' : '/activiti-app'
 };
 /*
  * Copyright 2005-2015 Alfresco Software, Ltd. All rights reserved.

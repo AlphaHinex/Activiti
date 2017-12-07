@@ -149,16 +149,40 @@
 /* Services */
 
 // Add authentication factories
-activitiApp.factory('AuthenticationSharedService', ['$rootScope', '$http', 'authService', '$q', '$location', '$window', 'httpBuffer',
-    function ($rootScope, $http, authService, $q, $location, $window, httpBuffer) {
+activitiApp.factory('AuthenticationSharedService', ['$rootScope', '$http', 'authService', '$q', '$location', '$window',
+    function ($rootScope, $http, authService, $q, $location, $window) {
       return {
         authenticate: function() {
-            $rootScope.authenticationError = false;
-            var updater = function(config) {return config;};
-            httpBuffer.retryAll(updater);
-            $rootScope.account = {"id":"admin","firstName":null,"lastName":"Administrator","email":"admin","fullName":" Administrator","groups":[{"id":"ROLE_ADMIN","name":"Superusers","type":"security-role"}]}
-            $rootScope.invalidCredentials = false;
-            $rootScope.$broadcast('event:auth-authConfirmed');
+          var deferred = $q.defer();
+          $http.get(ACTIVITI.CONFIG.contextRoot + '/app/rest/authenticate', {ignoreErrors: true, ignoreAuthModule: 'ignoreAuthModule'})
+              .success(function (data, status, headers, config) {
+              
+                  var authUrl = ACTIVITI.CONFIG.contextRoot + '/app/rest/account';
+                  if (ACTIVITI.CONFIG.integrationProfile) {
+                      authUrl += '?includeApps=true';
+                  }
+                  
+                  $http.get(authUrl)
+                      .success(function (data, status, headers, config) {
+                          $rootScope.account = data;
+                          $rootScope.invalidCredentials = false;
+                          $rootScope.$broadcast('event:auth-authConfirmed');
+
+                          deferred.resolve();
+                      })
+                      .error(function(data, status, headers, config) {
+                          // Reject promise and broadcast login required event
+                          deferred.reject(data);
+                          $rootScope.$broadcast('event:auth-loginRequired');
+                      });
+              })
+              .error(function(data, status, headers, config) {
+                  // Reject promise and broadcast login required event
+                  deferred.reject(data);
+                  $rootScope.$broadcast('event:auth-loginRequired');
+              });
+
+          return deferred.promise;
         },
           
         login: function (param) {

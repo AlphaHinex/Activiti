@@ -213,14 +213,10 @@ activitiModeler
             suffix: '.json'
         });
 
-        $translateProvider.registerAvailableLanguageKeys(['en', 'zh'], {
+        $translateProvider.registerAvailableLanguageKeys(['en'], {
             'en_*': 'en',
-            'en-*': 'en',
-            'zh_*': 'zh',
-            'zh-*': 'zh'
+            'en-*': 'en'
         });
-        
-        $translateProvider.preferredLanguage(ACTIVITI.CONFIG.lang);
         
   }])
   .run(['$rootScope', '$timeout', '$modal', '$translate', '$location', '$window', 'appResourceRoot',
@@ -397,7 +393,7 @@ activitiModeler
             if (proposedLanguage !== 'de' && proposedLanguage !== 'en' && proposedLanguage !== 'es' && proposedLanguage !== 'fr'
                 && proposedLanguage !== 'it' && proposedLanguage !== 'ja') {
               
-                $translate.use(ACTIVITI.CONFIG.lang);
+                $translate.use('en');
             }
 
             var fixedUrlPart = '/editor/';
@@ -435,20 +431,24 @@ activitiModeler
 
             // Call when the user is authenticated
            $rootScope.$on('event:auth-authConfirmed', function() {
-        	    $rootScope.authenticated = true;
-                if ($rootScope.account && $rootScope.account.type && $rootScope.account.type != 'enterprise' &&
-                        ($location.path() == '/stencils' || $location.path().indexOf('/stencils/') >= 0)) {
+        	   $rootScope.authenticated = true;
+               Account.get().then(function () {
 
-                    $location.path('/processes');
+            	   if ($rootScope.account && $rootScope.account.type && $rootScope.account.type != 'enterprise' &&
+                		   ($location.path() == '/stencils' || $location.path().indexOf('/stencils/') >= 0)) {
 
-                } else if ($location.path() == '' || $location.path() == '#') {
-                    $location.path('/processes');
-                }
+                	   $location.path('/processes');
+
+           		   } else if ($location.path() == '' || $location.path() == '#') {
+                	   $location.path('/processes');
+                   }
+               });
             });
 
             // Call when the user logs in
             $rootScope.$on('event:auth-loginConfirmed', function() {
                 $rootScope.authenticated = true;
+                $rootScope.account = Account.get();
                 $location.path('/processes');
             });
 
