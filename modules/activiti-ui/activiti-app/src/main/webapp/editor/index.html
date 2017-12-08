@@ -37,7 +37,7 @@
 </head>
 <body ng-app="activitiModeler" ng-cloak>
 
-    <div class="navbar navbar-fixed-top navbar-inverse" role="navigation" id="main-header" style="min-height: 0;display: none;">
+    <div class="navbar navbar-fixed-top navbar-inverse navbar-display-none" role="navigation" id="main-header">
         <div class="fixed-container">
             <div class="navbar-header">
                 <a ng-click="backToLanding()" class="landing-logo" ng-if="account != null && account != undefined" title="{{'GENERAL.MAIN-TITLE' | translate}}">
@@ -111,7 +111,7 @@
         </div>
     </div>
 
-    <div id="main" class="wrapper full clearfix" style="padding-top:0;" ng-view="" ng-cloak ng-style="{height: window.height + 'px'}">
+    <div id="main" class="wrapper full clearfix editor-main-padding" ng-view="" ng-cloak ng-style="{height: window.height + 'px'}">
     </div>
 
 <!--[if lt IE 9]>
