@@ -15,17 +15,28 @@ package org.activiti.bpmn.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * @author Tijs Rademakers
+ * @author Joram Barrez
  */
 public abstract class FlowNode extends FlowElement {
 
   protected boolean asynchronous;
   protected boolean notExclusive;
+
   protected List<SequenceFlow> incomingFlows = new ArrayList<SequenceFlow>();
   protected List<SequenceFlow> outgoingFlows = new ArrayList<SequenceFlow>();
+  
+  @JsonIgnore
+  protected Object behavior;
 
-  public boolean isAsynchronous() {
+  public FlowNode() {
+
+  }
+
+ public boolean isAsynchronous() {
     return asynchronous;
   }
 
@@ -33,11 +44,27 @@ public abstract class FlowNode extends FlowElement {
     this.asynchronous = asynchronous;
   }
   
+  public boolean isExclusive() {
+    return !notExclusive;
+  }
+  
+  public void setExclusive(boolean exclusive) {
+    this.notExclusive = !exclusive;
+  }
+  
   public boolean isNotExclusive() {
     return notExclusive;
   }
   public void setNotExclusive(boolean notExclusive) {
     this.notExclusive = notExclusive;
+  }
+
+  public Object getBehavior() {
+    return behavior;
+  }
+
+  public void setBehavior(Object behavior) {
+    this.behavior = behavior;
   }
 
   public List<SequenceFlow> getIncomingFlows() {
@@ -55,7 +82,7 @@ public abstract class FlowNode extends FlowElement {
   public void setOutgoingFlows(List<SequenceFlow> outgoingFlows) {
     this.outgoingFlows = outgoingFlows;
   }
-  
+
   public void setValues(FlowNode otherNode) {
     super.setValues(otherNode);
     setAsynchronous(otherNode.isAsynchronous());

@@ -19,40 +19,40 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.activiti.engine.delegate.BusinessRuleTaskDelegate;
+import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.Expression;
-import org.activiti.engine.impl.cfg.ProcessEngineConfigurationImpl;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
 import org.activiti.engine.impl.rules.RulesAgendaFilter;
 import org.activiti.engine.impl.rules.RulesHelper;
+import org.activiti.engine.impl.util.ProcessDefinitionUtil;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.drools.KnowledgeBase;
 import org.drools.runtime.StatefulKnowledgeSession;
-
 
 /**
  * activity implementation of the BPMN 2.0 business rule task.
  * 
  * @author Tijs Rademakers
+ * @author Joram Barrez
  */
 public class BusinessRuleTaskActivityBehavior extends TaskActivityBehavior implements BusinessRuleTaskDelegate {
-  
+
   private static final long serialVersionUID = 1L;
+  
   protected Set<Expression> variablesInputExpressions = new HashSet<Expression>();
   protected Set<Expression> rulesExpressions = new HashSet<Expression>();
-  protected boolean exclude = false;
+  protected boolean exclude;
   protected String resultVariable;
 
-  public BusinessRuleTaskActivityBehavior() {}
-  
-  public void execute(ActivityExecution execution) throws Exception {
-    ProcessEngineConfigurationImpl processEngineConfiguration = (ProcessEngineConfigurationImpl) execution.getEngineServices().getProcessEngineConfiguration();
-    ProcessDefinition processDefinition = processEngineConfiguration.getDeploymentManager().findDeployedProcessDefinitionById(
-        execution.getProcessDefinitionId());
+  public BusinessRuleTaskActivityBehavior() {
+  }
+
+  public void execute(DelegateExecution execution) {
+    ProcessDefinition processDefinition = ProcessDefinitionUtil.getProcessDefinition(execution.getProcessDefinitionId());
     String deploymentId = processDefinition.getDeploymentId();
-    
-    KnowledgeBase knowledgeBase = RulesHelper.findKnowledgeBaseByDeploymentId(deploymentId); 
+
+    KnowledgeBase knowledgeBase = RulesHelper.findKnowledgeBaseByDeploymentId(deploymentId);
     StatefulKnowledgeSession ksession = knowledgeBase.newStatefulKnowledgeSession();
-    
+
     if (variablesInputExpressions != null) {
       Iterator<Expression> itVariable = variablesInputExpressions.iterator();
       while (itVariable.hasNext()) {
@@ -60,7 +60,7 @@ public class BusinessRuleTaskActivityBehavior extends TaskActivityBehavior imple
         ksession.insert(variable.getValue(execution));
       }
     }
-    
+
     if (!rulesExpressions.isEmpty()) {
       RulesAgendaFilter filter = new RulesAgendaFilter();
       Iterator<Expression> itRuleNames = rulesExpressions.iterator();
@@ -70,11 +70,11 @@ public class BusinessRuleTaskActivityBehavior extends TaskActivityBehavior imple
       }
       filter.setAccept(!exclude);
       ksession.fireAllRules(filter);
-      
+
     } else {
       ksession.fireAllRules();
     }
-    
+
     Collection<Object> ruleOutputObjects = ksession.getObjects();
     if (ruleOutputObjects != null && !ruleOutputObjects.isEmpty()) {
       Collection<Object> outputVariables = new ArrayList<Object>();
@@ -86,21 +86,21 @@ public class BusinessRuleTaskActivityBehavior extends TaskActivityBehavior imple
     ksession.dispose();
     leave(execution);
   }
-  
+
   public void addRuleVariableInputIdExpression(Expression inputId) {
     this.variablesInputExpressions.add(inputId);
   }
-  
+
   public void addRuleIdExpression(Expression inputId) {
     this.rulesExpressions.add(inputId);
   }
-  
+
   public void setExclude(boolean exclude) {
     this.exclude = exclude;
   }
-  
+
   public void setResultVariable(String resultVariableName) {
     this.resultVariable = resultVariableName;
   }
-  
+
 }

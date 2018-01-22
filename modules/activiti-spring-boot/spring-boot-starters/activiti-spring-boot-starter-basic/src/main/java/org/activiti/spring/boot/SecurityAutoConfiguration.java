@@ -33,7 +33,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
  * {@link org.activiti.engine.IdentityService}.
  *
  * @author Josh Long
- * @author Vedran Pavic
  */
 @Configuration
 @AutoConfigureBefore(org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration.class)
@@ -57,7 +56,7 @@ public class SecurityAutoConfiguration {
     @Autowired
     private IdentityService identityService;
   }
-
+  
   @Configuration
   @ConditionalOnClass(name = {"org.activiti.rest.service.api.RestUrls", "org.springframework.web.servlet.DispatcherServlet"})
   @EnableWebSecurity
@@ -79,5 +78,4 @@ public class SecurityAutoConfiguration {
         .httpBasic();
     }
   }
-
 }

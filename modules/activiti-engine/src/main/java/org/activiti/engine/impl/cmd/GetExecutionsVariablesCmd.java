@@ -37,17 +37,17 @@ public class GetExecutionsVariablesCmd implements Command<List<VariableInstance>
   
   @Override
   public List<VariableInstance> execute(CommandContext commandContext) {
-    // Verify existance of executions
-    if(executionIds == null) {
+    // Verify existence of executions
+    if (executionIds == null) {
       throw new ActivitiIllegalArgumentException("executionIds is null");
     }
-    if(executionIds.isEmpty()){
-        throw new ActivitiIllegalArgumentException("Set of executionIds is empty");
+    if (executionIds.isEmpty()){
+      throw new ActivitiIllegalArgumentException("Set of executionIds is empty");
     }
     
     List<VariableInstance> instances = new ArrayList<VariableInstance>();
     List<VariableInstanceEntity> entities = commandContext.getVariableInstanceEntityManager().findVariableInstancesByExecutionIds(executionIds);
-    for(VariableInstanceEntity entity : entities){
+    for (VariableInstanceEntity entity : entities){
         entity.getValue();
         instances.add(entity);
     }

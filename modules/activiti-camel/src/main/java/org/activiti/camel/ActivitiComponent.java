@@ -15,6 +15,7 @@ package org.activiti.camel;
 import java.util.Map;
 
 import org.activiti.engine.IdentityService;
+import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
@@ -22,32 +23,35 @@ import org.apache.camel.impl.DefaultComponent;
 import org.apache.camel.util.IntrospectionSupport;
 
 /**
- * This class has been modified to be consistent with the changes to CamelBehavior and its implementations. The set of changes
- * significantly increases the flexibility of our Camel integration, as you can either choose one of three "out-of-the-box" modes,
- * or you can choose to create your own. Please reference the comments for the "CamelBehavior" class for more information on the 
- * out-of-the-box implementation class options. 
+ * This class has been modified to be consistent with the changes to CamelBehavior and its implementations. The set of changes significantly increases the flexibility of our Camel integration, as you
+ * can either choose one of three "out-of-the-box" modes, or you can choose to create your own. Please reference the comments for the "CamelBehavior" class for more information on the out-of-the-box
+ * implementation class options.
  * 
  * @author Ryan Johnston (@rjfsu), Tijs Rademakers, Arnold Schrijver
  */
 public class ActivitiComponent extends DefaultComponent {
 
   protected IdentityService identityService;
-    
+
   protected RuntimeService runtimeService;
   
+  protected RepositoryService repositoryService;
+
   protected boolean copyVariablesToProperties;
 
   protected boolean copyVariablesToBodyAsMap;
 
   protected boolean copyCamelBodyToBody;
 
-  public ActivitiComponent() {}
-  
+  public ActivitiComponent() {
+  }
+
   @Override
   public void setCamelContext(CamelContext context) {
     super.setCamelContext(context);
     identityService = getByType(context, IdentityService.class);
     runtimeService = getByType(context, RuntimeService.class);
+    repositoryService = getByType(context, RepositoryService.class);
   }
 
   private <T> T getByType(CamelContext ctx, Class<T> kls) {
@@ -64,39 +68,40 @@ public class ActivitiComponent extends DefaultComponent {
     ActivitiEndpoint ae = new ActivitiEndpoint(s, getCamelContext());
     ae.setIdentityService(identityService);
     ae.setRuntimeService(runtimeService);
-    
+    ae.setRepositoryService(repositoryService);
+
     ae.setCopyVariablesToProperties(this.copyVariablesToProperties);
     ae.setCopyVariablesToBodyAsMap(this.copyVariablesToBodyAsMap);
     ae.setCopyCamelBodyToBody(this.copyCamelBodyToBody);
-    
+
     Map<String, Object> returnVars = IntrospectionSupport.extractProperties(parameters, "var.return.");
     if (returnVars != null && returnVars.size() > 0) {
       ae.getReturnVarMap().putAll(returnVars);
     }
-    
+
     return ae;
   }
-  
+
   public boolean isCopyVariablesToProperties() {
     return copyVariablesToProperties;
   }
-  
+
   public void setCopyVariablesToProperties(boolean copyVariablesToProperties) {
     this.copyVariablesToProperties = copyVariablesToProperties;
   }
-  
+
   public boolean isCopyCamelBodyToBody() {
     return copyCamelBodyToBody;
   }
-  
+
   public void setCopyCamelBodyToBody(boolean copyCamelBodyToBody) {
     this.copyCamelBodyToBody = copyCamelBodyToBody;
   }
-  
+
   public boolean isCopyVariablesToBodyAsMap() {
     return copyVariablesToBodyAsMap;
   }
-  
+
   public void setCopyVariablesToBodyAsMap(boolean copyVariablesToBodyAsMap) {
     this.copyVariablesToBodyAsMap = copyVariablesToBodyAsMap;
   }

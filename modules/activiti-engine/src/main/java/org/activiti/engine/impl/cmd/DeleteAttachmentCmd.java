@@ -15,13 +15,14 @@ package org.activiti.engine.impl.cmd;
 
 import java.io.Serializable;
 
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.delegate.event.ActivitiEventType;
 import org.activiti.engine.delegate.event.impl.ActivitiEventBuilder;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.AttachmentEntity;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
-
+import org.activiti.engine.impl.util.Activiti5Util;
 
 /**
  * @author Tom Baeyens
@@ -31,43 +32,41 @@ public class DeleteAttachmentCmd implements Command<Object>, Serializable {
 
   private static final long serialVersionUID = 1L;
   protected String attachmentId;
-  
+
   public DeleteAttachmentCmd(String attachmentId) {
     this.attachmentId = attachmentId;
   }
 
   public Object execute(CommandContext commandContext) {
-    AttachmentEntity attachment = commandContext
-      .getDbSqlSession()
-      .selectById(AttachmentEntity.class, attachmentId);
+    AttachmentEntity attachment = commandContext.getAttachmentEntityManager().findById(attachmentId); 
 
-    commandContext
-      .getDbSqlSession()
-      .delete(attachment);
+    String processInstanceId = attachment.getProcessInstanceId();
+    String processDefinitionId = null;
+    if (attachment.getProcessInstanceId() != null) {
+      ExecutionEntity process = commandContext.getExecutionEntityManager().findById(processInstanceId);
+      if (process != null) {
+        processDefinitionId = process.getProcessDefinitionId();
+        if (Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, process.getProcessDefinitionId())) {
+          Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+          activiti5CompatibilityHandler.deleteAttachment(attachmentId);
+          return null;
+        }
+      }
+    }
     
+    commandContext.getAttachmentEntityManager().delete(attachment, false);
+
     if (attachment.getContentId() != null) {
-      commandContext
-        .getByteArrayEntityManager()
-        .deleteByteArrayById(attachment.getContentId());
+      commandContext.getByteArrayEntityManager().deleteByteArrayById(attachment.getContentId());
     }
-    
-    if (attachment.getTaskId()!=null) {
-      commandContext.getHistoryManager()
-        .createAttachmentComment(attachment.getTaskId(), attachment.getProcessInstanceId(), attachment.getName(), false);
+
+    if (attachment.getTaskId() != null) {
+      commandContext.getHistoryManager().createAttachmentComment(attachment.getTaskId(), attachment.getProcessInstanceId(), attachment.getName(), false);
     }
-    
-    if(commandContext.getProcessEngineConfiguration().getEventDispatcher().isEnabled()) {
-    	// Forced to fetch the process-instance to associate the right process definition
-    	String processDefinitionId = null;
-    	String processInstanceId = attachment.getProcessInstanceId();
-    	if(attachment.getProcessInstanceId() != null) {
-    		ExecutionEntity process = commandContext.getExecutionEntityManager().findExecutionById(processInstanceId);
-    		if(process != null) {
-    			processDefinitionId = process.getProcessDefinitionId();
-    		}
-    	}
-    	commandContext.getProcessEngineConfiguration().getEventDispatcher().dispatchEvent(
-    			ActivitiEventBuilder.createEntityEvent(ActivitiEventType.ENTITY_DELETED, attachment, processInstanceId, processInstanceId, processDefinitionId));
+
+    if (commandContext.getProcessEngineConfiguration().getEventDispatcher().isEnabled()) {
+      commandContext.getProcessEngineConfiguration().getEventDispatcher()
+          .dispatchEvent(ActivitiEventBuilder.createEntityEvent(ActivitiEventType.ENTITY_DELETED, attachment, processInstanceId, processInstanceId, processDefinitionId));
     }
     return null;
   }

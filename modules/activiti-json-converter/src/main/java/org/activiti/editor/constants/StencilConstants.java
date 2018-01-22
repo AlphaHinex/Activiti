@@ -17,7 +17,7 @@ package org.activiti.editor.constants;
  */
 public interface StencilConstants {
 
-//stencil items
+  // stencil items
   final String STENCIL_EVENT_START_NONE = "StartNoneEvent";
   final String STENCIL_EVENT_START_TIMER = "StartTimerEvent";
   final String STENCIL_EVENT_START_MESSAGE = "StartMessageEvent";
@@ -47,6 +47,7 @@ public interface StencilConstants {
   final String STENCIL_TASK_CAMEL = "CamelTask";
   final String STENCIL_TASK_MULE = "MuleTask";
   final String STENCIL_TASK_SHELL = "ShellTask";
+  final String STENCIL_TASK_DECISION = "DecisionTask";
 
   final String STENCIL_GATEWAY_EXCLUSIVE = "ExclusiveGateway";
   final String STENCIL_GATEWAY_PARALLEL = "ParallelGateway";
@@ -125,7 +126,7 @@ public interface StencilConstants {
   final String PROPERTY_LISTENER_EXPRESSION = "expression";
   final String PROPERTY_LISTENER_DELEGATE_EXPRESSION = "delegateExpression";
   final String PROPERTY_LISTENER_FIELDS = "fields";
-  
+
   final String PROPERTY_EVENT_LISTENERS = "eventlisteners";
   final String PROPERTY_EVENTLISTENER_VALUE = "eventListeners";
   final String PROPERTY_EVENTLISTENER_EVENTS = "events";
@@ -154,6 +155,7 @@ public interface StencilConstants {
   final String PROPERTY_USERTASK_OWNER = "owner";
   final String PROPERTY_USERTASK_CANDIDATE_USERS = "candidateUsers";
   final String PROPERTY_USERTASK_CANDIDATE_GROUPS = "candidateGroups";
+  final String PROPERTY_USERTASK_CANDIDATE_ROLES = "candidateRoles";
   final String PROPERTY_USERTASK_CATEGORY = "categorydefinition";
 
   final String PROPERTY_SERVICETASK_CLASS = "servicetaskclass";
@@ -210,17 +212,18 @@ public interface StencilConstants {
   final String PROPERTY_IOPARAMETER_SOURCE = "source";
   final String PROPERTY_IOPARAMETER_SOURCE_EXPRESSION = "sourceExpression";
   final String PROPERTY_IOPARAMETER_TARGET = "target";
-  
+
   final String PROPERTY_CAMELTASK_CAMELCONTEXT = "cameltaskcamelcontext";
-  
-  final String PROPERTY_MULETASK_ENDPOINT_URL= "muletaskendpointurl";
-  final String PROPERTY_MULETASK_LANGUAGE= "muletasklanguage";
-  final String PROPERTY_MULETASK_PAYLOAD_EXPRESSION= "muletaskpayloadexpression";
-  final String PROPERTY_MULETASK_RESULT_VARIABLE= "muletaskresultvariable";
+
+  final String PROPERTY_MULETASK_ENDPOINT_URL = "muletaskendpointurl";
+  final String PROPERTY_MULETASK_LANGUAGE = "muletasklanguage";
+  final String PROPERTY_MULETASK_PAYLOAD_EXPRESSION = "muletaskpayloadexpression";
+  final String PROPERTY_MULETASK_RESULT_VARIABLE = "muletaskresultvariable";
 
   final String PROPERTY_SEQUENCEFLOW_DEFAULT = "defaultflow";
   final String PROPERTY_SEQUENCEFLOW_CONDITION = "conditionsequenceflow";
   final String PROPERTY_SEQUENCEFLOW_ORDER = "sequencefloworder";
+  final String PROPERTY_FORM_REFERENCE = "formreference";
   
   final String PROPERTY_MESSAGE_DEFINITIONS = "messagedefinitions";
   final String PROPERTY_MESSAGE_DEFINITION_ID = "id";
@@ -233,4 +236,10 @@ public interface StencilConstants {
   final String PROPERTY_SIGNAL_DEFINITION_SCOPE = "scope";
   
   final String PROPERTY_TERMINATE_ALL = "terminateall";
+  final String PROPERTY_TERMINATE_MULTI_INSTANCE = "terminateMultiInstance";
+  
+  final String PROPERTY_DECISIONTABLE_REFERENCE = "decisiontaskdecisiontablereference";
+  final String PROPERTY_DECISIONTABLE_REFERENCE_ID = "decisiontablereferenceid";
+  final String PROPERTY_DECISIONTABLE_REFERENCE_NAME = "decisiontablereferencename";
+  final String PROPERTY_DECISIONTABLE_REFERENCE_KEY = "decisionTableReferenceKey";
 }

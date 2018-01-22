@@ -14,6 +14,7 @@
 package org.activiti.engine.impl.cmd;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.activiti.engine.ActivitiIllegalArgumentException;
@@ -21,34 +22,51 @@ import org.activiti.engine.ActivitiObjectNotFoundException;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
+import org.activiti.engine.impl.persistence.entity.ExecutionEntityManager;
 import org.activiti.engine.runtime.Execution;
-
 
 /**
  * @author Tom Baeyens
+ * @author Joram Barrez
  */
 public class FindActiveActivityIdsCmd implements Command<List<String>>, Serializable {
 
   private static final long serialVersionUID = 1L;
   protected String executionId;
-  
+
   public FindActiveActivityIdsCmd(String executionId) {
     this.executionId = executionId;
   }
 
   public List<String> execute(CommandContext commandContext) {
-    if(executionId == null) {
+    if (executionId == null) {
       throw new ActivitiIllegalArgumentException("executionId is null");
     }
-    
-    ExecutionEntity execution = commandContext
-      .getExecutionEntityManager()
-      .findExecutionById(executionId);
-    
-    if (execution==null) {
-      throw new ActivitiObjectNotFoundException("execution "+executionId+" doesn't exist", Execution.class);
+
+    ExecutionEntityManager executionEntityManager = commandContext.getExecutionEntityManager();
+    ExecutionEntity execution = executionEntityManager.findById(executionId);
+
+    if (execution == null) {
+      throw new ActivitiObjectNotFoundException("execution " + executionId + " doesn't exist", Execution.class);
+    }
+
+    return findActiveActivityIds(execution);
+  }
+  
+  public List<String> findActiveActivityIds(ExecutionEntity executionEntity) {
+    List<String> activeActivityIds = new ArrayList<String>();
+    collectActiveActivityIds(executionEntity, activeActivityIds);
+    return activeActivityIds;
+  }
+
+  protected void collectActiveActivityIds(ExecutionEntity executionEntity, List<String> activeActivityIds) {
+    if (executionEntity.isActive() && executionEntity.getActivityId() != null) {
+      activeActivityIds.add(executionEntity.getActivityId());
     }
     
-    return execution.findActiveActivityIds();
+    for (ExecutionEntity childExecution : executionEntity.getExecutions()) {
+      collectActiveActivityIds(childExecution, activeActivityIds);
+    }
   }
+  
 }

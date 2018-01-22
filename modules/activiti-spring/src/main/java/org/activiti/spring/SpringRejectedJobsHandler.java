@@ -14,15 +14,16 @@
 package org.activiti.spring;
 
 import org.activiti.engine.impl.asyncexecutor.AsyncExecutor;
-import org.activiti.engine.impl.persistence.entity.JobEntity;
+import org.activiti.engine.runtime.Job;
 
 /**
- * <p>Strategy for handling jobs that were acquired but cannot be 
- * executed at this point (queue-size exceeded).</p> 
+ * <p>
+ * Strategy for handling jobs that were acquired but cannot be executed at this point (queue-size exceeded).
+ * </p>
  * 
  * @author Tijs Rademakers
  */
 public interface SpringRejectedJobsHandler {
 
-  public void jobRejected(AsyncExecutor asyncExecutor, JobEntity job);  
+  public void jobRejected(AsyncExecutor asyncExecutor, Job job);
 }

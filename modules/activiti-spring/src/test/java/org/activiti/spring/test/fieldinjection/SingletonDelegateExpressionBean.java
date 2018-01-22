@@ -31,7 +31,7 @@ public class SingletonDelegateExpressionBean implements JavaDelegate {
   }
   
   @Override
-  public void execute(DelegateExecution execution) throws Exception {
+  public void execute(DelegateExecution execution) {
     
     // just a quick check to avoid creating a specific test for it
     int nrOfFieldExtensions = DelegateHelper.getFields(execution).size();

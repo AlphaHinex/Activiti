@@ -15,11 +15,11 @@ import org.junit.Test;
 public class PoolsConverterTest extends AbstractConverterTest {
 
   @Test
-  public void connvertXMLToModel() throws Exception {
+  public void convertXMLToModel() throws Exception {
     BpmnModel bpmnModel = readXMLFile();
     validateModel(bpmnModel);
   }
-  
+
   @Test
   public void convertModelToXML() throws Exception {
     BpmnModel bpmnModel = readXMLFile();
@@ -27,11 +27,11 @@ public class PoolsConverterTest extends AbstractConverterTest {
     validateModel(parsedModel);
     deployProcess(parsedModel);
   }
-  
+
   protected String getResource() {
     return "pools.bpmn";
   }
-  
+
   private void validateModel(BpmnModel model) {
     assertEquals(1, model.getPools().size());
     Pool pool = model.getPools().get(0);

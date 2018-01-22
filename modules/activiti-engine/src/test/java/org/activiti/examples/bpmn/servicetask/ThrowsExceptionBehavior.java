@@ -13,29 +13,30 @@
 
 package org.activiti.examples.bpmn.servicetask;
 
-import org.activiti.engine.impl.pvm.PvmTransition;
-import org.activiti.engine.impl.pvm.delegate.ActivityBehavior;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
-
+import org.activiti.engine.delegate.DelegateExecution;
+import org.activiti.engine.delegate.DelegateHelper;
+import org.activiti.engine.impl.delegate.ActivityBehavior;
 
 /**
  * @author Joram Barrez
  */
 public class ThrowsExceptionBehavior implements ActivityBehavior {
 
-  public void execute(ActivityExecution execution) throws Exception {
+  public void execute(DelegateExecution execution) {
     String var = (String) execution.getVariable("var");
-
-    PvmTransition transition;
+    
+    String sequenceFlowToTake = null; 
+    
     try {
       executeLogic(var);
-      transition = execution.getActivity().findOutgoingTransition("no-exception");
+      sequenceFlowToTake = "no-exception";
     } catch (Exception e) {
-      transition = execution.getActivity().findOutgoingTransition("exception");
+      sequenceFlowToTake = "exception";
     }
-    execution.take(transition);
+    
+    DelegateHelper.leaveDelegate(execution, sequenceFlowToTake);
   }
-  
+
   protected void executeLogic(String value) {
     if (value.equals("throw-exception")) {
       throw new RuntimeException();

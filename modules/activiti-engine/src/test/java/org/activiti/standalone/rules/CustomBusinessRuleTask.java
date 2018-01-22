@@ -16,11 +16,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.activiti.engine.delegate.BusinessRuleTaskDelegate;
+import org.activiti.engine.delegate.DelegateExecution;
+import org.activiti.engine.delegate.DelegateHelper;
 import org.activiti.engine.delegate.Expression;
-import org.activiti.engine.impl.bpmn.behavior.AbstractBpmnActivityBehavior;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
 
-public class CustomBusinessRuleTask extends AbstractBpmnActivityBehavior implements BusinessRuleTaskDelegate {
+public class CustomBusinessRuleTask implements BusinessRuleTaskDelegate {
   
   private static final long serialVersionUID = 1L;
   
@@ -30,9 +30,9 @@ public class CustomBusinessRuleTask extends AbstractBpmnActivityBehavior impleme
   public static String resultVariableName;
 
   @Override
-  public void execute(ActivityExecution execution) throws Exception {
+  public void execute(DelegateExecution execution) {
     execution.setVariable("test", "test2");
-    leave(execution);
+    DelegateHelper.leaveDelegate(execution);
   }
 
   @Override

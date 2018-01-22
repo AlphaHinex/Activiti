@@ -77,7 +77,7 @@ public class DynamicBpmnServiceImpl extends ServiceImpl implements DynamicBpmnSe
     changeScriptTaskScript(id, script, infoNode);
     return infoNode;
   }
- 
+  
   public void changeScriptTaskScript(String id, String script, ObjectNode infoNode) {
     setElementProperty(id, SCRIPT_TASK_SCRIPT, script, infoNode);
   }
@@ -210,12 +210,22 @@ public class DynamicBpmnServiceImpl extends ServiceImpl implements DynamicBpmnSe
     setElementProperty(id, USER_TASK_CANDIDATE_GROUPS, valuesNode, infoNode);
   }
   
+  public ObjectNode changeDmnTaskDecisionTableKey(String id, String decisionTableKey) {
+    ObjectNode infoNode = processEngineConfiguration.getObjectMapper().createObjectNode();
+    changeDmnTaskDecisionTableKey(id, decisionTableKey, infoNode);
+    return infoNode;
+  }
+
+  public void changeDmnTaskDecisionTableKey(String id, String decisionTableKey, ObjectNode infoNode) {
+    setElementProperty(id, DMN_TASK_DECISION_TABLE_KEY, decisionTableKey, infoNode);
+  }
+  
   public ObjectNode changeSequenceFlowCondition(String id, String condition) {
     ObjectNode infoNode = processEngineConfiguration.getObjectMapper().createObjectNode();
     changeSequenceFlowCondition(id, condition, infoNode);
     return infoNode;
   }
-
+  
   public void changeSequenceFlowCondition(String id, String condition, ObjectNode infoNode) {
     setElementProperty(id, SEQUENCE_FLOW_CONDITION, condition, infoNode);
   }
@@ -275,7 +285,7 @@ public class DynamicBpmnServiceImpl extends ServiceImpl implements DynamicBpmnSe
   protected void setElementProperty(String id, String propertyName, String propertyValue, ObjectNode infoNode) {
     ObjectNode bpmnNode = createOrGetBpmnNode(infoNode);
     if (bpmnNode.has(id) == false) {
-      bpmnNode.put(id, processEngineConfiguration.getObjectMapper().createObjectNode());
+      bpmnNode.putObject(id);
     }
     
     ((ObjectNode) bpmnNode.get(id)).put(propertyName, propertyValue);
@@ -284,15 +294,15 @@ public class DynamicBpmnServiceImpl extends ServiceImpl implements DynamicBpmnSe
   protected void setElementProperty(String id, String propertyName, JsonNode propertyValue, ObjectNode infoNode) {
     ObjectNode bpmnNode = createOrGetBpmnNode(infoNode);
     if (bpmnNode.has(id) == false) {
-      bpmnNode.put(id, processEngineConfiguration.getObjectMapper().createObjectNode());
+      bpmnNode.putObject(id);
     }
     
-    ((ObjectNode) bpmnNode.get(id)).put(propertyName, propertyValue);
+    ((ObjectNode) bpmnNode.get(id)).set(propertyName, propertyValue);
   }
   
   protected ObjectNode createOrGetBpmnNode(ObjectNode infoNode) {
     if (infoNode.has(BPMN_NODE) == false) {
-      infoNode.put(BPMN_NODE, processEngineConfiguration.getObjectMapper().createObjectNode());
+      infoNode.putObject(BPMN_NODE);
     }
     return (ObjectNode) infoNode.get(BPMN_NODE);
   }
@@ -304,12 +314,12 @@ public class DynamicBpmnServiceImpl extends ServiceImpl implements DynamicBpmnSe
   protected void setLocalizationProperty(String language, String id, String propertyName, String propertyValue, ObjectNode infoNode) {
     ObjectNode localizationNode = createOrGetLocalizationNode(infoNode);
     if (localizationNode.has(language) == false) {
-      localizationNode.put(language, processEngineConfiguration.getObjectMapper().createObjectNode());
+      localizationNode.putObject(language);
     }
     
     ObjectNode languageNode = (ObjectNode) localizationNode.get(language);
     if (languageNode.has(id) == false) {
-      languageNode.put(id, processEngineConfiguration.getObjectMapper().createObjectNode());
+      languageNode.putObject(id);
     }
     
     ((ObjectNode) languageNode.get(id)).put(propertyName, propertyValue);
@@ -317,7 +327,7 @@ public class DynamicBpmnServiceImpl extends ServiceImpl implements DynamicBpmnSe
   
   protected ObjectNode createOrGetLocalizationNode(ObjectNode infoNode) {
     if (infoNode.has(LOCALIZATION_NODE) == false) {
-      infoNode.put(LOCALIZATION_NODE, processEngineConfiguration.getObjectMapper().createObjectNode());
+      infoNode.putObject(LOCALIZATION_NODE);
     }
     return (ObjectNode) infoNode.get(LOCALIZATION_NODE);
   }

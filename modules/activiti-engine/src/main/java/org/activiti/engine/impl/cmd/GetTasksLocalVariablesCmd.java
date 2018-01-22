@@ -30,7 +30,7 @@ import org.activiti.engine.impl.persistence.entity.VariableInstanceEntity;
 public class GetTasksLocalVariablesCmd implements Command<List<VariableInstance>>, Serializable{
 
 
-  private static final long serialVersionUID = 4326522873059188196L;
+  private static final long serialVersionUID = 1L;
   protected Set<String> taskIds;
 
   public GetTasksLocalVariablesCmd(Set<String> taskIds) {

@@ -18,20 +18,22 @@ import java.util.concurrent.ConcurrentMap;
 import javax.xml.namespace.QName;
 
 /**
- * A dynamic web service client that allows to perform synchronous calls
- * to a specific web service.
+ * A dynamic web service client that allows to perform synchronous calls to a specific web service.
  * 
  * @author Esteban Robles Luna
  */
 public interface SyncWebServiceClient {
 
   /**
-   * Synchronously invoke a web service method with some arguments. 
+   * Synchronously invoke a web service method with some arguments.
    * 
-   * @param methodName a not null method name
-   * @param arguments a not null list of arguments
-   * @param overridenEndpointAddresses a not null map of overriden enpoint addresses. The key is the endpoint qualified name.
+   * @param methodName
+   *          a not null method name
+   * @param arguments
+   *          a not null list of arguments
+   * @param overridenEndpointAddresses 
+   *          a not null map of overriden enpoint addresses. The key is the endpoint qualified name.          
    * @return the result of invoking the method of the web service
    */
-  Object[] send(String methodName, Object[] arguments, final ConcurrentMap<QName, URL> overridenEndpointAddresses) throws Exception;
+  Object[] send(String methodName, Object[] arguments, ConcurrentMap<QName, URL> overridenEndpointAddresses) throws Exception;
 }

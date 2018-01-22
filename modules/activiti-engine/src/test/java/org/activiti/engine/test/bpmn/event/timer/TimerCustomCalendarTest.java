@@ -1,3 +1,16 @@
+/* Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.activiti.engine.test.bpmn.event.timer;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -10,6 +23,7 @@ import java.util.List;
 import org.activiti.engine.ActivitiException;
 import org.activiti.engine.impl.calendar.BusinessCalendar;
 import org.activiti.engine.impl.test.ResourceActivitiTestCase;
+import org.activiti.engine.runtime.Execution;
 import org.activiti.engine.runtime.Job;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.test.Deployment;
@@ -26,21 +40,23 @@ public class TimerCustomCalendarTest extends ResourceActivitiTestCase {
 
   @Deployment
   public void testCycleTimer() {
-    List<Job> jobs = this.managementService.createJobQuery().list();
+    List<Job> jobs = this.managementService.createTimerJobQuery().list();
 
     assertThat("One job is scheduled", jobs.size(), is(1));
     assertThat("Job must be scheduled by custom business calendar to Date(0)", jobs.get(0).getDuedate(), is(new Date(0)));
 
-    this.managementService.executeJob(jobs.get(0).getId());
+    managementService.moveTimerToExecutableJob(jobs.get(0).getId());
+    managementService.executeJob(jobs.get(0).getId());
 
-    jobs = this.managementService.createJobQuery().list();
+    jobs = this.managementService.createTimerJobQuery().list();
 
     assertThat("One job is scheduled (repetition is 2x)", jobs.size(), is(1));
     assertThat("Job must be scheduled by custom business calendar to Date(0)", jobs.get(0).getDuedate(), is(new Date(0)));
 
-    this.managementService.executeJob(jobs.get(0).getId());
+    managementService.moveTimerToExecutableJob(jobs.get(0).getId());
+    managementService.executeJob(jobs.get(0).getId());
 
-    jobs = this.managementService.createJobQuery().list();
+    jobs = this.managementService.createTimerJobQuery().list();
     assertThat("There must be no job.", jobs.isEmpty());
   }
 
@@ -48,15 +64,17 @@ public class TimerCustomCalendarTest extends ResourceActivitiTestCase {
   public void testCustomDurationTimerCalendar() {
     ProcessInstance processInstance = this.runtimeService.startProcessInstanceByKey("testCustomDurationCalendar");
 
-    List<Job> jobs = this.managementService.createJobQuery().list();
+    List<Job> jobs = this.managementService.createTimerJobQuery().list();
 
     assertThat("One job is scheduled", jobs.size(), is(1));
     assertThat("Job must be scheduled by custom business calendar to Date(0)", jobs.get(0).getDuedate(), is(new Date(0)));
 
-    this.managementService.executeJob(jobs.get(0).getId());
-    waitForJobExecutorToProcessAllJobs(10000, 100);
+    managementService.moveTimerToExecutableJob(jobs.get(0).getId());
+    managementService.executeJob(jobs.get(0).getId());
+    waitForJobExecutorToProcessAllJobsAndExecutableTimerJobs(10000, 200);
 
-    this.runtimeService.signal(processInstance.getId());
+    Execution execution = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).activityId("receive").singleResult();
+    runtimeService.trigger(execution.getId());
   }
 
   @Deployment
@@ -73,12 +91,13 @@ public class TimerCustomCalendarTest extends ResourceActivitiTestCase {
   public void testBoundaryTimer() {
     this.runtimeService.startProcessInstanceByKey("testBoundaryTimer");
 
-    List<Job> jobs = this.managementService.createJobQuery().list();
+    List<Job> jobs = this.managementService.createTimerJobQuery().list();
     assertThat("One job is scheduled", jobs.size(), is(1));
     assertThat("Job must be scheduled by custom business calendar to Date(0)", jobs.get(0).getDuedate(), is(new Date(0)));
 
-    this.managementService.executeJob(jobs.get(0).getId());
-    waitForJobExecutorToProcessAllJobs(10000, 100);
+    managementService.moveTimerToExecutableJob(jobs.get(0).getId());
+    managementService.executeJob(jobs.get(0).getId());
+    waitForJobExecutorToProcessAllJobsAndExecutableTimerJobs(10000, 200);
   }
 
   public static class CustomBusinessCalendar implements BusinessCalendar {

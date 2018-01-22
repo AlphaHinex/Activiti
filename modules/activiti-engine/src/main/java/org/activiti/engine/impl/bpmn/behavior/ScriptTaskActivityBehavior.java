@@ -15,9 +15,9 @@ package org.activiti.engine.impl.bpmn.behavior;
 import org.activiti.engine.ActivitiException;
 import org.activiti.engine.DynamicBpmnConstants;
 import org.activiti.engine.delegate.BpmnError;
+import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.impl.bpmn.helper.ErrorPropagation;
 import org.activiti.engine.impl.context.Context;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
 import org.activiti.engine.impl.scripting.ScriptingEngines;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 
 /**
  * activity implementation of the BPMN 2.0 script task.
@@ -35,33 +34,32 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author Falko Menge
  */
 public class ScriptTaskActivityBehavior extends TaskActivityBehavior {
-  
+
   private static final long serialVersionUID = 1L;
-  
+
   private static final Logger LOGGER = LoggerFactory.getLogger(ScriptTaskActivityBehavior.class);
-  
+
   protected String scriptTaskId;
   protected String script;
   protected String language;
   protected String resultVariable;
-  protected boolean storeScriptVariables = false; // https://activiti.atlassian.net/browse/ACT-1626
+  protected boolean storeScriptVariables = false; // see https://activiti.atlassian.net/browse/ACT-1626
 
   public ScriptTaskActivityBehavior(String script, String language, String resultVariable) {
     this.script = script;
     this.language = language;
     this.resultVariable = resultVariable;
   }
-  
+
   public ScriptTaskActivityBehavior(String scriptTaskId, String script, String language, String resultVariable, boolean storeScriptVariables) {
     this(script, language, resultVariable);
     this.scriptTaskId = scriptTaskId;
     this.storeScriptVariables = storeScriptVariables;
   }
-  
-  public void execute(ActivityExecution execution) throws Exception {
-    ScriptingEngines scriptingEngines = Context
-      .getProcessEngineConfiguration()
-      .getScriptingEngines();
+
+  public void execute(DelegateExecution execution) {
+
+    ScriptingEngines scriptingEngines = Context.getProcessEngineConfiguration().getScriptingEngines();
     
     if (Context.getProcessEngineConfiguration().isEnableProcessDefinitionInfoCache()) {
       ObjectNode taskElementProperties = Context.getBpmnOverrideElementProperties(scriptTaskId, execution.getProcessDefinitionId());
@@ -76,15 +74,15 @@ public class ScriptTaskActivityBehavior extends TaskActivityBehavior {
     boolean noErrors = true;
     try {
       Object result = scriptingEngines.evaluate(script, language, execution, storeScriptVariables);
-      
+
       if (resultVariable != null) {
         execution.setVariable(resultVariable, result);
       }
 
     } catch (ActivitiException e) {
-      
-      LOGGER.warn("Exception while executing " + execution.getActivity().getId() + " : " + e.getMessage());
-      
+
+      LOGGER.warn("Exception while executing " + execution.getCurrentFlowElement().getId() + " : " + e.getMessage());
+
       noErrors = false;
       Throwable rootCause = ExceptionUtils.getRootCause(e);
       if (rootCause instanceof BpmnError) {
@@ -93,10 +91,9 @@ public class ScriptTaskActivityBehavior extends TaskActivityBehavior {
         throw e;
       }
     }
-     
     if (noErrors) {
       leave(execution);
     }
   }
-  
+
 }

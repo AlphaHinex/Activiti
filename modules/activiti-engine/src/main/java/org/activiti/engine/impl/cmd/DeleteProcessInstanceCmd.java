@@ -15,14 +15,19 @@ package org.activiti.engine.impl.cmd;
 import java.io.Serializable;
 
 import org.activiti.engine.ActivitiIllegalArgumentException;
+import org.activiti.engine.ActivitiObjectNotFoundException;
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
+import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
+import org.activiti.engine.impl.util.Activiti5Util;
+import org.activiti.engine.runtime.ProcessInstance;
 
 /**
  * @author Joram Barrez
  */
 public class DeleteProcessInstanceCmd implements Command<Void>, Serializable {
-  
+
   private static final long serialVersionUID = 1L;
   protected String processInstanceId;
   protected String deleteReason;
@@ -32,14 +37,24 @@ public class DeleteProcessInstanceCmd implements Command<Void>, Serializable {
     this.deleteReason = deleteReason;
   }
 
-  public Void execute(CommandContext commandContext) { 
+  public Void execute(CommandContext commandContext) {
     if (processInstanceId == null) {
       throw new ActivitiIllegalArgumentException("processInstanceId is null");
     }
 
-    commandContext
-      .getExecutionEntityManager()
-      .deleteProcessInstance(processInstanceId, deleteReason);
+    ExecutionEntity processInstanceEntity = commandContext.getExecutionEntityManager().findById(processInstanceId);
+    
+    if (processInstanceEntity == null) {
+      throw new ActivitiObjectNotFoundException("No process instance found for id '" + processInstanceId + "'", ProcessInstance.class);
+    }
+    
+    if (Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, processInstanceEntity.getProcessDefinitionId())) {
+      Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+      activiti5CompatibilityHandler.deleteProcessInstance(processInstanceId, deleteReason);
+    } else {
+      commandContext.getExecutionEntityManager().deleteProcessInstance(processInstanceEntity.getProcessInstanceId(), deleteReason, false);
+    }
+
     return null;
   }
 

@@ -20,9 +20,9 @@ import java.util.concurrent.ExecutorService;
 import org.activiti.engine.impl.asyncexecutor.AsyncExecutor;
 import org.activiti.engine.impl.asyncexecutor.DefaultAsyncJobExecutor;
 import org.activiti.engine.impl.asyncexecutor.ExecuteAsyncRunnableFactory;
+import org.activiti.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.activiti.engine.impl.cfg.multitenant.TenantInfoHolder;
-import org.activiti.engine.impl.interceptor.CommandExecutor;
-import org.activiti.engine.impl.persistence.entity.JobEntity;
+import org.activiti.engine.runtime.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,29 +48,34 @@ public class SharedExecutorServiceAsyncExecutor extends DefaultAsyncJobExecutor 
   protected Map<String, TenantAwareAcquireAsyncJobsDueRunnable> asyncJobAcquisitionRunnables 
     = new HashMap<String, TenantAwareAcquireAsyncJobsDueRunnable>();
   
+  protected Map<String, Thread> resetExpiredJobsThreads = new HashMap<String, Thread>();
+  protected Map<String, TenantAwareResetExpiredJobsRunnable> resetExpiredJobsRunnables
+    = new HashMap<String, TenantAwareResetExpiredJobsRunnable>();
+  
   public SharedExecutorServiceAsyncExecutor(TenantInfoHolder tenantInfoHolder) {
     this.tenantInfoHolder = tenantInfoHolder;
     
     setExecuteAsyncRunnableFactory(new ExecuteAsyncRunnableFactory() {
       
-      public Runnable createExecuteAsyncRunnable(JobEntity jobEntity, CommandExecutor commandExecutor) {
+      @Override
+      public Runnable createExecuteAsyncRunnable(Job job, ProcessEngineConfigurationImpl processEngineConfiguration) {
         
         // Here, the runnable will be created by for example the acquire thread, which has already set the current id.
         // But it will be executed later on, by the executorService and thus we need to set it explicitely again then
         
-        return new TenantAwareExecuteAsyncRunnable(jobEntity, commandExecutor, 
+        return new TenantAwareExecuteAsyncRunnable(job, processEngineConfiguration, 
             SharedExecutorServiceAsyncExecutor.this.tenantInfoHolder, 
             SharedExecutorServiceAsyncExecutor.this.tenantInfoHolder.getCurrentTenantId());
       }
       
     });
   }
-
+  
   @Override
   public Set<String> getTenantIds() {
-    return timerJobAcquisitionThreads.keySet();
+    return timerJobAcquisitionRunnables.keySet();
   }
-  
+
   public void addTenantAsyncExecutor(String tenantId, boolean startExecutor) {
     
     TenantAwareAcquireTimerJobsRunnable timerRunnable = new TenantAwareAcquireTimerJobsRunnable(this, tenantInfoHolder, tenantId);
@@ -81,9 +86,14 @@ public class SharedExecutorServiceAsyncExecutor extends DefaultAsyncJobExecutor 
     asyncJobAcquisitionRunnables.put(tenantId, asyncJobsRunnable);
     asyncJobAcquisitionThreads.put(tenantId, new Thread(asyncJobsRunnable));
     
+    TenantAwareResetExpiredJobsRunnable resetExpiredJobsRunnable = new TenantAwareResetExpiredJobsRunnable(this, tenantInfoHolder, tenantId);
+    resetExpiredJobsRunnables.put(tenantId, resetExpiredJobsRunnable);
+    resetExpiredJobsThreads.put(tenantId, new Thread(resetExpiredJobsRunnable));
+    
     if (startExecutor) {
       startTimerJobAcquisitionForTenant(tenantId);
       startAsyncJobAcquisitionForTenant(tenantId);
+      startResetExpiredJobsForTenant(tenantId);
     }
   }
   
@@ -93,13 +103,11 @@ public class SharedExecutorServiceAsyncExecutor extends DefaultAsyncJobExecutor 
   }
   
   @Override
-  protected void startJobAcquisitionThread() {
-    for (String tenantId : timerJobAcquisitionThreads.keySet()) {
+  public void start() {
+    for (String tenantId : timerJobAcquisitionRunnables.keySet()) {
       startTimerJobAcquisitionForTenant(tenantId);
-    }
-    
-    for (String tenantId : asyncJobAcquisitionThreads.keySet()) {
-      asyncJobAcquisitionThreads.get(tenantId).start();
+      startAsyncJobAcquisitionForTenant(tenantId);
+      startResetExpiredJobsForTenant(tenantId);
     }
   }
 
@@ -111,16 +119,21 @@ public class SharedExecutorServiceAsyncExecutor extends DefaultAsyncJobExecutor 
     asyncJobAcquisitionThreads.get(tenantId).start();
   }
   
+  protected void startResetExpiredJobsForTenant(String tenantId) {
+    resetExpiredJobsThreads.get(tenantId).start();
+  }
+  
   @Override
   protected void stopJobAcquisitionThread() {
     for (String tenantId : timerJobAcquisitionRunnables.keySet()) {
       stopThreadsForTenant(tenantId);
     }
   }
-
+  
   protected void stopThreadsForTenant(String tenantId) {
     timerJobAcquisitionRunnables.get(tenantId).stop();
     asyncJobAcquisitionRunnables.get(tenantId).stop();
+    resetExpiredJobsRunnables.get(tenantId).stop();
     
     try {
       timerJobAcquisitionThreads.get(tenantId).join();
@@ -133,6 +146,12 @@ public class SharedExecutorServiceAsyncExecutor extends DefaultAsyncJobExecutor 
     } catch (InterruptedException e) {
       logger.warn("Interrupted while waiting for the timer job acquisition thread to terminate", e);
     }
+    
+    try {
+      resetExpiredJobsThreads.get(tenantId).join();
+    } catch (InterruptedException e) {
+      logger.warn("Interrupted while waiting for the reset expired jobs thread to terminate", e);
+    }
   }
-
+  
 }

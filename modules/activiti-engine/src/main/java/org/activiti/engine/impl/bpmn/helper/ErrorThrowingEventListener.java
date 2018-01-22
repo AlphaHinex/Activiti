@@ -13,53 +13,61 @@
 package org.activiti.engine.impl.bpmn.helper;
 
 import org.activiti.engine.ActivitiException;
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.delegate.event.ActivitiEvent;
 import org.activiti.engine.delegate.event.ActivitiEventListener;
 import org.activiti.engine.impl.context.Context;
+import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
+import org.activiti.engine.impl.util.Activiti5Util;
 
 /**
- * An {@link ActivitiEventListener} that throws a error event when an event is
- * dispatched to it.
+ * An {@link ActivitiEventListener} that throws a error event when an event is dispatched to it.
  * 
  * @author Frederik Heremans
  * 
  */
 public class ErrorThrowingEventListener extends BaseDelegateEventListener {
-	
-	protected String errorCode;
 
-	@Override
-	public void onEvent(ActivitiEvent event) {
-		if(isValidEvent(event)) {
-			ExecutionEntity execution = null;
-			
-			if (Context.isExecutionContextActive()) {
-				execution = Context.getExecutionContext().getExecution();
-			} else if(event.getExecutionId() != null){
-				// Get the execution based on the event's execution ID instead
-				execution = Context.getCommandContext().getExecutionEntityManager()
-						.findExecutionById(event.getExecutionId());
-			}
-			
-			if(execution == null) {
-				throw new ActivitiException("No execution context active and event is not related to an execution. No compensation event can be thrown.");
-			}
-			
-			try {
-				ErrorPropagation.propagateError(errorCode, execution);
-			} catch (Exception e) {
-				throw new ActivitiException("Error while propagating error-event", e);
-			}    
-		}
-	}
+  protected String errorCode;
 
-	public void setErrorCode(String errorCode) {
-	  this.errorCode = errorCode;
+  @Override
+  public void onEvent(ActivitiEvent event) {
+    if (isValidEvent(event)) {
+      
+      CommandContext commandContext = Context.getCommandContext();
+      
+      if (event.getProcessDefinitionId() != null && Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, event.getProcessDefinitionId())) {
+        Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+        activiti5CompatibilityHandler.throwErrorEvent(event);
+        return;
+      }
+      
+      ExecutionEntity execution = null;
+
+      if (event.getExecutionId() != null) {
+        // Get the execution based on the event's execution ID instead
+        execution = Context.getCommandContext().getExecutionEntityManager().findById(event.getExecutionId());
+      }
+
+      if (execution == null) {
+        throw new ActivitiException("No execution context active and event is not related to an execution. No compensation event can be thrown.");
+      }
+
+      try {
+        ErrorPropagation.propagateError(errorCode, execution);
+      } catch (Exception e) {
+        throw new ActivitiException("Error while propagating error-event", e);
+      }
+    }
   }
 
-	@Override
-	public boolean isFailOnException() {
-		return true;
-	}
+  public void setErrorCode(String errorCode) {
+    this.errorCode = errorCode;
+  }
+
+  @Override
+  public boolean isFailOnException() {
+    return true;
+  }
 }

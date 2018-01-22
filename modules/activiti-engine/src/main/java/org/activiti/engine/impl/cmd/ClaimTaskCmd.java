@@ -13,47 +13,59 @@
 package org.activiti.engine.impl.cmd;
 
 import org.activiti.engine.ActivitiTaskAlreadyClaimedException;
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.TaskEntity;
-
+import org.activiti.engine.impl.util.Activiti5Util;
 
 /**
  * @author Joram Barrez
  */
 public class ClaimTaskCmd extends NeedsActiveTaskCmd<Void> {
-  
+
   private static final long serialVersionUID = 1L;
 
   protected String userId;
-  
+
   public ClaimTaskCmd(String taskId, String userId) {
     super(taskId);
     this.userId = userId;
   }
-  
-  protected Void execute(CommandContext commandContext, TaskEntity task) {
 
-    if(userId != null) {
+  protected Void execute(CommandContext commandContext, TaskEntity task) {
+    if (Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, task.getProcessDefinitionId())) {
+      Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+      activiti5CompatibilityHandler.claimTask(taskId, userId);
+      return null;
+    }
+    
+    if (userId != null) {
+      task.setClaimTime(commandContext.getProcessEngineConfiguration().getClock().getCurrentTime());
+
       if (task.getAssignee() != null) {
-        if(!task.getAssignee().equals(userId)) {
-          // When the task is already claimed by another user, throw exception. Otherwise, ignore
+        if (!task.getAssignee().equals(userId)) {
+          // When the task is already claimed by another user, throw
+          // exception. Otherwise, ignore
           // this, post-conditions of method already met.
           throw new ActivitiTaskAlreadyClaimedException(task.getId(), task.getAssignee());
         }
       } else {
-        task.setAssignee(userId, true, true);
-      }      
+        commandContext.getTaskEntityManager().changeTaskAssignee(task, userId);
+      }
     } else {
+      // Task claim time should be null
+      task.setClaimTime(null);
+
       // Task should be assigned to no one
-      task.setAssignee(null, true, true);
+      commandContext.getTaskEntityManager().changeTaskAssignee(task, null);
     }
-    
-    // Add claim time
-    commandContext.getHistoryManager().recordTaskClaim( taskId);
+
+    // Add claim time to historic task instance
+    commandContext.getHistoryManager().recordTaskClaim(task);
 
     return null;
   }
-  
+
   @Override
   protected String getSuspendedTaskException() {
     return "Cannot claim a suspended task";

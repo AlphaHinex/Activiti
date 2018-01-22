@@ -13,20 +13,20 @@
 
 package org.activiti.engine.impl.bpmn.behavior;
 
+import org.activiti.engine.ActivitiException;
 import org.activiti.engine.DynamicBpmnConstants;
 import org.activiti.engine.delegate.BpmnError;
+import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.impl.bpmn.helper.ErrorPropagation;
 import org.activiti.engine.impl.bpmn.helper.SkipExpressionUtil;
 import org.activiti.engine.impl.context.Context;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * ActivityBehavior that evaluates an expression when executed. Optionally, it
- * sets the result of the expression as a variable on the execution.
+ * ActivityBehavior that evaluates an expression when executed. Optionally, it sets the result of the expression as a variable on the execution.
  * 
  * @author Tom Baeyens
  * @author Christian Stettler
@@ -36,6 +36,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 public class ServiceTaskExpressionActivityBehavior extends TaskActivityBehavior {
 
+  private static final long serialVersionUID = 1L;
+  
   protected String serviceTaskId;
   protected Expression expression;
   protected Expression skipExpression;
@@ -48,12 +50,11 @@ public class ServiceTaskExpressionActivityBehavior extends TaskActivityBehavior 
     this.resultVariable = resultVariable;
   }
 
-  public void execute(ActivityExecution execution) throws Exception {
+  public void execute(DelegateExecution execution) {
     Object value = null;
     try {
       boolean isSkipExpressionEnabled = SkipExpressionUtil.isSkipExpressionEnabled(execution, skipExpression);
-      if (!isSkipExpressionEnabled || 
-              (isSkipExpressionEnabled && !SkipExpressionUtil.shouldSkipFlowElement(execution, skipExpression))) {
+      if (!isSkipExpressionEnabled || (isSkipExpressionEnabled && !SkipExpressionUtil.shouldSkipFlowElement(execution, skipExpression))) {
         
         if (Context.getProcessEngineConfiguration().isEnableProcessDefinitionInfoCache()) {
           ObjectNode taskElementProperties = Context.getBpmnOverrideElementProperties(serviceTaskId, execution.getProcessDefinitionId());
@@ -87,7 +88,7 @@ public class ServiceTaskExpressionActivityBehavior extends TaskActivityBehavior 
       if (error != null) {
         ErrorPropagation.propagateError(error, execution);
       } else {
-        throw exc;
+        throw new ActivitiException("Could not execute service task expression", exc);
       }
     }
   }

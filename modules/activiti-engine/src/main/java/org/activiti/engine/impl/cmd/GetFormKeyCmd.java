@@ -14,16 +14,18 @@
 package org.activiti.engine.impl.cmd;
 
 import org.activiti.engine.ActivitiIllegalArgumentException;
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.form.DefaultFormHandler;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
-import org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity;
-import org.activiti.engine.impl.task.TaskDefinition;
-
+import org.activiti.engine.impl.util.Activiti5Util;
+import org.activiti.engine.impl.util.FormHandlerUtil;
+import org.activiti.engine.impl.util.ProcessDefinitionUtil;
+import org.activiti.engine.repository.ProcessDefinition;
 
 /**
  * Command for retrieving start or task form keys.
- *
+ * 
  * @author Falko Menge (camunda)
  */
 public class GetFormKeyCmd implements Command<String> {
@@ -57,18 +59,21 @@ public class GetFormKeyCmd implements Command<String> {
   }
 
   public String execute(CommandContext commandContext) {
-    ProcessDefinitionEntity processDefinition = commandContext
-            .getProcessEngineConfiguration()
-            .getDeploymentManager()
-            .findDeployedProcessDefinitionById(processDefinitionId);
+    ProcessDefinition processDefinition = ProcessDefinitionUtil.getProcessDefinition(processDefinitionId);
+    
+    if (commandContext.getProcessEngineConfiguration().isActiviti5CompatibilityEnabled() && 
+        Activiti5CompatibilityHandler.ACTIVITI_5_ENGINE_TAG.equals(processDefinition.getEngineVersion())) {
+      
+      return Activiti5Util.getActiviti5CompatibilityHandler().getFormKey(processDefinitionId, taskDefinitionKey); 
+    }
+    
     DefaultFormHandler formHandler;
     if (taskDefinitionKey == null) {
       // TODO: Maybe add getFormKey() to FormHandler interface to avoid the following cast
-      formHandler = (DefaultFormHandler) processDefinition.getStartFormHandler();
+      formHandler = (DefaultFormHandler) FormHandlerUtil.getStartFormHandler(commandContext, processDefinition); 
     } else {
-      TaskDefinition taskDefinition = processDefinition.getTaskDefinitions().get(taskDefinitionKey);
       // TODO: Maybe add getFormKey() to FormHandler interface to avoid the following cast
-      formHandler = (DefaultFormHandler) taskDefinition.getTaskFormHandler();
+      formHandler = (DefaultFormHandler) FormHandlerUtil.getTaskFormHandlder(processDefinitionId, taskDefinitionKey); 
     }
     String formKey = null;
     if (formHandler.getFormKey() != null) {

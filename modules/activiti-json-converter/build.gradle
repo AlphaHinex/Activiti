@@ -1,0 +1,10 @@
+archivesBaseName = 'activiti-json-converter'
+
+task pack(type: Jar, dependsOn: mvnPkg) {
+    from 'target/classes'
+    exclude 'org/activiti/editor/constants/StencilConstants.class'
+}
+
+artifacts {
+    archives pack
+}

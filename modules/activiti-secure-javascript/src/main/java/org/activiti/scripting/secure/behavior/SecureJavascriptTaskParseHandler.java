@@ -12,11 +12,9 @@
  */
 package org.activiti.scripting.secure.behavior;
 
-import org.activiti.bpmn.constants.BpmnXMLConstants;
 import org.activiti.bpmn.model.ScriptTask;
 import org.activiti.engine.impl.bpmn.parser.BpmnParse;
 import org.activiti.engine.impl.bpmn.parser.handler.ScriptTaskParseHandler;
-import org.activiti.engine.impl.pvm.process.ActivityImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,15 +38,12 @@ public class SecureJavascriptTaskParseHandler extends ScriptTaskParseHandler {
     }
   }
 
-  private void createSecureJavascriptTaskBehavior(BpmnParse bpmnParse,
-      ScriptTask scriptTask, String language) {
+  protected void createSecureJavascriptTaskBehavior(BpmnParse bpmnParse, ScriptTask scriptTask, String language) {
     if (StringUtils.isEmpty(scriptTask.getScript())) {
       logger.warn("No script provided for scriptTask " + scriptTask.getId());
     }
-    ActivityImpl activity = createActivityOnCurrentScope(bpmnParse, scriptTask, BpmnXMLConstants.ELEMENT_TASK_SCRIPT);
-    activity.setAsync(scriptTask.isAsynchronous());
-    activity.setExclusive(!scriptTask.isNotExclusive());
-    activity.setActivityBehavior(new SecureJavascriptTaskActivityBehavior(scriptTask.getId(), 
+    
+    scriptTask.setBehavior(new SecureJavascriptTaskActivityBehavior(scriptTask.getId(), 
         scriptTask.getScript(), language, scriptTask.getResultVariable(), scriptTask.isAutoStoreVariables()));
   }
 

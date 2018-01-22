@@ -18,11 +18,11 @@ import org.junit.Test;
 public class UserTaskConverterTest extends AbstractConverterTest {
 
   @Test
-  public void connvertXMLToModel() throws Exception {
+  public void convertXMLToModel() throws Exception {
     BpmnModel bpmnModel = readXMLFile();
     validateModel(bpmnModel);
   }
-  
+
   @Test
   public void convertModelToXML() throws Exception {
     BpmnModel bpmnModel = readXMLFile();
@@ -30,11 +30,11 @@ public class UserTaskConverterTest extends AbstractConverterTest {
     validateModel(parsedModel);
     deployProcess(parsedModel);
   }
-  
+
   protected String getResource() {
     return "usertaskmodel.bpmn";
   }
-  
+
   private void validateModel(BpmnModel model) {
     FlowElement flowElement = model.getMainProcess().getFlowElement("usertask");
     assertNotNull(flowElement);
@@ -47,6 +47,7 @@ public class UserTaskConverterTest extends AbstractConverterTest {
     assertEquals("testKey", userTask.getFormKey());
     assertEquals("40", userTask.getPriority());
     assertEquals("2012-11-01", userTask.getDueDate());
+    
     assertEquals("customCalendarName", userTask.getBusinessCalendarName());
 
     assertEquals("kermit", userTask.getAssignee());
@@ -56,14 +57,13 @@ public class UserTaskConverterTest extends AbstractConverterTest {
     assertEquals(2, userTask.getCandidateGroups().size());
     assertTrue(userTask.getCandidateGroups().contains("management"));
     assertTrue(userTask.getCandidateGroups().contains("sales"));
-    
+
     assertEquals(1, userTask.getCustomUserIdentityLinks().size());
     assertEquals(2, userTask.getCustomGroupIdentityLinks().size());
     assertTrue(userTask.getCustomUserIdentityLinks().get("businessAdministrator").contains("kermit"));
     assertTrue(userTask.getCustomGroupIdentityLinks().get("manager").contains("management"));
     assertTrue(userTask.getCustomGroupIdentityLinks().get("businessAdministrator").contains("management"));
-    
-    
+
     List<FormProperty> formProperties = userTask.getFormProperties();
     assertEquals(3, formProperties.size());
     FormProperty formProperty = formProperties.get(0);
@@ -85,26 +85,34 @@ public class UserTaskConverterTest extends AbstractConverterTest {
     assertTrue(StringUtils.isEmpty(formProperty.getVariable()));
     assertTrue(StringUtils.isEmpty(formProperty.getExpression()));
     assertEquals(2, formProperty.getFormValues().size());
-    
+
     List<ActivitiListener> listeners = userTask.getTaskListeners();
     assertEquals(3, listeners.size());
     ActivitiListener listener = listeners.get(0);
     assertTrue(ImplementationType.IMPLEMENTATION_TYPE_CLASS.equals(listener.getImplementationType()));
     assertEquals("org.test.TestClass", listener.getImplementation());
     assertEquals("create", listener.getEvent());
+    assertEquals("before-commit", listener.getOnTransaction());
+    assertEquals("org.test.TestResolverClass", listener.getCustomPropertiesResolverImplementation());
     listener = listeners.get(1);
     assertTrue(ImplementationType.IMPLEMENTATION_TYPE_EXPRESSION.equals(listener.getImplementationType()));
     assertEquals("${someExpression}", listener.getImplementation());
     assertEquals("assignment", listener.getEvent());
+    assertEquals("committed", listener.getOnTransaction());
+    assertEquals("${testResolverExpression}", listener.getCustomPropertiesResolverImplementation());
     listener = listeners.get(2);
     assertTrue(ImplementationType.IMPLEMENTATION_TYPE_DELEGATEEXPRESSION.equals(listener.getImplementationType()));
     assertEquals("${someDelegateExpression}", listener.getImplementation());
     assertEquals("complete", listener.getEvent());
-    
+    assertEquals("rolled-back", listener.getOnTransaction());
+    assertEquals("${delegateResolverExpression}", listener.getCustomPropertiesResolverImplementation());
+
     List<ActivitiListener> executionListeners = userTask.getExecutionListeners();
     assertEquals(1, executionListeners.size());
     ActivitiListener executionListener = executionListeners.get(0);
     assertEquals("end", executionListener.getEvent());
-    
+    assertEquals("before-commit", executionListener.getOnTransaction());
+    assertEquals("org.test.TestResolverClass", executionListener.getCustomPropertiesResolverImplementation());
+
   }
 }

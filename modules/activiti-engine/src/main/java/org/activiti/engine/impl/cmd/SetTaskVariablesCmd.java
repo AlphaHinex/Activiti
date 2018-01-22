@@ -15,9 +15,10 @@ package org.activiti.engine.impl.cmd;
 
 import java.util.Map;
 
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.TaskEntity;
-
+import org.activiti.engine.impl.util.Activiti5Util;
 
 /**
  * @author Tom Baeyens
@@ -29,40 +30,47 @@ public class SetTaskVariablesCmd extends NeedsActiveTaskCmd<Object> {
 
   protected Map<String, ? extends Object> variables;
   protected boolean isLocal;
-  
+
   public SetTaskVariablesCmd(String taskId, Map<String, ? extends Object> variables, boolean isLocal) {
     super(taskId);
     this.taskId = taskId;
     this.variables = variables;
     this.isLocal = isLocal;
   }
-  
+
   protected Object execute(CommandContext commandContext, TaskEntity task) {
+    
+    if (task.getProcessDefinitionId() != null && Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, task.getProcessDefinitionId())) {
+      Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+      activiti5CompatibilityHandler.setTaskVariables(taskId, variables, isLocal);
+      return null;
+    }
 
     if (isLocal) {
-    	if (variables != null) {
-    		for (String variableName : variables.keySet()) {
-    			task.setVariableLocal(variableName, variables.get(variableName), false);
-    		}
-    	}
-      
+      if (variables != null) {
+        for (String variableName : variables.keySet()) {
+          task.setVariableLocal(variableName, variables.get(variableName), false);
+        }
+      }
+
     } else {
-    	if (variables != null) {
-    		for (String variableName : variables.keySet()) {
-    			task.setVariable(variableName, variables.get(variableName), false);
-    		}
-    	}
+      if (variables != null) {
+        for (String variableName : variables.keySet()) {
+          task.setVariable(variableName, variables.get(variableName), false);
+        }
+      }
     }
-    
-    // ACT-1887: Force an update of the task's revision to prevent simultaneous inserts of the same
-    // variable. If not, duplicate variables may occur since optimistic locking doesn't work on inserts
+
+    // ACT-1887: Force an update of the task's revision to prevent
+    // simultaneous inserts of the same variable. If not, duplicate variables may occur since optimistic
+    // locking doesn't work on inserts
     task.forceUpdate();
     return null;
   }
-  
+
   @Override
   protected String getSuspendedTaskException() {
     return "Cannot add variables to a suspended task";
   }
-  
+
 }

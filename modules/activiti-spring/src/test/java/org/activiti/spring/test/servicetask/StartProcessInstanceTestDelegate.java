@@ -15,15 +15,16 @@ package org.activiti.spring.test.servicetask;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.JavaDelegate;
+import org.activiti.engine.impl.context.Context;
 
 /**
  * @author Joram Barrez
  */
 public class StartProcessInstanceTestDelegate implements JavaDelegate {
 
-    public void execute(DelegateExecution execution) throws Exception {
-        RuntimeService runtimeService = execution.getEngineServices().getRuntimeService();
-        runtimeService.startProcessInstanceByKey("oneTaskProcess");
-    }
+  public void execute(DelegateExecution execution) {
+    RuntimeService runtimeService = Context.getProcessEngineConfiguration().getRuntimeService();
+    runtimeService.startProcessInstanceByKey("oneTaskProcess");
+  }
 
 }

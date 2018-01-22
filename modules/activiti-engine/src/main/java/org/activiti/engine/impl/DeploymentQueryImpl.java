@@ -22,24 +22,27 @@ import org.activiti.engine.impl.interceptor.CommandExecutor;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentQuery;
 
-
 /**
  * @author Tom Baeyens
  * @author Joram Barrez
  */
 public class DeploymentQueryImpl extends AbstractQuery<DeploymentQuery, Deployment> implements DeploymentQuery, Serializable {
 
-  private static final long serialVersionUID = 1L;  
+  private static final long serialVersionUID = 1L;
   protected String deploymentId;
   protected String name;
   protected String nameLike;
   protected String category;
+  protected String categoryLike;
   protected String categoryNotEquals;
+  protected String key;
+  protected String keyLike;
   protected String tenantId;
   protected String tenantIdLike;
   protected boolean withoutTenantId;
   protected String processDefinitionKey;
   protected String processDefinitionKeyLike;
+  protected boolean latest;
 
   public DeploymentQueryImpl() {
   }
@@ -59,7 +62,7 @@ public class DeploymentQueryImpl extends AbstractQuery<DeploymentQuery, Deployme
     this.deploymentId = deploymentId;
     return this;
   }
-  
+
   public DeploymentQueryImpl deploymentName(String deploymentName) {
     if (deploymentName == null) {
       throw new ActivitiIllegalArgumentException("deploymentName is null");
@@ -83,6 +86,14 @@ public class DeploymentQueryImpl extends AbstractQuery<DeploymentQuery, Deployme
     this.category = deploymentCategory;
     return this;
   }
+  
+  public DeploymentQueryImpl deploymentCategoryLike(String categoryLike) {
+    if (categoryLike == null) {
+      throw new ActivitiIllegalArgumentException("deploymentCategoryLike is null");
+    }
+    this.categoryLike = categoryLike;
+    return this;
+  }
 
   public DeploymentQueryImpl deploymentCategoryNotEquals(String deploymentCategoryNotEquals) {
     if (deploymentCategoryNotEquals == null) {
@@ -92,33 +103,49 @@ public class DeploymentQueryImpl extends AbstractQuery<DeploymentQuery, Deployme
     return this;
   }
   
+  public DeploymentQueryImpl deploymentKey(String deploymentKey) {
+    if (deploymentKey == null) {
+      throw new ActivitiIllegalArgumentException("deploymentKey is null");
+    }
+    this.key = deploymentKey;
+    return this;
+  }
+  
+  public DeploymentQueryImpl deploymentKeyLike(String deploymentKeyLike) {
+    if (deploymentKeyLike == null) {
+      throw new ActivitiIllegalArgumentException("deploymentKeyLike is null");
+    }
+    this.keyLike = deploymentKeyLike;
+    return this;
+  }
+
   public DeploymentQueryImpl deploymentTenantId(String tenantId) {
-  	if (tenantId == null) {
-  		throw new ActivitiIllegalArgumentException("deploymentTenantId is null");
-  	}
-  	this.tenantId = tenantId;
-  	return this;
+    if (tenantId == null) {
+      throw new ActivitiIllegalArgumentException("deploymentTenantId is null");
+    }
+    this.tenantId = tenantId;
+    return this;
   }
-  
+
   public DeploymentQueryImpl deploymentTenantIdLike(String tenantIdLike) {
-  	if (tenantIdLike == null) {
-  		throw new ActivitiIllegalArgumentException("deploymentTenantIdLike is null");
-  	}
-  	this.tenantIdLike = tenantIdLike;
-  	return this;
+    if (tenantIdLike == null) {
+      throw new ActivitiIllegalArgumentException("deploymentTenantIdLike is null");
+    }
+    this.tenantIdLike = tenantIdLike;
+    return this;
   }
-  
+
   public DeploymentQueryImpl deploymentWithoutTenantId() {
-  	this.withoutTenantId = true;
-  	return this;
+    this.withoutTenantId = true;
+    return this;
   }
 
   public DeploymentQueryImpl processDefinitionKey(String key) {
-  	if (key == null) {
-  		throw new ActivitiIllegalArgumentException("key is null");
-  	}
-  	this.processDefinitionKey = key;
-  	return this;
+    if (key == null) {
+      throw new ActivitiIllegalArgumentException("key is null");
+    }
+    this.processDefinitionKey = key;
+    return this;
   }
 
   public DeploymentQueryImpl processDefinitionKeyLike(String keyLike) {
@@ -128,50 +155,54 @@ public class DeploymentQueryImpl extends AbstractQuery<DeploymentQuery, Deployme
     this.processDefinitionKeyLike = keyLike;
     return this;
   }
-
-  //sorting ////////////////////////////////////////////////////////
   
+  public DeploymentQueryImpl latest() {
+    if (key == null) {
+      throw new ActivitiIllegalArgumentException("latest can only be used together with a deployment key");
+    }
+    
+    this.latest = true;
+    return this;
+  }
+
+  // sorting ////////////////////////////////////////////////////////
 
   public DeploymentQuery orderByDeploymentId() {
     return orderBy(DeploymentQueryProperty.DEPLOYMENT_ID);
   }
-  
+
   public DeploymentQuery orderByDeploymenTime() {
     return orderBy(DeploymentQueryProperty.DEPLOY_TIME);
   }
-  
+
   public DeploymentQuery orderByDeploymentName() {
     return orderBy(DeploymentQueryProperty.DEPLOYMENT_NAME);
   }
-  
+
   public DeploymentQuery orderByTenantId() {
-  	return orderBy(DeploymentQueryProperty.DEPLOYMENT_TENANT_ID);
+    return orderBy(DeploymentQueryProperty.DEPLOYMENT_TENANT_ID);
   }
-  
-  //results ////////////////////////////////////////////////////////
-  
+
+  // results ////////////////////////////////////////////////////////
+
   @Override
   public long executeCount(CommandContext commandContext) {
     checkQueryOk();
-    return commandContext
-      .getDeploymentEntityManager()
-      .findDeploymentCountByQueryCriteria(this);
+    return commandContext.getDeploymentEntityManager().findDeploymentCountByQueryCriteria(this);
   }
 
   @Override
   public List<Deployment> executeList(CommandContext commandContext, Page page) {
     checkQueryOk();
-    return commandContext
-      .getDeploymentEntityManager()
-      .findDeploymentsByQueryCriteria(this, page);
+    return commandContext.getDeploymentEntityManager().findDeploymentsByQueryCriteria(this, page);
   }
-  
-  //getters ////////////////////////////////////////////////////////
-  
+
+  // getters ////////////////////////////////////////////////////////
+
   public String getDeploymentId() {
     return deploymentId;
   }
-  
+
   public String getName() {
     return name;
   }
@@ -188,17 +219,17 @@ public class DeploymentQueryImpl extends AbstractQuery<DeploymentQuery, Deployme
     return categoryNotEquals;
   }
 
-	public String getTenantId() {
-		return tenantId;
-	}
+  public String getTenantId() {
+    return tenantId;
+  }
 
-	public String getTenantIdLike() {
-		return tenantIdLike;
-	}
+  public String getTenantIdLike() {
+    return tenantIdLike;
+  }
 
-	public boolean isWithoutTenantId() {
-		return withoutTenantId;
-	}
+  public boolean isWithoutTenantId() {
+    return withoutTenantId;
+  }
 
   public String getProcessDefinitionKey() {
     return processDefinitionKey;

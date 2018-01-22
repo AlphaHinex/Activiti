@@ -22,7 +22,6 @@ import org.activiti.engine.identity.User;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
 
-
 /**
  * @author Tom Baeyens
  */
@@ -30,22 +29,20 @@ public class GetUserPictureCmd implements Command<Picture>, Serializable {
 
   private static final long serialVersionUID = 1L;
   protected String userId;
-  
+
   public GetUserPictureCmd(String userId) {
     this.userId = userId;
   }
 
   public Picture execute(CommandContext commandContext) {
-    if(userId == null) {
+    if (userId == null) {
       throw new ActivitiIllegalArgumentException("userId is null");
     }
-    User user = commandContext
-      .getUserIdentityManager()
-      .findUserById(userId);
-    if(user == null) {
-      throw new ActivitiObjectNotFoundException("user "+userId+" doesn't exist", User.class);
+    User user = commandContext.getUserEntityManager().findById(userId);
+    if (user == null) {
+      throw new ActivitiObjectNotFoundException("user " + userId + " doesn't exist", User.class);
     }
-    return commandContext.getUserIdentityManager().getUserPicture(userId);
+    return commandContext.getUserEntityManager().getUserPicture(userId);
   }
 
 }

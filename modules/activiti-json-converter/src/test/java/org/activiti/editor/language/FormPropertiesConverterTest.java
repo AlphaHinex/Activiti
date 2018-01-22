@@ -21,7 +21,7 @@ import org.junit.Test;
 public class FormPropertiesConverterTest extends AbstractConverterTest {
 
   @Test
-  public void connvertJsonToModel() throws Exception {
+  public void convertJsonToModel() throws Exception {
     BpmnModel bpmnModel = readJsonFile();
     validateModel(bpmnModel);
   }
@@ -43,7 +43,7 @@ public class FormPropertiesConverterTest extends AbstractConverterTest {
     assertEquals("User registration", model.getMainProcess().getName());
     assertEquals(true, model.getMainProcess().isExecutable());
     
-    FlowElement startFlowElement = model.getMainProcess().getFlowElement("startNode");
+    FlowElement startFlowElement = model.getMainProcess().getFlowElement("startNode", true);
     assertNotNull(startFlowElement);
     assertTrue(startFlowElement instanceof StartEvent);
     StartEvent startEvent = (StartEvent) startFlowElement;
@@ -85,7 +85,7 @@ public class FormPropertiesConverterTest extends AbstractConverterTest {
       }
     }
     
-    FlowElement userFlowElement = model.getMainProcess().getFlowElement("userTask");
+    FlowElement userFlowElement = model.getMainProcess().getFlowElement("userTask", true);
     assertNotNull(userFlowElement);
     assertTrue(userFlowElement instanceof UserTask);
     UserTask userTask = (UserTask) userFlowElement;

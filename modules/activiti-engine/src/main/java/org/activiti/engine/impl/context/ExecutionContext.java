@@ -15,9 +15,8 @@ package org.activiti.engine.impl.context;
 
 import org.activiti.engine.impl.persistence.entity.DeploymentEntity;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
-import org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity;
-import org.activiti.engine.impl.pvm.runtime.InterpretableExecution;
-
+import org.activiti.engine.impl.util.ProcessDefinitionUtil;
+import org.activiti.engine.repository.ProcessDefinition;
 
 /**
  * @author Tom Baeyens
@@ -25,11 +24,11 @@ import org.activiti.engine.impl.pvm.runtime.InterpretableExecution;
 public class ExecutionContext {
 
   protected ExecutionEntity execution;
-  
-  public ExecutionContext(InterpretableExecution execution) {
-    this.execution = (ExecutionEntity) execution;
+
+  public ExecutionContext(ExecutionEntity execution) {
+    this.execution = execution;
   }
-  
+
   public ExecutionEntity getExecution() {
     return execution;
   }
@@ -38,16 +37,13 @@ public class ExecutionContext {
     return execution.getProcessInstance();
   }
 
-  public ProcessDefinitionEntity getProcessDefinition() {
-    return (ProcessDefinitionEntity) execution.getProcessDefinition();
+  public ProcessDefinition getProcessDefinition() {
+    return ProcessDefinitionUtil.getProcessDefinition(execution.getProcessDefinitionId());
   }
 
   public DeploymentEntity getDeployment() {
     String deploymentId = getProcessDefinition().getDeploymentId();
-    DeploymentEntity deployment = Context
-      .getCommandContext()
-      .getDeploymentEntityManager()
-      .findDeploymentById(deploymentId);
+    DeploymentEntity deployment = Context.getCommandContext().getDeploymentEntityManager().findById(deploymentId);
     return deployment;
   }
 }

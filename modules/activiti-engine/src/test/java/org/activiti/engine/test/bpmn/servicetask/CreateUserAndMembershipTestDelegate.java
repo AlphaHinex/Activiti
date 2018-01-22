@@ -17,6 +17,7 @@ import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.JavaDelegate;
 import org.activiti.engine.identity.Group;
 import org.activiti.engine.identity.User;
+import org.activiti.engine.impl.context.Context;
 
 /**
  * @author Joram Barrez
@@ -24,17 +25,17 @@ import org.activiti.engine.identity.User;
 public class CreateUserAndMembershipTestDelegate implements JavaDelegate {
 
   @Override
-  public void execute(DelegateExecution execution) throws Exception {
+  public void execute(DelegateExecution execution) {
 
-    IdentityService identityService = execution.getEngineServices().getIdentityService();
-    
+    IdentityService identityService = Context.getProcessEngineConfiguration().getIdentityService();
+
     String username = "Kermit";
     User user = identityService.newUser(username);
     user.setPassword("123");
     user.setFirstName("Manually");
     user.setLastName("created");
     identityService.saveUser(user);
-    
+
     // Add admin group
     Group group = identityService.newGroup("admin");
     identityService.saveGroup(group);

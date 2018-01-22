@@ -26,7 +26,6 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * @author Josh Long
- * @author Vedran Pavic
  */
 public class RestApiAutoConfigurationTest {
 

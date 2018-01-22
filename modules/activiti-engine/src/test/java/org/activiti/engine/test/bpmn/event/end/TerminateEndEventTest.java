@@ -12,7 +12,6 @@
  */
 package org.activiti.engine.test.bpmn.event.end;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -22,15 +21,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.activiti.bpmn.model.BpmnModel;
+import org.activiti.bpmn.model.EndEvent;
 import org.activiti.bpmn.model.ExtensionAttribute;
 import org.activiti.bpmn.model.ExtensionElement;
 import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.JavaDelegate;
+import org.activiti.engine.history.DeleteReason;
+import org.activiti.engine.history.HistoricActivityInstance;
 import org.activiti.engine.history.HistoricProcessInstance;
-import org.activiti.engine.impl.bpmn.behavior.TerminateEndEventActivityBehavior;
+import org.activiti.engine.history.HistoricTaskInstance;
 import org.activiti.engine.impl.history.HistoryLevel;
-import org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity;
-import org.activiti.engine.impl.pvm.process.ActivityImpl;
 import org.activiti.engine.impl.test.PluggableActivitiTestCase;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.Execution;
@@ -55,7 +56,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
   public static class CountDelegate implements JavaDelegate {
 
-    public void execute(DelegateExecution execution) throws Exception {
+    public void execute(DelegateExecution execution) {
       serviceTaskInvokedCount++;
 
       // leave only 3 out of n subprocesses
@@ -67,7 +68,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
   public static class CountDelegate2 implements JavaDelegate {
 
-    public void execute(DelegateExecution execution) throws Exception {
+    public void execute(DelegateExecution execution) {
       serviceTaskInvokedCount2++;
     }
   }
@@ -84,17 +85,29 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
     assertProcessEnded(pi.getId());
     assertHistoricProcessInstanceDetails(pi);
+    
+    assertHistoricProcessInstanceDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT);
+    assertHistoricTasksDeleteReason(pi, null, "check before termination");
+    assertHistoricTasksDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "check before end");
+    assertHistoricActivitiesDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "preNormalTerminateTask");
+    assertHistoricActivitiesDeleteReason(pi, null, "preTerminateTask");
   }
-  
+
   @Deployment
   public void testProcessTerminateAll() throws Exception {
     ProcessInstance pi = runtimeService.startProcessInstanceByKey("terminateEndEventExample");
 
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preTerminateTask").singleResult();
     taskService.complete(task.getId());
-
+    
     assertProcessEnded(pi.getId());
     assertHistoricProcessInstanceDetails(pi);
+    
+    assertHistoricProcessInstanceDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT);
+    assertHistoricTasksDeleteReason(pi, null, "check before termination");
+    assertHistoricTasksDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "check before end");
+    assertHistoricActivitiesDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "preNormalTerminateTask");
+    assertHistoricActivitiesDeleteReason(pi, null, "preTerminateTask");
   }
 
   @Deployment
@@ -110,6 +123,12 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
     assertProcessEnded(pi.getId());
     assertHistoricProcessInstanceDetails(pi);
+    
+    assertHistoricProcessInstanceDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT);
+    assertHistoricTasksDeleteReason(pi, null, "check before termination");
+    assertHistoricTasksDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "check before end");
+    assertHistoricActivitiesDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "preNormalEnd");
+    assertHistoricActivitiesDeleteReason(pi, null, "preTerminateEnd");
   }
   
   @Deployment
@@ -126,6 +145,11 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
     assertProcessEnded(pi.getId());
     assertHistoricProcessInstanceDetails(pi);
+    
+    assertHistoricProcessInstanceDeleteReason(pi, null);
+    assertHistoricTasksDeleteReason(pi, null, "check before termination", "check before end");
+    assertHistoricActivitiesDeleteReason(pi, null, "preNormalEnd", "preTerminateEnd");
+    assertHistoricActivitiesDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "SubProcess_1");
   }
   
   @Deployment
@@ -138,6 +162,12 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
     
     assertProcessEnded(pi.getId());
     assertHistoricProcessInstanceDetails(pi);
+    
+    assertHistoricProcessInstanceDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT);
+    assertHistoricTasksDeleteReason(pi, null, "check before end");
+    assertHistoricTasksDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "check before termination");
+    assertHistoricActivitiesDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "preTerminateEnd");
+    assertHistoricActivitiesDeleteReason(pi, null, "preNormalEnd");
   }
   
   @Deployment(resources={
@@ -146,15 +176,21 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
   })
   public void testTerminateWithCallActivity() throws Exception {
     ProcessInstance pi = runtimeService.startProcessInstanceByKey("terminateEndEventExample");
-
-    long executionEntities = runtimeService.createExecutionQuery().processInstanceId(pi.getId()).count();
-    assertEquals(4, executionEntities);
     
+    ProcessInstance subProcessInstance = runtimeService.createProcessInstanceQuery().superProcessInstanceId(pi.getId()).singleResult();
+    assertNotNull(subProcessInstance);
+
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preTerminateEnd").singleResult();
     taskService.complete(task.getId());
     
     assertProcessEnded(pi.getId());
     assertHistoricProcessInstanceDetails(pi);
+    
+    assertHistoricProcessInstanceDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT);
+    assertHistoricTasksDeleteReason(pi, null, "check before termination");
+    assertHistoricTasksDeleteReason(subProcessInstance, DeleteReason.TERMINATE_END_EVENT, "Perform Sample");
+    assertHistoricActivitiesDeleteReason(pi, null, "preTerminateEnd");
+    assertHistoricActivitiesDeleteReason(subProcessInstance, DeleteReason.TERMINATE_END_EVENT, "task");
   }
   
 	@Deployment(resources = {
@@ -162,6 +198,9 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 	    "org/activiti/engine/test/bpmn/event/end/TerminateEndEventTest.subProcessNoTerminate.bpmn" })
 	public void testTerminateWithCallActivityTerminateAll() throws Exception {
 		ProcessInstance pi = runtimeService.startProcessInstanceByKey("terminateEndEventExample");
+		
+		ProcessInstance subProcessInstance = runtimeService.createProcessInstanceQuery().superProcessInstanceId(pi.getId()).singleResult();
+	  assertNotNull(subProcessInstance);
 
 		Task task = taskService.createTaskQuery().processInstanceId(pi.getId())
 		    .taskDefinitionKey("preTerminateEnd").singleResult();
@@ -169,6 +208,12 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
 		assertProcessEnded(pi.getId());
 		assertHistoricProcessInstanceDetails(pi);
+		
+		assertHistoricProcessInstanceDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT);
+	  assertHistoricTasksDeleteReason(pi, null, "check before termination");
+	  assertHistoricTasksDeleteReason(subProcessInstance, DeleteReason.TERMINATE_END_EVENT, "Perform Sample");
+	  assertHistoricActivitiesDeleteReason(pi, null, "preTerminateEnd");
+	  assertHistoricActivitiesDeleteReason(subProcessInstance, DeleteReason.TERMINATE_END_EVENT, "task");
 	}
 
 
@@ -179,9 +224,9 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
   public void testTerminateInExclusiveGatewayWithCallActivity() throws Exception {
     ProcessInstance pi = runtimeService.startProcessInstanceByKey("terminateEndEventExample-terminateAfterExclusiveGateway");
 
-    long executionEntities = runtimeService.createExecutionQuery().processInstanceId(pi.getId()).count();
-    assertEquals(4, executionEntities);
-
+    ProcessInstance subProcessInstance = runtimeService.createProcessInstanceQuery().superProcessInstanceId(pi.getId()).singleResult();
+    assertNotNull(subProcessInstance);
+    
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preTerminateEnd").singleResult();
     Map<String, Object> variables = new HashMap<String, Object>();
     variables.put("input", 1);
@@ -195,9 +240,6 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
   public void testTerminateInExclusiveGatewayWithMultiInstanceSubProcess() throws Exception {
     ProcessInstance pi = runtimeService.startProcessInstanceByKey("terminateEndEventExample-terminateAfterExclusiveGateway");
 
-    long executionEntities = runtimeService.createExecutionQuery().processInstanceId(pi.getId()).count();
-    assertEquals(14, executionEntities);
-
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preTerminateEnd").singleResult();
     Map<String, Object> variables = new HashMap<String, Object>();
     variables.put("input", 1);
@@ -205,6 +247,12 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
     assertProcessEnded(pi.getId());
     assertHistoricProcessInstanceDetails(pi);
+    
+    assertHistoricProcessInstanceDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT);
+    assertHistoricTasksDeleteReason(pi, null, "check before termination");
+    assertHistoricTasksDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "User Task");
+    assertHistoricActivitiesDeleteReason(pi, null, "preTerminateEnd");
+    assertHistoricActivitiesDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "task");
   }
   
   @Deployment
@@ -236,7 +284,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
   	// should terminate the subprocess and continue the parent
   	long executionEntities = runtimeService.createExecutionQuery().processInstanceId(pi.getId()).count();
-  	assertEquals(1, executionEntities);
+  	assertTrue(executionEntities > 0);
 
   	Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preNormalEnd").singleResult();
   	taskService.complete(task.getId());
@@ -271,6 +319,10 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
     
     assertProcessEnded(pi.getId());
     
+    assertHistoricProcessInstanceDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT);
+    assertHistoricTasksDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "check before normal end");
+    assertHistoricActivitiesDeleteReason(pi, DeleteReason.TERMINATE_END_EVENT, "outerTask");
+    
     // Test terminating subprocess
     
     pi = runtimeService.startProcessInstanceByKey("terminateEndEventWithBoundary");
@@ -278,7 +330,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
     assertEquals(3, taskService.createTaskQuery().processInstanceId(pi.getId()).count());
     
     // a job for boundary event timer should exist 
-    assertEquals(1L, managementService.createJobQuery().count());
+    assertEquals(1L, managementService.createTimerJobQuery().count());
     
     // Complete sub process task that leads to a terminate end event
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preTermInnerTask").singleResult();
@@ -288,7 +340,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
     assertEquals(1, taskService.createTaskQuery().processInstanceId(pi.getId()).count());
     
     // job for boundary event timer should have been removed  
-    assertEquals(0L, managementService.createJobQuery().count());
+    assertEquals(0L, managementService.createTimerJobQuery().count());
     
     // complete outerTask
     task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("outerTask").singleResult();
@@ -319,7 +371,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
     ProcessInstance pi = runtimeService.startProcessInstanceByKey("terminateEndEventExample");
 
     long executionEntities = runtimeService.createExecutionQuery().count();
-    assertEquals(1, executionEntities);
+    assertTrue(executionEntities > 0);
     
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preNormalEnd").singleResult();
     taskService.complete(task.getId());
@@ -353,17 +405,17 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
   public void testTerminateInSubProcessConcurrentMultiInstance() throws Exception {
     ProcessInstance pi = runtimeService.startProcessInstanceByKey("terminateEndEventExample");
 
-    long executionEntities = runtimeService.createExecutionQuery().count();
-    assertEquals(12, executionEntities);
-    
     List<Task> tasks = taskService.createTaskQuery().processInstanceId(pi.getId()).list();
     assertEquals(4, tasks.size()); // 3 user tasks in MI  +1 (preNormalEnd) = 4 (2 were killed because it went directly to the terminate end event)
+    
+    long executionEntitiesCount = runtimeService.createExecutionQuery().count();
+    assertEquals(9, executionEntitiesCount);
     
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preNormalEnd").singleResult();
     taskService.complete(task.getId());
     
-    long executionEntities2 = runtimeService.createExecutionQuery().count();
-    assertEquals(10, executionEntities2);
+    executionEntitiesCount = runtimeService.createExecutionQuery().count();
+    assertEquals(8, executionEntitiesCount);
     
     tasks = taskService.createTaskQuery().list();
     for (Task t : tasks) {
@@ -389,12 +441,14 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
     }
     
     assertProcessEnded(pi.getId());
+    assertHistoricProcessInstanceDetails(pi);
   }
   
   @Deployment
   public void testTerminateInSubProcessConcurrentMultiInstanceTerminateAll() throws Exception {
     ProcessInstance pi = runtimeService.startProcessInstanceByKey("terminateEndEventExample");
     assertProcessEnded(pi.getId());
+    assertHistoricProcessInstanceDetails(pi);
   }
 
   @Deployment(resources = {"org/activiti/engine/test/bpmn/event/end/TerminateEndEventTest.testTerminateInCallActivityConcurrentCallActivity.bpmn",
@@ -418,7 +472,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
     ProcessInstance pi = runtimeService.startProcessInstanceByKey("terminateEndEventExample");
 
     long executionEntities = runtimeService.createExecutionQuery().count();
-    assertEquals(1, executionEntities);
+    assertTrue(executionEntities > 0);
     
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preNormalEnd").singleResult();
     taskService.complete(task.getId());
@@ -427,7 +481,6 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
     assertHistoricProcessInstanceDetails(pi);
   }
   
-  
   @Deployment
   public void testTerminateInSubProcessSequentialConcurrentMultiInstance() throws Exception {
     
@@ -435,9 +488,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
     ProcessInstance pi = runtimeService.startProcessInstanceByKey("terminateEndEventExample");
 
     long remainingExecutions = runtimeService.createExecutionQuery().count();
-    
-    // outer execution still available
-    assertEquals(1, remainingExecutions);
+    assertTrue(remainingExecutions > 0);
     
     // three finished
     assertEquals(3, serviceTaskInvokedCount2);
@@ -466,7 +517,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
     // should terminate the called process and continue the parent
     long executionEntities = runtimeService.createExecutionQuery().count();
-    assertEquals(1, executionEntities);
+    assertTrue(executionEntities > 0);
     
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preNormalEnd").singleResult();
     taskService.complete(task.getId());
@@ -484,7 +535,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
     // should terminate the called process and continue the parent
     long executionEntities = runtimeService.createExecutionQuery().count();
-    assertEquals(1, executionEntities);
+    assertTrue(executionEntities > 0);
     
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preNormalEnd").singleResult();
     taskService.complete(task.getId());
@@ -511,7 +562,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
     // should terminate the called process and continue the parent
     long executionEntities = runtimeService.createExecutionQuery().count();
-    assertEquals(1, executionEntities);
+    assertTrue(executionEntities > 0);
     
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preNormalEnd").singleResult();
     taskService.complete(task.getId());
@@ -547,7 +598,6 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
   	taskService.complete(task.getId());
   	assertProcessEnded(processInstance.getId());
   	assertHistoricProcessInstanceDetails(processInstance);
-  	
   }
   
   @Deployment
@@ -569,10 +619,10 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
   		
   		if (i != 8) {
   			aTasks = taskService.createTaskQuery().taskName("A").list();
-  			assertEquals(1, aTasks.size());
+  			assertEquals("Expected task for i=" + i, 1, aTasks.size());
     	
   			bTasks = taskService.createTaskQuery().taskName("B").list();
-  			assertEquals(1, bTasks.size());
+  			assertEquals("Expected task for i=" +i, 1, bTasks.size());
   		}
   	}
   	
@@ -582,6 +632,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
   	taskService.complete(task.getId());
   	assertProcessEnded(processInstance.getId());
   	assertHistoricProcessInstanceDetails(processInstance);
+  	
   }
   
   @Deployment(resources={
@@ -603,7 +654,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 
     // should terminate the called process and continue the parent
     long executionEntities = runtimeService.createExecutionQuery().count();
-    assertEquals(1, executionEntities);
+    assertTrue(executionEntities > 0);
     
     Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).taskDefinitionKey("preNormalEnd").singleResult();
     taskService.complete(task.getId());
@@ -678,7 +729,6 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 		taskService.complete(task.getId());
 		
 		assertProcessEnded(processInstance.getId());
-		assertHistoricProcessInstanceDetails(processInstance);
 	}
 	
 	@Deployment
@@ -720,6 +770,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
 		// Should have 7 tasks C active after each other
 		for (int i=0; i<7; i++) {
 			Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).taskName("C").singleResult();
+			assertNotNull("Task was null for i = " + i, task);
 			taskService.complete(task.getId());
 		}
 		
@@ -854,14 +905,11 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
   public void testParseTerminateEndEventDefinitionWithExtensions() {
     org.activiti.engine.repository.Deployment deployment = repositoryService.createDeployment().addClasspathResource("org/activiti/engine/test/bpmn/event/end/TerminateEndEventTest.parseExtensionElements.bpmn20.xml").deploy();
     ProcessDefinition processDefinitionQuery = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
-    ProcessDefinitionEntity processDefinition = this.processEngineConfiguration.getProcessDefinitionCache().get(processDefinitionQuery.getId());
+    BpmnModel bpmnModel = this.processEngineConfiguration.getProcessDefinitionCache()
+        .get(processDefinitionQuery.getId()).getBpmnModel();
 
-    assertThat(processDefinition.getActivities().size(), is(2));
-    ActivityImpl endEvent = processDefinition.getActivities().get(1);
-    assertThat(endEvent.getId(), is("terminateEnd"));
-    assertThat(endEvent.getActivityBehavior(), instanceOf(TerminateEndEventActivityBehavior.class));
-    TerminateEndEventActivityBehavior terminateEndEventBehavior = (TerminateEndEventActivityBehavior) endEvent.getActivityBehavior();
-    Map<String, List<ExtensionElement>> extensionElements = terminateEndEventBehavior.getEndEvent().getExtensionElements();
+    Map<String, List<ExtensionElement>> extensionElements = bpmnModel.getProcesses().get(0)
+        .findFlowElementsOfType(EndEvent.class).get(0).getExtensionElements();
     assertThat(extensionElements.size(), is(1));
     List<ExtensionElement> strangeProperties = extensionElements.get("strangeProperty");
     assertThat(strangeProperties.size(), is(1));
@@ -880,7 +928,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
   // Unit test for ACT-4101 : NPE when there are multiple routes to terminateEndEvent, and both are reached
   @Deployment
   public void testThreeExecutionsArrivingInTerminateEndEvent() {
-  	 Map<String, Object> variableMap = new HashMap<String, Object>();
+     Map<String, Object> variableMap = new HashMap<String, Object>();
      variableMap.put("passed_QC", false);
      variableMap.put("has_bad_pixel_pattern", true);
      ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("skybox_image_pull_request", variableMap);
@@ -900,8 +948,7 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
              || activityId.equalsIgnoreCase("")) {
                continue;
              }
-         System.out.println("Current Activity:" + activityId);
-         runtimeService.signal(execution.getId());
+         runtimeService.trigger(execution.getId());
        }
        processInstance =
            runtimeService.createProcessInstanceQuery().processInstanceId(processInstance.getId()).singleResult();
@@ -911,26 +958,67 @@ public class TerminateEndEventTest extends PluggableActivitiTestCase {
      assertHistoricProcessInstanceDetails(processInstanceId);
   }
   
+  protected void assertHistoricProcessInstanceDetails(ProcessInstance pi) {
+    assertHistoricProcessInstanceDetails(pi.getId());
+  }
+  
   protected void assertHistoricProcessInstanceDetails(String processInstanceId) {
     if (processEngineConfiguration.getHistoryLevel().isAtLeast(HistoryLevel.ACTIVITY)) {
       HistoricProcessInstance historicProcessInstance = historyService.createHistoricProcessInstanceQuery()
           .processInstanceId(processInstanceId).singleResult();
-      assertHistoricProcessInstance(historicProcessInstance);
+      
+      assertNotNull(historicProcessInstance.getEndTime());
+      assertNotNull(historicProcessInstance.getDurationInMillis());
+      assertNotNull(historicProcessInstance.getEndActivityId());
     }
   }
   
-  protected void assertHistoricProcessInstanceDetails(ProcessInstance pi) {
-    if (processEngineConfiguration.getHistoryLevel().isAtLeast(HistoryLevel.ACTIVITY)) {
+  protected void assertHistoricProcessInstanceDeleteReason(ProcessInstance processInstance, String expectedDeleteReason) {
+    if (processEngineConfiguration.getHistoryLevel().isAtLeast(HistoryLevel.AUDIT)) {
       HistoricProcessInstance historicProcessInstance = historyService.createHistoricProcessInstanceQuery()
-          .processInstanceId(pi.getId()).singleResult();
-      assertHistoricProcessInstance(historicProcessInstance);
+          .processInstanceId(processInstance.getId()).singleResult();
+      if (expectedDeleteReason == null) {
+        assertNull(historicProcessInstance.getDeleteReason());
+      } else {
+        assertTrue(historicProcessInstance.getDeleteReason().startsWith(expectedDeleteReason));
+      }
     }
   }
-
-  protected void assertHistoricProcessInstance(HistoricProcessInstance historicProcessInstance) {
-    assertNotNull(historicProcessInstance.getEndTime());
-    assertNotNull(historicProcessInstance.getDurationInMillis());
-    assertNotNull(historicProcessInstance.getEndActivityId());
+  
+  protected void assertHistoricTasksDeleteReason(ProcessInstance processInstance, String expectedDeleteReason, String ... taskNames) {
+    if (processEngineConfiguration.getHistoryLevel().isAtLeast(HistoryLevel.AUDIT)) {
+      for (String taskName : taskNames) {
+        List<HistoricTaskInstance> historicTaskInstances = historyService.createHistoricTaskInstanceQuery()
+            .processInstanceId(processInstance.getId()).taskName(taskName).list();
+        assertTrue(historicTaskInstances.size() > 0);
+        for (HistoricTaskInstance historicTaskInstance : historicTaskInstances) {
+          assertNotNull(historicTaskInstance.getEndTime());
+          if (expectedDeleteReason == null) {
+            assertNull(historicTaskInstance.getDeleteReason());
+          } else {
+            assertTrue(historicTaskInstance.getDeleteReason().startsWith(expectedDeleteReason));
+          }
+        }
+      }
+    }
+  }
+  
+  protected void assertHistoricActivitiesDeleteReason(ProcessInstance processInstance, String expectedDeleteReason, String ... activityIds) {
+    if (processEngineConfiguration.getHistoryLevel().isAtLeast(HistoryLevel.AUDIT)) {
+      for (String activityId : activityIds) {
+        List<HistoricActivityInstance> historicActiviyInstances = historyService.createHistoricActivityInstanceQuery()
+            .activityId(activityId).processInstanceId(processInstance.getId()).list();
+        assertTrue(historicActiviyInstances.size() > 0);
+        for (HistoricActivityInstance historicActiviyInstance : historicActiviyInstances) {
+          assertNotNull(historicActiviyInstance.getEndTime());
+          if (expectedDeleteReason == null) {
+            assertNull(historicActiviyInstance.getDeleteReason()); 
+          } else {
+            assertTrue(historicActiviyInstance.getDeleteReason().startsWith(expectedDeleteReason));
+          }
+        }
+      }
+    }
   }
   
 }

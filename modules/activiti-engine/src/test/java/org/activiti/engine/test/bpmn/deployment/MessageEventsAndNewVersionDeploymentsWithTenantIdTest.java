@@ -327,7 +327,7 @@ public class MessageEventsAndNewVersionDeploymentsWithTenantIdTest extends Plugg
     
     repositoryService.deleteDeployment(deploymentId4, true);
     runtimeService.startProcessInstanceByMessageAndTenantId("myStartMessage", TENANT_ID);
-    assertEquals(1, runtimeService.createExecutionQuery().count());
+    assertEquals(1, runtimeService.createProcessInstanceQuery().count());
     cleanup(deploymentId1);
   }
 

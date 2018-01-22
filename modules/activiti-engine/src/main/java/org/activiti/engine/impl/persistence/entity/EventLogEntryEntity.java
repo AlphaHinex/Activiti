@@ -15,145 +15,42 @@ package org.activiti.engine.impl.persistence.entity;
 import java.util.Date;
 
 import org.activiti.engine.event.EventLogEntry;
-import org.activiti.engine.impl.db.PersistentObject;
 
 /**
  * An event log entry can only be inserted (and maybe deleted).
  * 
  * @author Joram Barrez
  */
-public class EventLogEntryEntity implements PersistentObject, EventLogEntry {
-	
-	protected long logNumber; // cant use id here, it would clash with persistentObject
-	protected String type;
-	protected String processDefinitionId;
-	protected String processInstanceId;
-	protected String executionId;
-	protected String taskId;
-	protected Date timeStamp;
-	protected String userId;
-	protected byte[] data;
-	protected String lockOwner;
-	protected String lockTime;
-	protected int isProcessed;
+public interface EventLogEntryEntity extends Entity, EventLogEntry {
 
-  public EventLogEntryEntity() {
-  }
-  
-  @Override
-  public String getId() {
-    return "event-log-" + logNumber; // To avoid clashed, prefixing it (it shouldnt be used)
-  }
-  
-  @Override
-  public void setId(String id) {
-  	// Set id doesn't do anything: auto incremented column
-  }
-  
-  @Override
-  public Object getPersistentState() {
-    return null; // Not updateable
-  }
-  
-	public long getLogNumber() {
-		return logNumber;
-	}
+  void setLogNumber(long logNumber);
 
-	public void setLogNumber(long logNumber) {
-		this.logNumber = logNumber;
-	}
+  void setType(String type);
 
-	public String getType() {
-		return type;
-	}
+  void setProcessDefinitionId(String processDefinitionId);
 
-	public void setType(String type) {
-		this.type = type;
-	}
+  void setProcessInstanceId(String processInstanceId);
 
-	public String getProcessDefinitionId() {
-		return processDefinitionId;
-	}
+  void setExecutionId(String executionId);
 
-	public void setProcessDefinitionId(String processDefinitionId) {
-		this.processDefinitionId = processDefinitionId;
-	}
+  void setTaskId(String taskId);
 
-	public String getProcessInstanceId() {
-		return processInstanceId;
-	}
+  void setTimeStamp(Date timeStamp);
 
-	public void setProcessInstanceId(String processInstanceId) {
-		this.processInstanceId = processInstanceId;
-	}
+  void setUserId(String userId);
 
-	public String getExecutionId() {
-		return executionId;
-	}
+  void setData(byte[] data);
 
-	public void setExecutionId(String executionId) {
-		this.executionId = executionId;
-	}
+  String getLockOwner();
 
-	public String getTaskId() {
-		return taskId;
-	}
+  void setLockOwner(String lockOwner);
 
-	public void setTaskId(String taskId) {
-		this.taskId = taskId;
-	}
+  String getLockTime();
 
-	public Date getTimeStamp() {
-		return timeStamp;
-	}
+  void setLockTime(String lockTime);
 
-	public void setTimeStamp(Date timeStamp) {
-		this.timeStamp = timeStamp;
-	}
-	
-	public String getUserId() {
-		return userId;
-	}
+  int getProcessed();
 
-	public void setUserId(String userId) {
-		this.userId = userId;
-	}
-
-	public byte[] getData() {
-		return data;
-	}
-
-	public void setData(byte[] data) {
-		this.data = data;
-	}
-
-	public String getLockOwner() {
-		return lockOwner;
-	}
-
-	public void setLockOwner(String lockOwner) {
-		this.lockOwner = lockOwner;
-	}
-
-	public String getLockTime() {
-		return lockTime;
-	}
-
-	public void setLockTime(String lockTime) {
-		this.lockTime = lockTime;
-	}
-	
-	public int getProcessed() {
-		return isProcessed;
-	}
-
-	public void setProcessed(int isProcessed) {
-		this.isProcessed = isProcessed;
-	}
-
-	@Override
-	public String toString() {
-	  return timeStamp.toString() + " : " + type;
-	}
+  void setProcessed(int isProcessed);
 
 }

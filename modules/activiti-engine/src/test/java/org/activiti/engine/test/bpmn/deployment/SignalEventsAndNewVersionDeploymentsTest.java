@@ -302,7 +302,7 @@ public class SignalEventsAndNewVersionDeploymentsTest extends PluggableActivitiT
     
     repositoryService.deleteDeployment(deploymentId4, true);
     runtimeService.signalEventReceived("myStartSignal");
-    assertEquals(1, runtimeService.createExecutionQuery().count());
+    assertEquals(1, runtimeService.createProcessInstanceQuery().count());
     cleanup(deploymentId1);
   }
 

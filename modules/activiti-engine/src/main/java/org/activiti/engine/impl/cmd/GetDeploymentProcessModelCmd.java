@@ -19,12 +19,10 @@ import java.io.Serializable;
 import org.activiti.engine.ActivitiIllegalArgumentException;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
-import org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity;
-
+import org.activiti.engine.repository.ProcessDefinition;
 
 /**
- * Gives access to a deployed process model, e.g., a BPMN 2.0 XML file, through
- * a stream of bytes.
+ * Gives access to a deployed process model, e.g., a BPMN 2.0 XML file, through a stream of bytes.
  * 
  * @author Falko Menge
  */
@@ -41,15 +39,10 @@ public class GetDeploymentProcessModelCmd implements Command<InputStream>, Seria
   }
 
   public InputStream execute(CommandContext commandContext) {
-    ProcessDefinitionEntity processDefinition = commandContext
-            .getProcessEngineConfiguration()
-            .getDeploymentManager()
-            .findDeployedProcessDefinitionById(processDefinitionId);
+    ProcessDefinition processDefinition = commandContext.getProcessEngineConfiguration().getDeploymentManager().findDeployedProcessDefinitionById(processDefinitionId);
     String deploymentId = processDefinition.getDeploymentId();
     String resourceName = processDefinition.getResourceName();
-    InputStream processModelStream =
-            new GetDeploymentResourceCmd(deploymentId, resourceName)
-            .execute(commandContext);
+    InputStream processModelStream = new GetDeploymentResourceCmd(deploymentId, resourceName).execute(commandContext);
     return processModelStream;
   }
 

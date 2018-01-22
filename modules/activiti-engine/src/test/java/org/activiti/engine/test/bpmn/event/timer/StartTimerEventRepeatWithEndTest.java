@@ -64,43 +64,38 @@ public class StartTimerEventRepeatWithEndTest extends PluggableActivitiTestCase 
     calendar.set(2025, Calendar.DECEMBER, 10, 0, 0, 0);
     testClock.setCurrentTime(calendar.getTime());
 
-    //deploy the process
-    repositoryService.createDeployment()
-            .addClasspathResource("org/activiti/engine/test/bpmn/event/timer/StartTimerEventRepeatWithEndTest.testCycleDateStartTimerEvent.bpmn20.xml")
-            .deploy();
+    // deploy the process
+    repositoryService.createDeployment().addClasspathResource("org/activiti/engine/test/bpmn/event/timer/StartTimerEventRepeatWithEndTest.testCycleDateStartTimerEvent.bpmn20.xml").deploy();
     assertEquals(1, repositoryService.createProcessDefinitionQuery().count());
 
-    //AFTER DEPLOYMENT
-    //when the process is deployed there will be created a timerStartEvent job which will wait to be executed.
-    List<Job> jobs = managementService.createJobQuery().list();
+    // AFTER DEPLOYMENT
+    // when the process is deployed there will be created a timerStartEvent
+    // job which will wait to be executed.
+    List<Job> jobs = managementService.createTimerJobQuery().list();
     assertEquals(1, jobs.size());
 
-    //dueDate should be after 24 hours from the process deployment
+    // dueDate should be after 24 hours from the process deployment
     Calendar dueDateCalendar = Calendar.getInstance();
     dueDateCalendar.set(2025, Calendar.DECEMBER, 11, 0, 0, 0);
 
-    //check the due date is inside the 2 seconds range
+    // check the due date is inside the 2 seconds range
     assertEquals(true, Math.abs(dueDateCalendar.getTime().getTime() - jobs.get(0).getDuedate().getTime()) < 2000);
 
-    //No process instances
+    // No process instances
     List<ProcessInstance> processInstances = runtimeService.createProcessInstanceQuery().list();
     assertEquals(0, processInstances.size());
 
-    //No tasks
+    // No tasks
     List<Task> tasks = taskService.createTaskQuery().list();
     assertEquals(0, tasks.size());
 
     // ADVANCE THE CLOCK
     // advance the clock to 11 dec -> the system will execute the pending job and will create a new one
     moveByMinutes(60 * 25);
-    try {
-      waitForJobExecutorToProcessAllJobs(2000, 200);
-      fail("there must be a pending job because the endDate is not reached yet");
-    } catch (Exception e) {
-      //expected failure
-    }
+    waitForJobExecutorToProcessAllJobs(2000, 200);
     
-    jobs = managementService.createJobQuery().list();
+    // there must be a pending job because the endDate is not reached yet
+    jobs = managementService.createTimerJobQuery().list();
     assertEquals(1, jobs.size());
 
     // After the first startEvent Execution should be one process instance started
@@ -112,7 +107,7 @@ public class StartTimerEventRepeatWithEndTest extends PluggableActivitiTestCase 
     assertEquals(1, tasks.size());
 
     // one new job will be created (and the old one will be deleted after execution)
-    jobs = managementService.createJobQuery().list();
+    jobs = managementService.createTimerJobQuery().list();
     assertEquals(1, jobs.size());
 
     dueDateCalendar = Calendar.getInstance();
@@ -124,9 +119,9 @@ public class StartTimerEventRepeatWithEndTest extends PluggableActivitiTestCase 
     // 12 dec (last execution)
     moveByMinutes(60 * 25);
     try {
-      waitForJobExecutorToProcessAllJobs(2000, 200);
+      waitForJobExecutorToProcessAllJobs(10000, 200);
     } catch (Exception e) {
-      fail("Because the endDate is reached it will not be executed other jobs");
+      fail("Because the endDate is reached no other jobs created");
     }
     // After the second startEvent Execution should have 2 process instances started
     // (since the first one was not completed)
@@ -134,7 +129,10 @@ public class StartTimerEventRepeatWithEndTest extends PluggableActivitiTestCase 
     assertEquals(2, processInstances.size());
 
     // Because the endDate 12.dec.2025 is reached
-    // the current job will be deleted after execution and a new one will not be created.
+    // the current job will be deleted after execution and a new one will
+    // not be created.
+    jobs = managementService.createTimerJobQuery().list();
+    assertEquals(0, jobs.size());
     jobs = managementService.createJobQuery().list();
     assertEquals(0, jobs.size());
 
@@ -152,7 +150,7 @@ public class StartTimerEventRepeatWithEndTest extends PluggableActivitiTestCase 
       }
     }
 
-    //count "entity created" events
+    // count "entity created" events
     int eventCreatedCount = 0;
     for (ActivitiEvent eventReceived : eventsReceived) {
       if (ActivitiEventType.ENTITY_CREATED.equals(eventReceived.getType())) {
@@ -167,12 +165,13 @@ public class StartTimerEventRepeatWithEndTest extends PluggableActivitiTestCase 
         eventDeletedCount++;
       }
     }
-    assertEquals(2, timerFiredCount); //2 timers fired
-    assertEquals(2, eventCreatedCount); //2 jobs created
-    assertEquals(2, eventDeletedCount); //2 jobs deleted
+    assertEquals(2, timerFiredCount); // 2 timers fired
+    assertEquals(4, eventCreatedCount); // 4 jobs created, 2 per timer job
+    assertEquals(4, eventDeletedCount); // 4 jobs deleted, 2 per timer job
 
     // for each processInstance
-    // let's complete the userTasks where the process is hanging in order to complete the processes.
+    // let's complete the userTasks where the process is hanging in order to
+    // complete the processes.
     for (ProcessInstance processInstance : processInstances) {
       tasks = taskService.createTaskQuery().processInstanceId(processInstance.getProcessInstanceId()).list();
       Task task = tasks.get(0);
@@ -181,15 +180,17 @@ public class StartTimerEventRepeatWithEndTest extends PluggableActivitiTestCase 
       taskService.complete(task.getId());
     }
 
-    //now All the process instances should be completed
+    // now All the process instances should be completed
     processInstances = runtimeService.createProcessInstanceQuery().list();
     assertEquals(0, processInstances.size());
 
-    //no jobs
+    // no jobs
+    jobs = managementService.createTimerJobQuery().list();
+    assertEquals(0, jobs.size());
     jobs = managementService.createJobQuery().list();
     assertEquals(0, jobs.size());
 
-    //no tasks
+    // no tasks
     tasks = taskService.createTaskQuery().list();
     assertEquals(0, tasks.size());
 

@@ -12,125 +12,42 @@
  */
 package org.activiti.engine.impl.persistence.entity;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.activiti.engine.identity.Picture;
 import org.activiti.engine.identity.User;
-import org.activiti.engine.impl.context.Context;
 import org.activiti.engine.impl.db.HasRevision;
-import org.activiti.engine.impl.db.PersistentObject;
-
 
 /**
  * @author Tom Baeyens
  * @author Arkadiy Gornovoy
  */
-public class UserEntity implements User, Serializable, PersistentObject, HasRevision {
+public interface UserEntity extends User, Entity, HasRevision {
 
-  private static final long serialVersionUID = 1L;
+  Picture getPicture();
 
-  protected String id;
-  protected int revision;
-  protected String firstName;
-  protected String lastName;
-  protected String email;
-  protected String password;
-  
-  protected final ByteArrayRef pictureByteArrayRef = new ByteArrayRef();
-  
-  public UserEntity() {
-  }
-  
-  public UserEntity(String id) {
-    this.id = id;
-  }
-  
-  public void delete() {
-    Context.getCommandContext()
-      .getDbSqlSession()
-      .delete(this);
+  void setPicture(Picture picture);
 
-    deletePicture();
-  }
-  
-  public Object getPersistentState() {
-    Map<String, Object> persistentState = new HashMap<String, Object>();
-    persistentState.put("firstName", firstName);
-    persistentState.put("lastName", lastName);
-    persistentState.put("email", email);
-    persistentState.put("password", password);
-    persistentState.put("pictureByteArrayId", pictureByteArrayRef.getId());
-    return persistentState;
-  }
-  
-  public int getRevisionNext() {
-    return revision+1;
-  }
-  
-  public Picture getPicture() {
-    if(pictureByteArrayRef.getId() != null) {
-      return new Picture(pictureByteArrayRef.getBytes(), pictureByteArrayRef.getName());
-    }
-    return null;
-  }
-  
-  public void setPicture(Picture picture) {
-    if(picture != null) {
-      savePicture(picture);
-    } else {
-      deletePicture();
-    }      
-  }
+  String getId();
 
-  protected void savePicture(Picture picture) {
-    pictureByteArrayRef.setValue(picture.getMimeType(), picture.getBytes());
-  }
-  
-  protected void deletePicture() {
-    pictureByteArrayRef.delete();
-  }
+  void setId(String id);
 
-  public String getId() {
-    return id;
-  }
-  public void setId(String id) {
-    this.id = id;
-  }
-  public String getFirstName() {
-    return firstName;
-  }
-  public void setFirstName(String firstName) {
-    this.firstName = firstName;
-  }
-  public String getLastName() {
-    return lastName;
-  }
-  public void setLastName(String lastName) {
-    this.lastName = lastName;
-  }
-  public String getEmail() {
-    return email;
-  }
-  public void setEmail(String email) {
-    this.email = email;
-  }
-  public String getPassword() {
-    return password;
-  }
-  public void setPassword(String password) {
-    this.password = password;
-  }
-  public int getRevision() {
-    return revision;
-  }
-  public void setRevision(int revision) {
-    this.revision = revision;
-  }
-  
-  public boolean isPictureSet() {
-    return pictureByteArrayRef.getId() != null;
-  }
+  String getFirstName();
 
+  void setFirstName(String firstName);
+
+  String getLastName();
+
+  void setLastName(String lastName);
+
+  String getEmail();
+
+  void setEmail(String email);
+
+  String getPassword();
+
+  void setPassword(String password);
+
+  boolean isPictureSet();
+
+  ByteArrayRef getPictureByteArrayRef();
+  
 }

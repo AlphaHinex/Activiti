@@ -13,188 +13,102 @@
 
 package org.activiti.engine.impl.bpmn.helper;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
+import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.impl.context.Context;
 import org.activiti.engine.impl.persistence.entity.CompensateEventSubscriptionEntity;
 import org.activiti.engine.impl.persistence.entity.EventSubscriptionEntity;
+import org.activiti.engine.impl.persistence.entity.EventSubscriptionEntityManager;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
-import org.activiti.engine.impl.pvm.PvmProcessDefinition;
-import org.activiti.engine.impl.pvm.PvmScope;
-import org.activiti.engine.impl.pvm.delegate.ActivityBehavior;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
-import org.activiti.engine.impl.pvm.process.ActivityImpl;
-import org.activiti.engine.impl.pvm.runtime.InterpretableExecution;
-
+import org.activiti.engine.impl.persistence.entity.ExecutionEntityManager;
+import org.activiti.engine.impl.util.CollectionUtil;
 
 /**
- * @author Daniel Meyer
- * @author Nico Rehwaldt
+ * @author Tijs Rademakers
  * @author Joram Barrez
  */
 public class ScopeUtil {
- 
-  /**
-   * Find the next scope execution in the parent execution hierarchy
-   * That method works different than {@link #findScopeExecutionForScope(org.activiti.engine.impl.persistence.entity.ExecutionEntity, org.activiti.engine.impl.pvm.PvmScope)} 
-   * which returns the most outer scope execution.
-   * 
-   * @param execution the execution from which to start the search
-   * @return the next scope execution in the parent execution hierarchy
-   */
-  public static ActivityExecution findScopeExecution(ActivityExecution execution) {
-    
-    while(execution.getParentId() != null && !execution.isScope()) {
-      execution = execution.getParent();
-    }
-    
-    if(execution != null && execution.isConcurrent()) {
-      execution = execution.getParent();
-    }
-    
-    return execution;
-    
-  }
-  /**
-   * returns the top-most execution sitting in an activity part of the scope defined by 'scopeActivitiy'.
-   */
-  public static ExecutionEntity findScopeExecutionForScope(ExecutionEntity execution, PvmScope scopeActivity) {
-    
-    // TODO: this feels hacky!
-    
-    if (scopeActivity instanceof PvmProcessDefinition) {
-      return execution.getProcessInstance();
-      
-    } else {
-      
-      ActivityImpl currentActivity = execution.getActivity();      
-      ExecutionEntity candiadateExecution = null;
-      ExecutionEntity originalExecution = execution;
-      
-      while (execution != null) {
-        currentActivity = execution.getActivity();
-        if (scopeActivity.getActivities().contains(currentActivity) /* does not search rec*/ 
-                || scopeActivity.equals(currentActivity)) {
-          // found a candidate execution; lets still check whether we find an
-          // execution which is also sitting in an activity part of this scope
-          // higher up the hierarchy
-          candiadateExecution = execution;        
-        } else if (currentActivity!= null 
-                && currentActivity.contains((ActivityImpl)scopeActivity) /*searches rec*/) {
-          // now we're too "high", the candidate execution is the one.
-          break;
-        }
-          
-        execution = execution.getParent();
-      }
-      
-      // if activity is scope, we need to get the parent at least:
-      if(originalExecution == candiadateExecution 
-              && originalExecution.getActivity().isScope() 
-              && !originalExecution.getActivity().equals(scopeActivity)) {
-        candiadateExecution = originalExecution.getParent();
-      }      
-      
-      return candiadateExecution;
-    }
-  }
-  
-  public static ActivityImpl findInParentScopesByBehaviorType(ActivityImpl activity, Class<? extends ActivityBehavior> behaviorType) {
-    while (activity != null) {
-      for (ActivityImpl childActivity : activity.getActivities()) {
-        if(behaviorType.isAssignableFrom(childActivity.getActivityBehavior().getClass())) {
-          return childActivity;          
-        }
-      }
-      activity = activity.getParentActivity();      
-    }    
-    return null;
-  }
 
   /**
-   * we create a separate execution for each compensation handler invocation. 
+   * we create a separate execution for each compensation handler invocation.
    */
-  public static void throwCompensationEvent(List<CompensateEventSubscriptionEntity> eventSubscriptions, ActivityExecution execution, boolean async) {
+  public static void throwCompensationEvent(List<CompensateEventSubscriptionEntity> eventSubscriptions, DelegateExecution execution, boolean async) {
 
+    ExecutionEntityManager executionEntityManager = Context.getCommandContext().getExecutionEntityManager();
+    
     // first spawn the compensating executions
     for (EventSubscriptionEntity eventSubscription : eventSubscriptions) {
       ExecutionEntity compensatingExecution = null;
-      // check whether compensating execution is already created 
-      // (which is the case when compensating an embedded subprocess, 
-      // where the compensating execution is created when leaving the subprocess 
-      // and holds snapshot data).
-      if(eventSubscription.getConfiguration() !=null) {
-        compensatingExecution = Context.getCommandContext()
-          .getExecutionEntityManager()
-          .findExecutionById(eventSubscription.getConfiguration());
-        // move the compensating execution under this execution:
-        compensatingExecution.setParent((InterpretableExecution) execution);        
+      
+      // check whether compensating execution is already created (which is the case when compensating an embedded subprocess,
+      // where the compensating execution is created when leaving the subprocess and holds snapshot data).
+      if (eventSubscription.getConfiguration() != null) {
+        compensatingExecution = executionEntityManager.findById(eventSubscription.getConfiguration());
+        compensatingExecution.setParent(compensatingExecution.getProcessInstance());
         compensatingExecution.setEventScope(false);
       } else {
-        compensatingExecution = (ExecutionEntity) execution.createExecution();
+        compensatingExecution = executionEntityManager.createChildExecution((ExecutionEntity) execution); 
         eventSubscription.setConfiguration(compensatingExecution.getId());
       }
-      compensatingExecution.setConcurrent(true);   
+      
     }
-    
+
     // signal compensation events in reverse order of their 'created' timestamp
     Collections.sort(eventSubscriptions, new Comparator<EventSubscriptionEntity>() {
       public int compare(EventSubscriptionEntity o1, EventSubscriptionEntity o2) {
         return o2.getCreated().compareTo(o1.getCreated());
       }
     });
-    
+
     for (CompensateEventSubscriptionEntity compensateEventSubscriptionEntity : eventSubscriptions) {
-      compensateEventSubscriptionEntity.eventReceived(null, async);      
+      Context.getCommandContext().getEventSubscriptionEntityManager().eventReceived(compensateEventSubscriptionEntity, null, async);
     }
   }
   
   /**
-   * creates an event scope for the given execution:
-   * 
-   * create a new event scope execution under the parent of the given 
-   * execution and move all event subscriptions to that execution.
-   * 
-   * this allows us to "remember" the event subscriptions after finishing a 
-   * scope
+   * Creates a new event scope execution and moves existing event subscriptions to this new execution
    */
-  public static void createEventScopeExecution(ExecutionEntity execution) {
+  public static void createCopyOfSubProcessExecutionForCompensation(ExecutionEntity subProcessExecution) {
+    EventSubscriptionEntityManager eventSubscriptionEntityManager = Context.getCommandContext().getEventSubscriptionEntityManager();
+    List<EventSubscriptionEntity> eventSubscriptions = eventSubscriptionEntityManager.findEventSubscriptionsByExecutionAndType(subProcessExecution.getId(), "compensate");
+    
+    List<CompensateEventSubscriptionEntity> compensateEventSubscriptions = new ArrayList<CompensateEventSubscriptionEntity>();
+    for (EventSubscriptionEntity event : eventSubscriptions) {
+      if (event instanceof CompensateEventSubscriptionEntity) {
+        compensateEventSubscriptions.add((CompensateEventSubscriptionEntity) event);
+      }
+    }
 
-    ExecutionEntity eventScope = ScopeUtil.findScopeExecutionForScope(execution, execution.getActivity().getParent());
-    
-    List<CompensateEventSubscriptionEntity> eventSubscriptions = execution.getCompensateEventSubscriptions();
-    
-    if(!eventSubscriptions.isEmpty()) {
+    if (CollectionUtil.isNotEmpty(compensateEventSubscriptions)) {
       
-      ExecutionEntity eventScopeExecution = eventScope.createExecution();
-      eventScopeExecution.setActive(false);      
-      eventScopeExecution.setConcurrent(false);
-      eventScopeExecution.setEventScope(true);      
-      eventScopeExecution.setActivity((ActivityImpl) execution.getActivity());
+      ExecutionEntity processInstanceExecutionEntity = subProcessExecution.getProcessInstance();
       
-      execution.setConcurrent(false);
-      
-      // copy local variables to eventScopeExecution by value. This way, 
-      // the eventScopeExecution references a 'snapshot' of the local variables      
-      Map<String, Object> variables = execution.getVariablesLocal();
-      for (Entry<String, Object> variable : variables.entrySet()) {
-        eventScopeExecution.setVariableLocal(variable.getKey(), variable.getValue());        
-      }
-      
+      ExecutionEntity eventScopeExecution = Context.getCommandContext().getExecutionEntityManager().createChildExecution(processInstanceExecutionEntity); 
+      eventScopeExecution.setActive(false);
+      eventScopeExecution.setEventScope(true);
+      eventScopeExecution.setCurrentFlowElement(subProcessExecution.getCurrentFlowElement());
+
+      // copy local variables to eventScopeExecution by value. This way,
+      // the eventScopeExecution references a 'snapshot' of the local variables
+      new SubProcessVariableSnapshotter().setVariablesSnapshots(subProcessExecution, eventScopeExecution);
+
       // set event subscriptions to the event scope execution:
-      for (CompensateEventSubscriptionEntity eventSubscriptionEntity : eventSubscriptions) {
-        eventSubscriptionEntity = eventSubscriptionEntity.moveUnder(eventScopeExecution);        
+      for (CompensateEventSubscriptionEntity eventSubscriptionEntity : compensateEventSubscriptions) {
+        eventSubscriptionEntityManager.delete(eventSubscriptionEntity);
+
+        CompensateEventSubscriptionEntity newSubscription = eventSubscriptionEntityManager.insertCompensationEvent(
+            eventScopeExecution, eventSubscriptionEntity.getActivityId());
+        newSubscription.setConfiguration(eventSubscriptionEntity.getConfiguration());
+        newSubscription.setCreated(eventSubscriptionEntity.getCreated());
       }
-            
-      CompensateEventSubscriptionEntity eventSubscription = CompensateEventSubscriptionEntity.createAndInsert(eventScope);
-      eventSubscription.setActivity(execution.getActivity());
+
+      CompensateEventSubscriptionEntity eventSubscription = eventSubscriptionEntityManager.insertCompensationEvent(
+          processInstanceExecutionEntity, eventScopeExecution.getCurrentFlowElement().getId());
       eventSubscription.setConfiguration(eventScopeExecution.getId());
-      
     }
   }
-
 }

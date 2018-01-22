@@ -57,5 +57,4 @@ public class RestApiAutoConfiguration {
   	// Hence, this 'dummy' configuration
   	
   }
-
 }

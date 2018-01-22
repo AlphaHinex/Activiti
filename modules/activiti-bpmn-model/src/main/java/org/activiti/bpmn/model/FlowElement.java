@@ -15,6 +15,7 @@ package org.activiti.bpmn.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author Tijs Rademakers
@@ -24,6 +25,7 @@ public abstract class FlowElement extends BaseElement implements HasExecutionLis
   protected String name;
   protected String documentation;
   protected List<ActivitiListener> executionListeners = new ArrayList<ActivitiListener>();
+  protected FlowElementsContainer parentContainer;
 
   public String getName() {
     return name;
@@ -40,21 +42,41 @@ public abstract class FlowElement extends BaseElement implements HasExecutionLis
   public void setDocumentation(String documentation) {
     this.documentation = documentation;
   }
-  
+
   public List<ActivitiListener> getExecutionListeners() {
     return executionListeners;
   }
+
   public void setExecutionListeners(List<ActivitiListener> executionListeners) {
     this.executionListeners = executionListeners;
   }
   
-  public abstract FlowElement clone();
+  @JsonIgnore
+  public FlowElementsContainer getParentContainer() {
+    return parentContainer;
+  }
   
+  @JsonIgnore
+  public SubProcess getSubProcess() {
+    SubProcess subProcess = null;
+    if (parentContainer instanceof SubProcess) {
+      subProcess = (SubProcess) parentContainer;
+    }
+    
+    return subProcess;
+  }
+  
+  public void setParentContainer(FlowElementsContainer parentContainer) {
+    this.parentContainer = parentContainer;
+  }
+
+  public abstract FlowElement clone();
+
   public void setValues(FlowElement otherElement) {
     super.setValues(otherElement);
     setName(otherElement.getName());
     setDocumentation(otherElement.getDocumentation());
-    
+
     executionListeners = new ArrayList<ActivitiListener>();
     if (otherElement.getExecutionListeners() != null && !otherElement.getExecutionListeners().isEmpty()) {
       for (ActivitiListener listener : otherElement.getExecutionListeners()) {

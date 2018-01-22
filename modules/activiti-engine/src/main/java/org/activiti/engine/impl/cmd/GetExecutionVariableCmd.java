@@ -16,11 +16,12 @@ import java.io.Serializable;
 
 import org.activiti.engine.ActivitiIllegalArgumentException;
 import org.activiti.engine.ActivitiObjectNotFoundException;
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
+import org.activiti.engine.impl.util.Activiti5Util;
 import org.activiti.engine.runtime.Execution;
-
 
 /**
  * @author Tom Baeyens
@@ -40,29 +41,32 @@ public class GetExecutionVariableCmd implements Command<Object>, Serializable {
   }
 
   public Object execute(CommandContext commandContext) {
-    if(executionId == null) {
+    if (executionId == null) {
       throw new ActivitiIllegalArgumentException("executionId is null");
     }
-    if(variableName == null) {
+    if (variableName == null) {
       throw new ActivitiIllegalArgumentException("variableName is null");
     }
-    
-    ExecutionEntity execution = commandContext
-      .getExecutionEntityManager()
-      .findExecutionById(executionId);
-    
-    if (execution==null) {
-      throw new ActivitiObjectNotFoundException("execution "+executionId+" doesn't exist", Execution.class);
+
+    ExecutionEntity execution = commandContext.getExecutionEntityManager().findById(executionId);
+
+    if (execution == null) {
+      throw new ActivitiObjectNotFoundException("execution " + executionId + " doesn't exist", Execution.class);
     }
     
+    if (Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, execution.getProcessDefinitionId())) {
+      Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+      return activiti5CompatibilityHandler.getExecutionVariable(executionId, variableName, isLocal);
+    }
+
     Object value;
-    
+
     if (isLocal) {
       value = execution.getVariableLocal(variableName, false);
     } else {
       value = execution.getVariable(variableName, false);
     }
-    
+
     return value;
   }
 }

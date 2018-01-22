@@ -52,11 +52,9 @@ public class SaveProcessDefinitionInfoCmd implements Command<Void>, Serializable
     ProcessDefinitionInfoEntityManager definitionInfoEntityManager = commandContext.getProcessDefinitionInfoEntityManager();
     ProcessDefinitionInfoEntity definitionInfoEntity = definitionInfoEntityManager.findProcessDefinitionInfoByProcessDefinitionId(processDefinitionId);
     if (definitionInfoEntity == null) {
-      definitionInfoEntity = new ProcessDefinitionInfoEntity();
+      definitionInfoEntity = definitionInfoEntityManager.create();
       definitionInfoEntity.setProcessDefinitionId(processDefinitionId);
       commandContext.getProcessDefinitionInfoEntityManager().insertProcessDefinitionInfo(definitionInfoEntity);
-    } else {
-      commandContext.getProcessDefinitionInfoEntityManager().updateProcessDefinitionInfo(definitionInfoEntity);
     }
     
     if (infoNode != null) {

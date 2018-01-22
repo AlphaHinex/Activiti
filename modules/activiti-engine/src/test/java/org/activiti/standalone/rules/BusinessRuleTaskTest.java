@@ -37,8 +37,9 @@ public class BusinessRuleTaskTest extends PluggableActivitiTestCase {
     assertTrue(CustomBusinessRuleTask.exclude);
     assertEquals("rulesOutput", CustomBusinessRuleTask.resultVariableName);
     
-    runtimeService.signal(runtimeService.createExecutionQuery()
+    runtimeService.trigger(runtimeService.createExecutionQuery()
         .processInstanceId(processInstance.getId())
+        .onlyChildExecutions()
         .singleResult()
         .getId());
     assertProcessEnded(processInstance.getId());

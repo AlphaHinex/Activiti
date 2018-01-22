@@ -14,12 +14,10 @@
     <property name="history" value="full" />
     
     <!-- Database configurations -->
-    <property name="databaseSchemaUpdate" value="true" />
+    <property name="databaseSchemaUpdate" value="drop-create" />
     
     <!-- job executor configurations -->
-    <property name="jobExecutorActivate" value="false" />
     <property name="asyncExecutor" ref="asyncExecutor" />
-    <property name="asyncExecutorEnabled" value="true" />
     <property name="asyncExecutorActivate" value="false" />
     
     <property name="defaultFailedJobWaitTime" value="1" />

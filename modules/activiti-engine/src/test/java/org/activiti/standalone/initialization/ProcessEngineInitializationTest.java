@@ -22,20 +22,18 @@ import org.activiti.engine.ProcessEngineConfiguration;
 import org.activiti.engine.impl.ProcessEngineImpl;
 import org.activiti.engine.impl.db.DbSqlSession;
 import org.activiti.engine.impl.db.DbSqlSessionFactory;
-import org.activiti.engine.impl.test.PvmTestCase;
+import org.activiti.engine.impl.test.AbstractTestCase;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 
 /**
  * @author Tom Baeyens
  */
-public class ProcessEngineInitializationTest extends PvmTestCase {
+public class ProcessEngineInitializationTest extends AbstractTestCase {
 
   public void testNoTables() {
     try {
-      ProcessEngineConfiguration
-      .createProcessEngineConfigurationFromResource("org/activiti/standalone/initialization/notables.activiti.cfg.xml")
-        .buildProcessEngine();
+      ProcessEngineConfiguration.createProcessEngineConfigurationFromResource("org/activiti/standalone/initialization/notables.activiti.cfg.xml").buildProcessEngine();
       fail("expected exception");
     } catch (Exception e) {
       // OK
@@ -45,10 +43,8 @@ public class ProcessEngineInitializationTest extends PvmTestCase {
 
   public void testVersionMismatch() {
     // first create the schema
-    ProcessEngineImpl processEngine = (ProcessEngineImpl) ProcessEngineConfiguration
-      .createProcessEngineConfigurationFromResource("org/activiti/standalone/initialization/notables.activiti.cfg.xml")
-      .setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_CREATE_DROP)
-      .buildProcessEngine();
+    ProcessEngineImpl processEngine = (ProcessEngineImpl) ProcessEngineConfiguration.createProcessEngineConfigurationFromResource("org/activiti/standalone/initialization/notables.activiti.cfg.xml")
+        .setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_CREATE_DROP).buildProcessEngine();
 
     // then update the version to something that is different to the library
     // version
@@ -78,11 +74,9 @@ public class ProcessEngineInitializationTest extends PvmTestCase {
     try {
       // now we can see what happens if when a process engine is being
       // build with a version mismatch between library and db tables
-      ProcessEngineConfiguration
-        .createProcessEngineConfigurationFromResource("org/activiti/standalone/initialization/notables.activiti.cfg.xml")
-        .setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_FALSE)
-        .buildProcessEngine();
-      
+      ProcessEngineConfiguration.createProcessEngineConfigurationFromResource("org/activiti/standalone/initialization/notables.activiti.cfg.xml")
+          .setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_FALSE).buildProcessEngine();
+
       fail("expected exception");
     } catch (ActivitiWrongDbException e) {
       assertTextPresent("version mismatch", e.getMessage());

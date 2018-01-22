@@ -17,12 +17,10 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
 
-import org.activiti.engine.impl.db.DbSqlSession;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.AttachmentEntity;
 import org.activiti.engine.impl.persistence.entity.ByteArrayEntity;
-
 
 /**
  * @author Tom Baeyens
@@ -31,23 +29,22 @@ public class GetAttachmentContentCmd implements Command<InputStream>, Serializab
 
   private static final long serialVersionUID = 1L;
   protected String attachmentId;
-  
+
   public GetAttachmentContentCmd(String attachmentId) {
     this.attachmentId = attachmentId;
   }
 
   public InputStream execute(CommandContext commandContext) {
-    DbSqlSession dbSqlSession = commandContext.getDbSqlSession();
-    AttachmentEntity attachment = dbSqlSession.selectById(AttachmentEntity.class, attachmentId);
-    
+    AttachmentEntity attachment = commandContext.getAttachmentEntityManager().findById(attachmentId);
+
     String contentId = attachment.getContentId();
-    if (contentId==null) {
+    if (contentId == null) {
       return null;
     }
-    
-    ByteArrayEntity byteArray = dbSqlSession.selectById(ByteArrayEntity.class, contentId);
+
+    ByteArrayEntity byteArray = commandContext.getByteArrayEntityManager().findById(contentId);
     byte[] bytes = byteArray.getBytes();
-    
+
     return new ByteArrayInputStream(bytes);
   }
 

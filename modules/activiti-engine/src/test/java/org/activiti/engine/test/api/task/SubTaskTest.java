@@ -24,9 +24,9 @@ import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
 
-
 /**
  * @author Tom Baeyens
+ * @author Tijs Rademakers
  */
 public class SubTaskTest extends PluggableActivitiTestCase {
 
@@ -45,18 +45,14 @@ public class SubTaskTest extends PluggableActivitiTestCase {
     subTaskTwo.setName("subtask two");
     subTaskTwo.setParentTaskId(gonzoTaskId);
     taskService.saveTask(subTaskTwo);
-    
+
     String subTaskId = subTaskOne.getId();
     assertTrue(taskService.getSubTasks(subTaskId).isEmpty());
-    assertTrue(historyService
-            .createHistoricTaskInstanceQuery()
-            .taskParentTaskId(subTaskId)
-            .list()
-            .isEmpty());
+    assertTrue(historyService.createHistoricTaskInstanceQuery().taskParentTaskId(subTaskId).list().isEmpty());
 
     List<Task> subTasks = taskService.getSubTasks(gonzoTaskId);
     Set<String> subTaskNames = new HashSet<String>();
-    for (Task subTask: subTasks) {
+    for (Task subTask : subTasks) {
       subTaskNames.add(subTask.getName());
     }
 
@@ -66,17 +62,14 @@ public class SubTaskTest extends PluggableActivitiTestCase {
       expectedSubTaskNames.add("subtask two");
 
       assertEquals(expectedSubTaskNames, subTaskNames);
-      
-      List<HistoricTaskInstance> historicSubTasks = historyService
-        .createHistoricTaskInstanceQuery()
-        .taskParentTaskId(gonzoTaskId)
-        .list();
-      
+
+      List<HistoricTaskInstance> historicSubTasks = historyService.createHistoricTaskInstanceQuery().taskParentTaskId(gonzoTaskId).list();
+
       subTaskNames = new HashSet<String>();
-      for (HistoricTaskInstance historicSubTask: historicSubTasks) {
+      for (HistoricTaskInstance historicSubTask : historicSubTasks) {
         subTaskNames.add(historicSubTask.getName());
       }
-      
+
       assertEquals(expectedSubTaskNames, subTaskNames);
     }
 
@@ -124,4 +117,5 @@ public class SubTaskTest extends PluggableActivitiTestCase {
     
     repositoryService.deleteDeployment(deployment.getId(), true);
   }
+
 }

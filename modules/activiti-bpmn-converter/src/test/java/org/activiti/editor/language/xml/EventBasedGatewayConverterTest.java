@@ -15,25 +15,26 @@ import org.junit.Test;
 
 /**
  * Test for ACT-1657
+ * 
  * @author Frederik Heremans
  */
 public class EventBasedGatewayConverterTest extends AbstractConverterTest {
 
   @Test
-  public void connvertXMLToModel() throws Exception {
+  public void convertXMLToModel() throws Exception {
     BpmnModel bpmnModel = readXMLFile();
     validateModel(bpmnModel);
   }
-  
+
   protected String getResource() {
     return "eventgatewaymodel.bpmn";
   }
-  
+
   private void validateModel(BpmnModel model) {
     FlowElement flowElement = model.getMainProcess().getFlowElement("eventBasedGateway");
     assertNotNull(flowElement);
     assertTrue(flowElement instanceof EventGateway);
-    
+
     EventGateway gateway = (EventGateway) flowElement;
     List<ActivitiListener> listeners = gateway.getExecutionListeners();
     assertEquals(1, listeners.size());

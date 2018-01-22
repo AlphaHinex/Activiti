@@ -29,7 +29,7 @@ public class EndEventTest extends PluggableActivitiTestCase {
     ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("oneTaskWithDelay");
     Task task = taskService.createTaskQuery().singleResult();
     assertNotNull(task);
-    
+
     // We will now start two threads that both complete the task.
     // In the process, the task is followed by a delay of three seconds
     // This will cause both threads to call the taskService.complete method with enough time,
@@ -40,12 +40,12 @@ public class EndEventTest extends PluggableActivitiTestCase {
 
     assertFalse(taskCompleter1.isSucceeded());
     assertFalse(taskCompleter2.isSucceeded());
-    
+
     taskCompleter1.start();
     taskCompleter2.start();
     taskCompleter1.join();
     taskCompleter2.join();
-    
+
     int successCount = 0;
     if (taskCompleter1.isSucceeded()) {
       successCount++;
@@ -53,11 +53,11 @@ public class EndEventTest extends PluggableActivitiTestCase {
     if (taskCompleter2.isSucceeded()) {
       successCount++;
     }
-    
+
     assertEquals("(Only) one thread should have been able to successfully end the process", 1, successCount);
     assertProcessEnded(processInstance.getId());
   }
-  
+
   /** Helper class for concurrent testing */
   class TaskCompleter extends Thread {
 
@@ -67,7 +67,7 @@ public class EndEventTest extends PluggableActivitiTestCase {
     public TaskCompleter(String taskId) {
       this.taskId = taskId;
     }
-    
+
     public boolean isSucceeded() {
       return succeeded;
     }

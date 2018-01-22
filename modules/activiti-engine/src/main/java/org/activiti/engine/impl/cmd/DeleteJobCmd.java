@@ -5,9 +5,14 @@ import java.io.Serializable;
 import org.activiti.engine.ActivitiException;
 import org.activiti.engine.ActivitiIllegalArgumentException;
 import org.activiti.engine.ActivitiObjectNotFoundException;
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
+import org.activiti.engine.delegate.event.ActivitiEventType;
+import org.activiti.engine.delegate.event.impl.ActivitiEventBuilder;
+import org.activiti.engine.impl.context.Context;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.JobEntity;
+import org.activiti.engine.impl.util.Activiti5Util;
 import org.activiti.engine.runtime.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +35,23 @@ public class DeleteJobCmd implements Command<Object>, Serializable {
 
   public Object execute(CommandContext commandContext) {
     JobEntity jobToDelete = getJobToDelete(commandContext);
+    
+    if (Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, jobToDelete.getProcessDefinitionId())) {
+      Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+      activiti5CompatibilityHandler.deleteJob(jobToDelete.getId());
+      return null;
+    }
 
-    jobToDelete.delete();
+    sendCancelEvent(jobToDelete);
+
+    commandContext.getJobEntityManager().delete(jobToDelete);
     return null;
+  }
+
+  protected void sendCancelEvent(JobEntity jobToDelete) {
+    if (Context.getProcessEngineConfiguration().getEventDispatcher().isEnabled()) {
+      Context.getProcessEngineConfiguration().getEventDispatcher().dispatchEvent(ActivitiEventBuilder.createEntityEvent(ActivitiEventType.JOB_CANCELED, jobToDelete));
+    }
   }
 
   protected JobEntity getJobToDelete(CommandContext commandContext) {
@@ -43,7 +62,7 @@ public class DeleteJobCmd implements Command<Object>, Serializable {
       log.debug("Deleting job {}", jobId);
     }
 
-    JobEntity job = commandContext.getJobEntityManager().findJobById(jobId);
+    JobEntity job = commandContext.getJobEntityManager().findById(jobId);
     if (job == null) {
       throw new ActivitiObjectNotFoundException("No job found with id '" + jobId + "'", Job.class);
     }

@@ -8,7 +8,7 @@ import org.junit.Test;
 public class EmptyModelTest extends AbstractConverterTest {
 
   @Test
-  public void connvertXMLToModel() throws Exception {
+  public void convertXMLToModel() throws Exception {
     try {
       readXMLFile();
       fail("Expected xml exception");
@@ -16,7 +16,7 @@ public class EmptyModelTest extends AbstractConverterTest {
       // exception expected
     }
   }
-  
+
   @Test
   public void convertModelToXML() throws Exception {
     try {
@@ -26,7 +26,7 @@ public class EmptyModelTest extends AbstractConverterTest {
       // exception expected
     }
   }
-  
+
   protected String getResource() {
     return "empty.bpmn";
   }

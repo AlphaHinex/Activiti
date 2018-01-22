@@ -33,8 +33,7 @@ public class ProcessInstanceAndVariablesQueryTest extends PluggableActivitiTestC
   private List<String> processInstanceIds;
 
   /**
-   * Setup starts 4 process instances of oneTaskProcess 
-   * and 1 instance of oneTaskProcess2
+   * Setup starts 4 process instances of oneTaskProcess and 1 instance of oneTaskProcess2
    */
   protected void setUp() throws Exception {
     super.setUp();
@@ -67,14 +66,13 @@ public class ProcessInstanceAndVariablesQueryTest extends PluggableActivitiTestC
     }
     super.tearDown();
   }
-  
+
   public void testQuery() {
-    ProcessInstance processInstance = runtimeService.createProcessInstanceQuery().includeProcessVariables()
-        .variableValueEquals("anothertest", 123).singleResult();
+    ProcessInstance processInstance = runtimeService.createProcessInstanceQuery().includeProcessVariables().variableValueEquals("anothertest", 123).singleResult();
     Map<String, Object> variableMap = processInstance.getProcessVariables();
     assertEquals(1, variableMap.size());
     assertEquals(123, variableMap.get("anothertest"));
-    
+
     List<ProcessInstance> instanceList = runtimeService.createProcessInstanceQuery().includeProcessVariables().list();
     assertEquals(6, instanceList.size());
     
@@ -101,80 +99,63 @@ public class ProcessInstanceAndVariablesQueryTest extends PluggableActivitiTestC
     assertEquals(2, variableMap.size());
     assertEquals("test", variableMap.get("test"));
     assertEquals("test2", variableMap.get("test2"));
-    
-    processInstance = runtimeService.createProcessInstanceQuery().includeProcessVariables()
-        .processDefinitionKey(PROCESS_DEFINITION_KEY_2).singleResult();
+
+    processInstance = runtimeService.createProcessInstanceQuery().includeProcessVariables().processDefinitionKey(PROCESS_DEFINITION_KEY_2).singleResult();
     variableMap = processInstance.getProcessVariables();
     assertEquals(1, variableMap.size());
     assertEquals(123, variableMap.get("anothertest"));
-    
-    instanceList = runtimeService.createProcessInstanceQuery()
-        .includeProcessVariables()
-        .processDefinitionKey(PROCESS_DEFINITION_KEY)
-        .listPage(0, 5);
+
+    instanceList = runtimeService.createProcessInstanceQuery().includeProcessVariables().processDefinitionKey(PROCESS_DEFINITION_KEY).listPage(0, 5);
     assertEquals(4, instanceList.size());
     processInstance = instanceList.get(0);
     variableMap = processInstance.getProcessVariables();
     assertEquals(2, variableMap.size());
     assertEquals("test", variableMap.get("test"));
     assertEquals("test2", variableMap.get("test2"));
-    
-    instanceList = runtimeService.createProcessInstanceQuery()
-        .includeProcessVariables()
-        .processDefinitionKey(PROCESS_DEFINITION_KEY)
-        .listPage(0, 1);
+
+    instanceList = runtimeService.createProcessInstanceQuery().includeProcessVariables().processDefinitionKey(PROCESS_DEFINITION_KEY).listPage(0, 1);
     assertEquals(1, instanceList.size());
     processInstance = instanceList.get(0);
     variableMap = processInstance.getProcessVariables();
     assertEquals(2, variableMap.size());
     assertEquals("test", variableMap.get("test"));
     assertEquals("test2", variableMap.get("test2"));
-    
-    instanceList = runtimeService.createProcessInstanceQuery()
-        .includeProcessVariables()
-        .processDefinitionKey(PROCESS_DEFINITION_KEY)
-        .orderByProcessDefinitionKey()
-        .asc()
-        .listPage(2, 4);
+
+    instanceList = runtimeService.createProcessInstanceQuery().includeProcessVariables().processDefinitionKey(PROCESS_DEFINITION_KEY).orderByProcessDefinitionKey().asc().listPage(2, 4);
     assertEquals(2, instanceList.size());
     processInstance = instanceList.get(0);
     variableMap = processInstance.getProcessVariables();
     assertEquals(2, variableMap.size());
     assertEquals("test", variableMap.get("test"));
     assertEquals("test2", variableMap.get("test2"));
-    
-    instanceList = runtimeService.createProcessInstanceQuery()
-        .includeProcessVariables()
-        .processDefinitionKey(PROCESS_DEFINITION_KEY)
-        .orderByProcessDefinitionKey()
-        .asc()
-        .listPage(4, 5);
+
+    instanceList = runtimeService.createProcessInstanceQuery().includeProcessVariables().processDefinitionKey(PROCESS_DEFINITION_KEY).orderByProcessDefinitionKey().asc().listPage(4, 5);
     assertEquals(0, instanceList.size());
   }
 
   public void testOrQuery() {
     ProcessInstance processInstance = runtimeService.createProcessInstanceQuery().includeProcessVariables()
-        .or().variableValueEquals("undefined", 999).variableValueEquals("anothertest", 123).endOr().singleResult();
+            .or().variableValueEquals("undefined", 999).variableValueEquals("anothertest", 123).endOr().singleResult();
     Map<String, Object> variableMap = processInstance.getProcessVariables();
     assertEquals(1, variableMap.size());
     assertEquals(123, variableMap.get("anothertest"));
 
     processInstance = runtimeService.createProcessInstanceQuery().includeProcessVariables()
-        .or().variableValueEquals("undefined", 999).endOr().singleResult();
+            .or().variableValueEquals("undefined", 999).endOr().singleResult();
     assertNull(processInstance);
 
     processInstance = runtimeService.createProcessInstanceQuery().includeProcessVariables()
-        .or().variableValueEquals("anothertest", 123).variableValueEquals("undefined", 999).endOr().singleResult();
+            .or().variableValueEquals("anothertest", 123).variableValueEquals("undefined", 999).endOr().singleResult();
     variableMap = processInstance.getProcessVariables();
     assertEquals(1, variableMap.size());
     assertEquals(123, variableMap.get("anothertest"));
 
     processInstance = runtimeService.createProcessInstanceQuery().includeProcessVariables()
-        .or().variableValueEquals("anothertest", 999).endOr().singleResult();
+            .or().variableValueEquals("anothertest", 999).endOr().singleResult();
     assertNull(processInstance);
 
     processInstance = runtimeService.createProcessInstanceQuery().includeProcessVariables()
-        .or().variableValueEquals("anothertest", 999).variableValueEquals("anothertest", 123).endOr().singleResult();
+            .or().variableValueEquals("anothertest", 999).variableValueEquals("anothertest", 123).endOr().singleResult();
     variableMap = processInstance.getProcessVariables();
     assertEquals(1, variableMap.size());
     assertEquals(123, variableMap.get("anothertest"));
@@ -183,14 +164,14 @@ public class ProcessInstanceAndVariablesQueryTest extends PluggableActivitiTestC
   public void testOrQueryMultipleVariableValues() {
     ProcessInstanceQuery query0 = runtimeService.createProcessInstanceQuery().includeProcessVariables().or();
     for (int i = 0; i < 20; i++) {
-        query0 = query0.variableValueEquals("anothertest", i);
+      query0 = query0.variableValueEquals("anothertest", i);
     }
     query0 = query0.endOr();
     assertNull(query0.singleResult());
 
     ProcessInstanceQuery query1 = runtimeService.createProcessInstanceQuery().includeProcessVariables().or().variableValueEquals("anothertest", 123);
     for (int i = 0; i < 20; i++) {
-        query1 = query1.variableValueEquals("anothertest", i);
+      query1 = query1.variableValueEquals("anothertest", i);
     }
     query1 = query1.endOr();
     assertNull(query0.singleResult());
@@ -202,24 +183,24 @@ public class ProcessInstanceAndVariablesQueryTest extends PluggableActivitiTestC
 
     ProcessInstanceQuery query2 = runtimeService.createProcessInstanceQuery().includeProcessVariables().or();
     for (int i = 0; i < 20; i++) {
-        query2 = query2.variableValueEquals("anothertest", i);
+      query2 = query2.variableValueEquals("anothertest", i);
     }
     query2 = query2.endOr()
-        .or()
-        .processDefinitionKey(PROCESS_DEFINITION_KEY_2)
-        .processDefinitionId("undefined")
-        .endOr();
+            .or()
+            .processDefinitionKey(PROCESS_DEFINITION_KEY_2)
+            .processDefinitionId("undefined")
+            .endOr();
     assertNull(query2.singleResult());
 
     ProcessInstanceQuery query3 = runtimeService.createProcessInstanceQuery().includeProcessVariables().or().variableValueEquals("anothertest", 123);
     for (int i = 0; i < 20; i++) {
-        query3 = query3.variableValueEquals("anothertest", i);
+      query3 = query3.variableValueEquals("anothertest", i);
     }
     query3 = query3.endOr()
-        .or()
-        .processDefinitionKey(PROCESS_DEFINITION_KEY_2)
-        .processDefinitionId("undefined")
-        .endOr();
+            .or()
+            .processDefinitionKey(PROCESS_DEFINITION_KEY_2)
+            .processDefinitionId("undefined")
+            .endOr();
     variableMap = query3.singleResult().getProcessVariables();
     assertEquals(1, variableMap.size());
     assertEquals(123, variableMap.get("anothertest"));

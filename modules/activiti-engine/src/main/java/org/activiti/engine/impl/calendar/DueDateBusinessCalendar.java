@@ -19,7 +19,6 @@ import org.activiti.engine.runtime.ClockReader;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 
-
 public class DueDateBusinessCalendar extends BusinessCalendarImpl {
 
   public static final String NAME = "dueDate";

@@ -14,54 +14,19 @@
 package org.activiti.engine.impl.persistence.entity;
 
 import org.activiti.engine.history.HistoricFormProperty;
-import org.activiti.engine.impl.context.Context;
 
 /**
  * @author Tom Baeyens
+ * @author Joram Barrez
  */
-public class HistoricFormPropertyEntity extends HistoricDetailEntity implements HistoricFormProperty {
+public interface HistoricFormPropertyEntity extends HistoricDetailEntity, HistoricFormProperty {
 
-  private static final long serialVersionUID = 1L;
-  
-  protected String propertyId;
-  protected String propertyValue;
-  
-  public HistoricFormPropertyEntity() {
-    this.detailType = "FormProperty";
-  }
+  String getPropertyId();
 
-  public HistoricFormPropertyEntity(ExecutionEntity execution, String propertyId, String propertyValue) {
-    this(execution, propertyId, propertyValue, null);
-  }
-  
-  public HistoricFormPropertyEntity(ExecutionEntity execution, String propertyId, String propertyValue, String taskId) {
-    this.processInstanceId = execution.getProcessInstanceId();
-    this.executionId = execution.getId();
-    this.taskId = taskId;
-    this.propertyId = propertyId;
-    this.propertyValue = propertyValue;
-    this.time = Context.getProcessEngineConfiguration().getClock().getCurrentTime();
-    this.detailType = "FormProperty";
+  void setPropertyId(String propertyId);
 
-    HistoricActivityInstanceEntity historicActivityInstance = Context.getCommandContext().getHistoryManager().findActivityInstance(execution);
-    if (historicActivityInstance!=null) {
-      this.activityInstanceId = historicActivityInstance.getId();
-    }
-  }
+  String getPropertyValue();
 
-  public String getPropertyId() {
-    return propertyId;
-  }
-  
-  public void setPropertyId(String propertyId) {
-    this.propertyId = propertyId;
-  }
-  
-  public String getPropertyValue() {
-    return propertyValue;
-  }
-  
-  public void setPropertyValue(String propertyValue) {
-    this.propertyValue = propertyValue;
-  }
+  void setPropertyValue(String propertyValue);
+    
 }

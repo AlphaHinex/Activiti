@@ -2,11 +2,11 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
   
-<mapper namespace="org.activiti.engine.impl.persistence.entity.ProcessDefinitionInfoEntity">
+<mapper namespace="org.activiti.engine.impl.persistence.entity.ProcessDefinitionInfoEntityImpl">
 
   <!-- ProcessDefinitionInfo INSERT -->
   
-  <insert id="insertProcessDefinitionInfo" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionInfoEntity">
+  <insert id="insertProcessDefinitionInfo" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionInfoEntityImpl">
     insert into ${prefix}ACT_PROCDEF_INFO(ID_, PROC_DEF_ID_, REV_, INFO_JSON_ID_)
     values(#{id, jdbcType=VARCHAR}, 
            #{processDefinitionId, jdbcType=VARCHAR},
@@ -25,7 +25,7 @@
      </foreach>
   </insert>
 
-  <insert id="bulkInsertProcessDefinitionInfo_oracle" parameterType="java.util.List">
+  <insert id="bulkInsertProcessDefinitionInfo" databaseId="oracle" parameterType="java.util.List">
     INSERT ALL 
       <foreach collection="list" item="processDefinitionInfo" index="index"> 
         INTO ${prefix}ACT_PROCDEF_INFO(ID_, PROC_DEF_ID_, REV_, INFO_JSON_ID_) VALUES 
@@ -38,7 +38,7 @@
   </insert>
 
   <!-- ProcessDefinitionInfo UPDATE -->
-  <update id="updateProcessDefinitionInfo" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionInfoEntity">
+  <update id="updateProcessDefinitionInfo" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionInfoEntityImpl">
     update ${prefix}ACT_PROCDEF_INFO set
       REV_ = #{revisionNext, jdbcType=INTEGER},
       INFO_JSON_ID_ = #{infoJsonId, jdbcType=VARCHAR}
@@ -48,13 +48,13 @@
   
   <!-- ProcessDefinitionInfo DELETE -->
   
-  <delete id="deleteProcessDefinitionInfo" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionInfoEntity">
+  <delete id="deleteProcessDefinitionInfo" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionInfoEntityImpl">
     delete from ${prefix}ACT_PROCDEF_INFO where ID_ = #{id} and REV_ = #{revision}
   </delete>
 
   <!-- MODEL RESULTMAP -->
   
-  <resultMap id="processDefinitionInfoResultMap" type="org.activiti.engine.impl.persistence.entity.ProcessDefinitionInfoEntity">
+  <resultMap id="processDefinitionInfoResultMap" type="org.activiti.engine.impl.persistence.entity.ProcessDefinitionInfoEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="processDefinitionId" column="PROC_DEF_ID_" jdbcType="VARCHAR" />
     <result property="revision" column="REV_" jdbcType="INTEGER"/>

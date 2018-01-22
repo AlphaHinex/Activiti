@@ -29,10 +29,9 @@ import org.activiti.engine.delegate.event.impl.ActivitiEventBuilder;
 import org.activiti.engine.impl.asyncexecutor.AsyncExecutor;
 import org.activiti.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.activiti.engine.impl.cfg.TransactionContextFactory;
-import org.activiti.engine.impl.el.ExpressionManager;
 import org.activiti.engine.impl.interceptor.CommandExecutor;
 import org.activiti.engine.impl.interceptor.SessionFactory;
-import org.activiti.engine.impl.jobexecutor.JobExecutor;
+import org.activiti.form.api.FormRepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,11 +51,11 @@ public class ProcessEngineImpl implements ProcessEngine {
   protected FormService formService;
   protected ManagementService managementService;
   protected DynamicBpmnService dynamicBpmnService;
-  protected JobExecutor jobExecutor;
+  protected FormRepositoryService formEngineRepositoryService;
+  protected org.activiti.form.api.FormService formEngineFormService;
   protected AsyncExecutor asyncExecutor;
   protected CommandExecutor commandExecutor;
   protected Map<Class<?>, SessionFactory> sessionFactories;
-  protected ExpressionManager expressionManager;
   protected TransactionContextFactory transactionContextFactory;
   protected ProcessEngineConfigurationImpl processEngineConfiguration;
 
@@ -71,59 +70,53 @@ public class ProcessEngineImpl implements ProcessEngine {
     this.formService = processEngineConfiguration.getFormService();
     this.managementService = processEngineConfiguration.getManagementService();
     this.dynamicBpmnService = processEngineConfiguration.getDynamicBpmnService();
-    this.jobExecutor = processEngineConfiguration.getJobExecutor();
     this.asyncExecutor = processEngineConfiguration.getAsyncExecutor();
     this.commandExecutor = processEngineConfiguration.getCommandExecutor();
     this.sessionFactories = processEngineConfiguration.getSessionFactories();
     this.transactionContextFactory = processEngineConfiguration.getTransactionContextFactory();
-    
-    commandExecutor.execute(processEngineConfiguration.getSchemaCommandConfig(), new SchemaOperationsProcessEngineBuild());
+    this.formEngineRepositoryService = processEngineConfiguration.getFormEngineRepositoryService();
+    this.formEngineFormService = processEngineConfiguration.getFormEngineFormService();
+
+    if (processEngineConfiguration.isUsingRelationalDatabase() && processEngineConfiguration.getDatabaseSchemaUpdate() != null) {
+      commandExecutor.execute(processEngineConfiguration.getSchemaCommandConfig(), new SchemaOperationsProcessEngineBuild());
+    }
 
     if (name == null) {
       log.info("default activiti ProcessEngine created");
     } else {
       log.info("ProcessEngine {} created", name);
     }
-    
+
     ProcessEngines.registerProcessEngine(this);
 
-    if (jobExecutor != null && jobExecutor.isAutoActivate()) {
-      jobExecutor.start();
-    }
-    
     if (asyncExecutor != null && asyncExecutor.isAutoActivate()) {
       asyncExecutor.start();
     }
-     
+
     if (processEngineConfiguration.getProcessEngineLifecycleListener() != null) {
       processEngineConfiguration.getProcessEngineLifecycleListener().onProcessEngineBuilt(this);
     }
-    
-    processEngineConfiguration.getEventDispatcher().dispatchEvent(
-    		ActivitiEventBuilder.createGlobalEvent(ActivitiEventType.ENGINE_CREATED));
+
+    processEngineConfiguration.getEventDispatcher().dispatchEvent(ActivitiEventBuilder.createGlobalEvent(ActivitiEventType.ENGINE_CREATED));
   }
-  
+
   public void close() {
     ProcessEngines.unregister(this);
-    if (jobExecutor != null && jobExecutor.isActive()) {
-      jobExecutor.shutdown();
-    }
-    
     if (asyncExecutor != null && asyncExecutor.isActive()) {
       asyncExecutor.shutdown();
     }
 
     commandExecutor.execute(processEngineConfiguration.getSchemaCommandConfig(), new SchemaOperationProcessEngineClose());
-    
+
     if (processEngineConfiguration.getProcessEngineLifecycleListener() != null) {
       processEngineConfiguration.getProcessEngineLifecycleListener().onProcessEngineClosed(this);
     }
     
-    processEngineConfiguration.getEventDispatcher().dispatchEvent(
-    		ActivitiEventBuilder.createGlobalEvent(ActivitiEventType.ENGINE_CLOSED));
+    processEngineConfiguration.getEventDispatcher().dispatchEvent(ActivitiEventBuilder.createGlobalEvent(ActivitiEventType.ENGINE_CLOSED));
   }
 
-  // getters and setters //////////////////////////////////////////////////////
+  // getters and setters
+  // //////////////////////////////////////////////////////
 
   public String getName() {
     return name;
@@ -148,11 +141,11 @@ public class ProcessEngineImpl implements ProcessEngine {
   public RuntimeService getRuntimeService() {
     return runtimeService;
   }
-  
+
   public RepositoryService getRepositoryService() {
     return repositoryService;
   }
-  
+
   public FormService getFormService() {
     return formService;
   }
@@ -163,5 +156,13 @@ public class ProcessEngineImpl implements ProcessEngine {
 
   public ProcessEngineConfigurationImpl getProcessEngineConfiguration() {
     return processEngineConfiguration;
+  }
+  
+  public FormRepositoryService getFormEngineRepositoryService() {
+    return formEngineRepositoryService;
+  }
+  
+  public org.activiti.form.api.FormService getFormEngineFormService() {
+    return formEngineFormService;
   }
 }

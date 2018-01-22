@@ -13,6 +13,7 @@
 package org.activiti.standalone.escapeclause;
 
 import org.activiti.engine.runtime.JobQuery;
+import org.activiti.engine.runtime.TimerJobQuery;
 
 public class JobQueryEscapeClauseTest extends AbstractEscapeClauseTestCase {
 
@@ -57,17 +58,17 @@ public class JobQueryEscapeClauseTest extends AbstractEscapeClauseTestCase {
   }
 
   public void testQueryByTenantIdLike() {
-    JobQuery query = managementService.createJobQuery().jobTenantIdLike("%\\%%");
+    TimerJobQuery query = managementService.createTimerJobQuery().jobTenantIdLike("%\\%%");
     assertEquals("tenant%", query.singleResult().getTenantId());
     assertEquals(1, query.list().size());
     assertEquals(1, query.count());
 
-    query = managementService.createJobQuery().jobTenantIdLike("%\\_%");
+    query = managementService.createTimerJobQuery().jobTenantIdLike("%\\_%");
     assertEquals("tenant_", query.singleResult().getTenantId());
     assertEquals(1, query.list().size());
     assertEquals(1, query.count());
 
-    query = managementService.createJobQuery().jobTenantIdLike("%test%");
+    query = managementService.createTimerJobQuery().jobTenantIdLike("%test%");
     assertEquals("test", query.singleResult().getTenantId());
     assertEquals(1, query.list().size());
     assertEquals(1, query.count());

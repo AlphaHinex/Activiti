@@ -13,6 +13,13 @@
 
 package org.activiti.rest.service.api.runtime.task;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,27 +35,36 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-
 /**
  * @author Frederik Heremans
  */
 @RestController
+@Api(tags = { "Tasks" }, description = "Manage Tasks", authorizations = { @Authorization(value = "basicAuth") })
 public class TaskIdentityLinkFamilyResource extends TaskBaseResource {
 
-  @RequestMapping(value="/runtime/tasks/{taskId}/identitylinks/{family}", method = RequestMethod.GET, produces="application/json")
-  public List<RestIdentityLink> getIdentityLinksForFamily(@PathVariable("taskId") String taskId, 
-      @PathVariable("family") String family, HttpServletRequest request) {
-    
+
+  @ApiOperation(value = "Get all identitylinks for a task for either groups or users", tags = {"Tasks"},
+      notes="## Get all identitylinks for a task URL\n\n"
+          + " ```\n GET runtime/tasks/{taskId}/identitylinks/users\n" + "GET runtime/tasks/{taskId}/identitylinks/groups  ```"
+          + "\n\n\n"
+          + "Returns only identity links targetting either users or groups. Response body and status-codes are exactly the same as when getting the full list of identity links for a task."
+      )
+  @ApiResponses(value = {
+      @ApiResponse(code = 200, message =  "Indicates the task was found and the requested identity links are returned."),
+      @ApiResponse(code = 404, message = "Indicates the requested task was not found.")
+  })
+  @RequestMapping(value = "/runtime/tasks/{taskId}/identitylinks/{family}", method = RequestMethod.GET, produces = "application/json")
+  public List<RestIdentityLink> getIdentityLinksForFamily(@ApiParam(name="taskId") @PathVariable("taskId") String taskId,@ApiParam(name="family") @PathVariable("family") String family, HttpServletRequest request) {
+
     Task task = getTaskFromRequest(taskId);
 
-    if (family == null || (!RestUrls.SEGMENT_IDENTITYLINKS_FAMILY_GROUPS.equals(family)
-            && !RestUrls.SEGMENT_IDENTITYLINKS_FAMILY_USERS.equals(family))) {
+    if (family == null || (!RestUrls.SEGMENT_IDENTITYLINKS_FAMILY_GROUPS.equals(family) && !RestUrls.SEGMENT_IDENTITYLINKS_FAMILY_USERS.equals(family))) {
       throw new ActivitiIllegalArgumentException("Identity link family should be 'users' or 'groups'.");
     }
-    
+
     boolean isUser = family.equals(RestUrls.SEGMENT_IDENTITYLINKS_FAMILY_USERS);
     List<RestIdentityLink> results = new ArrayList<RestIdentityLink>();
-    
+
     List<IdentityLink> allLinks = taskService.getIdentityLinksForTask(task.getId());
     for (IdentityLink link : allLinks) {
       boolean match = false;
@@ -57,7 +73,7 @@ public class TaskIdentityLinkFamilyResource extends TaskBaseResource {
       } else {
         match = link.getGroupId() != null;
       }
-      
+
       if (match) {
         results.add(restResponseFactory.createRestIdentityLink(link));
       }

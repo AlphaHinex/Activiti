@@ -2,12 +2,12 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
   
-<mapper namespace="org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity">
+<mapper namespace="org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntityImpl">
   
   <!-- PROCESSDEFINITION INSERT -->
 
-  <insert id="insertProcessDefinition" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity">
-    insert into ${prefix}ACT_RE_PROCDEF(ID_, REV_, CATEGORY_, NAME_, KEY_, VERSION_, DEPLOYMENT_ID_, RESOURCE_NAME_, DGRM_RESOURCE_NAME_, DESCRIPTION_, HAS_START_FORM_KEY_, HAS_GRAPHICAL_NOTATION_ , SUSPENSION_STATE_, TENANT_ID_)
+  <insert id="insertProcessDefinition" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntityImpl">
+    insert into ${prefix}ACT_RE_PROCDEF(ID_, REV_, CATEGORY_, NAME_, KEY_, VERSION_, DEPLOYMENT_ID_, RESOURCE_NAME_, DGRM_RESOURCE_NAME_, DESCRIPTION_, HAS_START_FORM_KEY_, HAS_GRAPHICAL_NOTATION_ , SUSPENSION_STATE_, TENANT_ID_, ENGINE_VERSION_)
     values (#{id, jdbcType=VARCHAR},
     		1,
             #{category, jdbcType=VARCHAR},
@@ -21,11 +21,12 @@
             #{hasStartFormKey, jdbcType=BOOLEAN},
             #{isGraphicalNotationDefined, jdbcType=BOOLEAN},
             #{suspensionState, jdbcType=INTEGER},
-            #{tenantId, jdbcType=VARCHAR})
+            #{tenantId, jdbcType=VARCHAR},
+            #{engineVersion, jdbcType=VARCHAR})
   </insert>
 
   <insert id="bulkInsertProcessDefinition" parameterType="java.util.List">
-    INSERT INTO ${prefix}ACT_RE_PROCDEF(ID_, REV_, CATEGORY_, NAME_, KEY_, VERSION_, DEPLOYMENT_ID_, RESOURCE_NAME_, DGRM_RESOURCE_NAME_, DESCRIPTION_, HAS_START_FORM_KEY_, HAS_GRAPHICAL_NOTATION_ , SUSPENSION_STATE_, TENANT_ID_)
+    INSERT INTO ${prefix}ACT_RE_PROCDEF(ID_, REV_, CATEGORY_, NAME_, KEY_, VERSION_, DEPLOYMENT_ID_, RESOURCE_NAME_, DGRM_RESOURCE_NAME_, DESCRIPTION_, HAS_START_FORM_KEY_, HAS_GRAPHICAL_NOTATION_ , SUSPENSION_STATE_, TENANT_ID_, ENGINE_VERSION_)
     VALUES 
       <foreach collection="list" item="processDefinition" index="index" separator=","> 
         (#{processDefinition.id, jdbcType=VARCHAR},
@@ -41,15 +42,16 @@
          #{processDefinition.hasStartFormKey, jdbcType=BOOLEAN},
          #{processDefinition.isGraphicalNotationDefined, jdbcType=BOOLEAN},
          #{processDefinition.suspensionState, jdbcType=INTEGER},
-         #{processDefinition.tenantId, jdbcType=VARCHAR})
+         #{processDefinition.tenantId, jdbcType=VARCHAR},
+         #{processDefinition.engineVersion, jdbcType=VARCHAR})
     </foreach>
   </insert>
 
-  <insert id="bulkInsertProcessDefinition_oracle" parameterType="java.util.List">
+  <insert id="bulkInsertProcessDefinition" databaseId="oracle" parameterType="java.util.List">
     INSERT ALL 
     <foreach collection="list" item="processDefinition" index="index"> 
       INTO ${prefix}ACT_RE_PROCDEF(ID_, REV_, CATEGORY_, NAME_, KEY_, VERSION_, DEPLOYMENT_ID_, RESOURCE_NAME_,
-      DGRM_RESOURCE_NAME_, DESCRIPTION_, HAS_START_FORM_KEY_, HAS_GRAPHICAL_NOTATION_ , SUSPENSION_STATE_, TENANT_ID_) VALUES 
+      DGRM_RESOURCE_NAME_, DESCRIPTION_, HAS_START_FORM_KEY_, HAS_GRAPHICAL_NOTATION_ , SUSPENSION_STATE_, TENANT_ID_, ENGINE_VERSION_) VALUES 
         (#{processDefinition.id, jdbcType=VARCHAR},
          1,
          #{processDefinition.category, jdbcType=VARCHAR},
@@ -63,14 +65,15 @@
          #{processDefinition.hasStartFormKey, jdbcType=BOOLEAN},
          #{processDefinition.isGraphicalNotationDefined, jdbcType=BOOLEAN},
          #{processDefinition.suspensionState, jdbcType=INTEGER},
-         #{processDefinition.tenantId, jdbcType=VARCHAR})
+         #{processDefinition.tenantId, jdbcType=VARCHAR},
+         #{processDefinition.engineVersion, jdbcType=VARCHAR})
     </foreach>
     SELECT * FROM dual
   </insert>
   
   <!-- PROCESSDEFINITION UPDATE -->
 
-  <update id="updateProcessDefinition" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity">
+  <update id="updateProcessDefinition" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntityImpl">
     update ${prefix}ACT_RE_PROCDEF set
       REV_ = #{revisionNext, jdbcType=INTEGER},    
       SUSPENSION_STATE_ = #{suspensionState, jdbcType=INTEGER},
@@ -88,13 +91,17 @@
 
   <!-- PROCESSDEFINITION DELETE -->
 
+    <delete id="deleteProcessDefinition" parameterType="org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntityImpl">
+        delete from ${prefix}ACT_RE_PROCDEF where ID_ = #{id} and REV_ = #{revision}
+    </delete>
+
   <delete id="deleteProcessDefinitionsByDeploymentId" parameterType="string">
     delete from ${prefix}ACT_RE_PROCDEF where DEPLOYMENT_ID_ = #{deploymenId} 
   </delete>
   
   <!-- PROCESSDEFINITION RESULTMAP -->
 
-  <resultMap id="processDefinitionResultMap" type="org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity">
+  <resultMap id="processDefinitionResultMap" type="org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="revision" column="REV_" />
     <result property="category" column="CATEGORY_" />
@@ -109,12 +116,13 @@
     <result property="hasStartFormKey" column="HAS_START_FORM_KEY_" jdbcType="BOOLEAN"/>
     <result property="isGraphicalNotationDefined" column="HAS_GRAPHICAL_NOTATION_" jdbcType="BOOLEAN" />
     <result property="suspensionState" column="SUSPENSION_STATE_" jdbcType="INTEGER"/>
+    <result property="engineVersion" column="ENGINE_VERSION_" jdbcType="VARCHAR" />
   </resultMap>
 
   <!-- PROCESSDEFINITION SELECT -->
 
   <select id="selectProcessDefinition" parameterType="string" resultMap="processDefinitionResultMap">
-    select * from ${prefix}ACT_RE_PROCDEF where ID_ = #{processDefinitionId}
+    select * from ${prefix}ACT_RE_PROCDEF where ID_ = #{processDefinitionId, jdbcType=VARCHAR}
   </select>
 
   <select id="selectProcessDefinitionById" parameterType="string" resultMap="processDefinitionResultMap">
@@ -261,6 +269,19 @@
       and KEY_ = #{processDefinitionKey}
       and TENANT_ID_ = #{tenantId}
   </select>
+  
+  <select id="selectProcessDefinitionsByKeyAndVersion" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="processDefinitionResultMap">
+    select *
+    from ${prefix}ACT_RE_PROCDEF 
+    where KEY_ = #{parameter.processDefinitionKey} and VERSION_ = #{parameter.processDefinitionVersion} and (TENANT_ID_ = '' or TENANT_ID_ is null)
+  </select>
+    
+  
+   <select id="selectProcessDefinitionsByKeyAndVersionAndTenantId" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="processDefinitionResultMap">
+    select *
+    from ${prefix}ACT_RE_PROCDEF 
+    where KEY_ = #{parameter.processDefinitionKey} and VERSION_ = #{parameter.processDefinitionVersion} and TENANT_ID_ = #{parameter.tenantId}
+  </select>
     
   <select id="selectLatestProcessDefinitionByKey" parameterType="string" resultMap="processDefinitionResultMap">
     select *
@@ -279,7 +300,7 @@
   </select>
   
   <!-- mysql specific sql -->
-  <select id="selectProcessDefinitionsByQueryCriteria_mysql" parameterType="org.activiti.engine.impl.ProcessDefinitionQueryImpl" resultMap="processDefinitionResultMap">
+  <select id="selectProcessDefinitionsByQueryCriteria" databaseId="mysql" parameterType="org.activiti.engine.impl.ProcessDefinitionQueryImpl" resultMap="processDefinitionResultMap">
   	${limitBefore}
     select distinct RES.* ${limitBetween}
     <include refid="selectProcessDefinitionsByQueryCriteriaSql"/>
@@ -288,29 +309,13 @@
   </select>
 
   <!-- mysql specific sql -->
-  <select id="selectProcessDefinitionCountByQueryCriteria_mysql" parameterType="org.activiti.engine.impl.ProcessDefinitionQueryImpl" resultType="long">
+  <select id="selectProcessDefinitionCountByQueryCriteria" databaseId="mysql" parameterType="org.activiti.engine.impl.ProcessDefinitionQueryImpl" resultType="long">
     select distinct count(RES.ID_)
     <include refid="selectProcessDefinitionsByQueryCriteriaSql"/>
   </select>
 
   <select id="selectProcessDefinitionByNativeQuery" parameterType="java.util.Map" resultMap="processDefinitionResultMap">
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitBefore}
-    </if>
-    ${sql}
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitAfter}
-    </if>
-  </select>
-
-  <select id="selectProcessDefinitionByNativeQuery_mssql_or_db2" parameterType="java.util.Map" resultMap="processDefinitionResultMap">
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitBeforeNativeQuery}
-    </if>
-    ${sql}
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitAfter}
-    </if>
+    <include refid="org.activiti.engine.db.common.selectByNativeQuery"/>
   </select>
 
   <select id="selectProcessDefinitionCountByNativeQuery" parameterType="java.util.Map" resultType="long">

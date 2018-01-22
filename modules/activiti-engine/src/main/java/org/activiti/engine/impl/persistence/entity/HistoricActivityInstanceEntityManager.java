@@ -10,58 +10,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.activiti.engine.impl.persistence.entity;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.activiti.engine.history.HistoricActivityInstance;
 import org.activiti.engine.impl.HistoricActivityInstanceQueryImpl;
 import org.activiti.engine.impl.Page;
-import org.activiti.engine.impl.history.HistoryLevel;
-import org.activiti.engine.impl.persistence.AbstractManager;
-
 
 /**
- * @author Tom Baeyens
+ * @author Joram Barrez
  */
-public class HistoricActivityInstanceEntityManager extends AbstractManager {
-
-  public void deleteHistoricActivityInstancesByProcessInstanceId(String historicProcessInstanceId) {
-    if (getHistoryManager().isHistoryLevelAtLeast(HistoryLevel.ACTIVITY)) {
-      getDbSqlSession().delete("deleteHistoricActivityInstancesByProcessInstanceId", historicProcessInstanceId);
-    }
-  }
+public interface HistoricActivityInstanceEntityManager extends EntityManager<HistoricActivityInstanceEntity> {
   
-  public void insertHistoricActivityInstance(HistoricActivityInstanceEntity historicActivityInstance) {
-    getDbSqlSession().insert(historicActivityInstance);
-  }
-
-  public HistoricActivityInstanceEntity findHistoricActivityInstance(String activityId, String processInstanceId) {
-    Map<String, String> parameters = new HashMap<String, String>();
-    parameters.put("activityId", activityId);
-    parameters.put("processInstanceId", processInstanceId);
+  List<HistoricActivityInstanceEntity> findUnfinishedHistoricActivityInstancesByExecutionAndActivityId(String executionId, String activityId);
   
-    return (HistoricActivityInstanceEntity) getDbSqlSession().selectOne("selectHistoricActivityInstance", parameters);
-  }
+  List<HistoricActivityInstanceEntity> findUnfinishedHistoricActivityInstancesByProcessInstanceId(String processInstanceId);
 
-  public long findHistoricActivityInstanceCountByQueryCriteria(HistoricActivityInstanceQueryImpl historicActivityInstanceQuery) {
-    return (Long) getDbSqlSession().selectOne("selectHistoricActivityInstanceCountByQueryCriteria", historicActivityInstanceQuery);
-  }
+  long findHistoricActivityInstanceCountByQueryCriteria(HistoricActivityInstanceQueryImpl historicActivityInstanceQuery);
+  
+  List<HistoricActivityInstance> findHistoricActivityInstancesByQueryCriteria(HistoricActivityInstanceQueryImpl historicActivityInstanceQuery, Page page);
 
-  @SuppressWarnings("unchecked")
-  public List<HistoricActivityInstance> findHistoricActivityInstancesByQueryCriteria(HistoricActivityInstanceQueryImpl historicActivityInstanceQuery, Page page) {
-    return getDbSqlSession().selectList("selectHistoricActivityInstancesByQueryCriteria", historicActivityInstanceQuery, page);
-  }
+  List<HistoricActivityInstance> findHistoricActivityInstancesByNativeQuery(Map<String, Object> parameterMap, int firstResult, int maxResults);
+  
+  long findHistoricActivityInstanceCountByNativeQuery(Map<String, Object> parameterMap);
+  
+  void deleteHistoricActivityInstancesByProcessInstanceId(String historicProcessInstanceId);
 
-  @SuppressWarnings("unchecked")
-  public List<HistoricActivityInstance> findHistoricActivityInstancesByNativeQuery(Map<String, Object> parameterMap, int firstResult, int maxResults) {
-    return getDbSqlSession().selectListWithRawParameter("selectHistoricActivityInstanceByNativeQuery", parameterMap, firstResult, maxResults);
-  }
-
-  public long findHistoricActivityInstanceCountByNativeQuery(Map<String, Object> parameterMap) {
-    return (Long) getDbSqlSession().selectOne("selectHistoricActivityInstanceCountByNativeQuery", parameterMap);
-  }
 }

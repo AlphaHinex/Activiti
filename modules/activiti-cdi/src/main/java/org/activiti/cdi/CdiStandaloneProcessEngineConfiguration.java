@@ -12,6 +12,7 @@
  */
 package org.activiti.cdi;
 
+import org.activiti.cdi.impl.CdiCommandInvoker;
 import org.activiti.engine.impl.cfg.StandaloneProcessEngineConfiguration;
 
 /**
@@ -20,8 +21,15 @@ import org.activiti.engine.impl.cfg.StandaloneProcessEngineConfiguration;
 public class CdiStandaloneProcessEngineConfiguration extends StandaloneProcessEngineConfiguration {
 
   @Override
-  protected void initExpressionManager() {
+  public void initExpressionManager() {
     expressionManager = new CdiExpressionManager();
+  }
+  
+  @Override
+  public void initCommandInvoker() {
+    if (commandInvoker == null) {
+      commandInvoker = new CdiCommandInvoker();
+    }
   }
 
 }

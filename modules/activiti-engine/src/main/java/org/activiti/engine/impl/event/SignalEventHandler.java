@@ -15,67 +15,65 @@ package org.activiti.engine.impl.event;
 
 import java.util.Map;
 
+import org.activiti.bpmn.model.FlowElement;
 import org.activiti.engine.ActivitiException;
 import org.activiti.engine.ActivitiObjectNotFoundException;
-import org.activiti.engine.impl.context.Context;
 import org.activiti.engine.impl.interceptor.CommandContext;
-import org.activiti.engine.impl.persistence.deploy.DeploymentManager;
 import org.activiti.engine.impl.persistence.entity.EventSubscriptionEntity;
-import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
-import org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity;
-import org.activiti.engine.impl.pvm.process.ActivityImpl;
+import org.activiti.engine.impl.util.ProcessDefinitionUtil;
+import org.activiti.engine.impl.util.ProcessInstanceHelper;
 import org.activiti.engine.repository.ProcessDefinition;
-
-
 
 /**
  * @author Daniel Meyer
  * @author Joram Barrez
  */
 public class SignalEventHandler extends AbstractEventHandler {
-  
+
   public static final String EVENT_HANDLER_TYPE = "signal";
 
   public String getEventHandlerType() {
     return EVENT_HANDLER_TYPE;
   }
-  
+
+  @SuppressWarnings("unchecked")
   @Override
   public void handleEvent(EventSubscriptionEntity eventSubscription, Object payload, CommandContext commandContext) {
-  	if (eventSubscription.getExecutionId() != null) {
-  		super.handleEvent(eventSubscription, payload, commandContext);
-  	} else if (eventSubscription.getProcessDefinitionId() != null) {
-  		// Start event
-  		String processDefinitionId = eventSubscription.getProcessDefinitionId();
-  		DeploymentManager deploymentCache = Context
-           .getProcessEngineConfiguration()
-           .getDeploymentManager();
-         
-  		ProcessDefinitionEntity processDefinition = deploymentCache.findDeployedProcessDefinitionById(processDefinitionId);
-  		if (processDefinition == null) {
-  			throw new ActivitiObjectNotFoundException("No process definition found for id '" + processDefinitionId + "'", ProcessDefinition.class);
-  		}
- 
-  		ActivityImpl startActivity = processDefinition.findActivity(eventSubscription.getActivityId());
-  		if (startActivity == null) {
-  			throw new ActivitiException("Could no handle signal: no start activity found with id " + eventSubscription.getActivityId());
-  		}
-  		ExecutionEntity processInstance = processDefinition.createProcessInstance(null, startActivity);
-  		if (processInstance == null) {
-  			throw new ActivitiException("Could not handle signal: no process instance started");
-  		}
-  		
-  		if (payload != null) {
-  			if (payload instanceof Map) {
-  				Map<String, Object> variables = (Map<String, Object>) payload;
-  				processInstance.setVariables(variables);
-  			}
-  		}
-  		
-  		processInstance.start();
-  	} else {
-  		throw new ActivitiException("Invalid signal handling: no execution nor process definition set");
-  	}
+    if (eventSubscription.getExecutionId() != null) {
+      
+      super.handleEvent(eventSubscription, payload, commandContext);
+
+    } else if (eventSubscription.getProcessDefinitionId() != null) {
+      
+      // Find initial flow element matching the signal start event
+      String processDefinitionId = eventSubscription.getProcessDefinitionId();
+      ProcessDefinition processDefinition = ProcessDefinitionUtil.getProcessDefinition(processDefinitionId);
+      
+      if (processDefinition == null) {
+        throw new ActivitiObjectNotFoundException("No process definition found for id '" + processDefinitionId + "'", ProcessDefinition.class);
+      }
+      
+      if (processDefinition.isSuspended()) {
+        throw new ActivitiException("Could not handle signal: process definition with id: " + processDefinitionId + " is suspended");
+      }
+      
+      org.activiti.bpmn.model.Process process = ProcessDefinitionUtil.getProcess(processDefinitionId);
+      FlowElement flowElement = process.getFlowElement(eventSubscription.getActivityId(), true);
+      if (flowElement == null) {
+        throw new ActivitiException("Could not find matching FlowElement for activityId " + eventSubscription.getActivityId());
+      }
+      
+      // Start process instance via that flow element
+      Map<String, Object> variables = null;
+      if (payload instanceof Map) {
+        variables = (Map<String, Object>) payload;
+      }
+      ProcessInstanceHelper processInstanceHelper = commandContext.getProcessEngineConfiguration().getProcessInstanceHelper();
+      processInstanceHelper.createAndStartProcessInstanceWithInitialFlowElement(processDefinition, null, null, flowElement, process, variables, null, true);
+      
+    } else {
+      throw new ActivitiException("Invalid signal handling: no execution nor process definition set");
+    }
   }
 
 }

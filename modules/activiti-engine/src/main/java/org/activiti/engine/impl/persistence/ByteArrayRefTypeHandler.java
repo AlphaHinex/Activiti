@@ -29,7 +29,7 @@ public class ByteArrayRefTypeHandler extends TypeReference<ByteArrayRef> impleme
     }
     return parameter.getId();
   }
-  
+
   @Override
   public ByteArrayRef getResult(ResultSet rs, String columnName) throws SQLException {
     String id = rs.getString(columnName);

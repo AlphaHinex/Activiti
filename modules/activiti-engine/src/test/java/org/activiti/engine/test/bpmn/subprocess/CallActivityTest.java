@@ -40,7 +40,7 @@ public class CallActivityTest extends ResourceActivitiTestCase {
   private static String INHERIT_VARIABLES_MAIN_PROCESS_RESOURCE = "org/activiti/engine/test/bpmn/subprocess/SubProcessTest.testInheritVariablesCallActivity_mainProcess.bpmn20.xml";
   private static String INHERIT_VARIABLES_CHILD_PROCESS_RESOURCE = "org/activiti/engine/test/bpmn/subprocess/SubProcessTest.testInheritVariablesCallActivity_childProcess.bpmn20.xml";
   private static String NOT_INHERIT_VARIABLES_MAIN_PROCESS_RESOURCE = "org/activiti/engine/test/bpmn/subprocess/SubProcessTest.testNotInheritVariablesCallActivity_mainProcess.bpmn20.xml";
-
+  
   public CallActivityTest() {
     super("org/activiti/standalone/parsing/encoding.activiti.cfg.xml");
   }
@@ -48,9 +48,7 @@ public class CallActivityTest extends ResourceActivitiTestCase {
   public void testInstantiateProcessByMessage() throws Exception {
     BpmnModel messageTriggeredBpmnModel = loadBPMNModel(MESSAGE_TRIGGERED_PROCESS_RESOURCE);
 
-    Deployment messageTriggeredBpmnDeployment = processEngine.getRepositoryService()
-        .createDeployment()
-        .name("messageTriggeredProcessDeployment")
+    Deployment messageTriggeredBpmnDeployment = processEngine.getRepositoryService().createDeployment().name("messageTriggeredProcessDeployment")
         .addBpmnModel("messageTriggered.bpmn20.xml", messageTriggeredBpmnModel).deploy();
 
     ProcessInstance childProcessInstance = runtimeService.startProcessInstanceByMessage("TRIGGER_PROCESS_MESSAGE");
@@ -60,9 +58,7 @@ public class CallActivityTest extends ResourceActivitiTestCase {
   public void testInstantiateSuspendedProcessByMessage() throws Exception {
     BpmnModel messageTriggeredBpmnModel = loadBPMNModel(MESSAGE_TRIGGERED_PROCESS_RESOURCE);
 
-    Deployment messageTriggeredBpmnDeployment = processEngine.getRepositoryService()
-        .createDeployment()
-        .name("messageTriggeredProcessDeployment")
+    Deployment messageTriggeredBpmnDeployment = processEngine.getRepositoryService().createDeployment().name("messageTriggeredProcessDeployment")
         .addBpmnModel("messageTriggered.bpmn20.xml", messageTriggeredBpmnModel).deploy();
 
     suspendProcessDefinitions(messageTriggeredBpmnDeployment);
@@ -79,10 +75,7 @@ public class CallActivityTest extends ResourceActivitiTestCase {
   public void testInstantiateChildProcess() throws Exception {
     BpmnModel childBpmnModel = loadBPMNModel(CHILD_PROCESS_RESOURCE);
 
-    Deployment childDeployment = processEngine.getRepositoryService()
-        .createDeployment()
-        .name("childProcessDeployment")
-        .addBpmnModel("childProcess.bpmn20.xml", childBpmnModel).deploy();
+    Deployment childDeployment = processEngine.getRepositoryService().createDeployment().name("childProcessDeployment").addBpmnModel("childProcess.bpmn20.xml", childBpmnModel).deploy();
 
     ProcessInstance childProcessInstance = runtimeService.startProcessInstanceByKey("childProcess");
     assertNotNull(childProcessInstance);
@@ -91,10 +84,7 @@ public class CallActivityTest extends ResourceActivitiTestCase {
   public void testInstantiateSuspendedChildProcess() throws Exception {
     BpmnModel childBpmnModel = loadBPMNModel(CHILD_PROCESS_RESOURCE);
 
-    Deployment childDeployment = processEngine.getRepositoryService()
-        .createDeployment()
-        .name("childProcessDeployment")
-        .addBpmnModel("childProcess.bpmn20.xml", childBpmnModel).deploy();
+    Deployment childDeployment = processEngine.getRepositoryService().createDeployment().name("childProcessDeployment").addBpmnModel("childProcess.bpmn20.xml", childBpmnModel).deploy();
 
     suspendProcessDefinitions(childDeployment);
 
@@ -107,20 +97,13 @@ public class CallActivityTest extends ResourceActivitiTestCase {
 
   }
 
-
   public void testInstantiateSubprocess() throws Exception {
     BpmnModel mainBpmnModel = loadBPMNModel(MAIN_PROCESS_RESOURCE);
     BpmnModel childBpmnModel = loadBPMNModel(CHILD_PROCESS_RESOURCE);
 
-    Deployment childDeployment = processEngine.getRepositoryService()
-        .createDeployment()
-        .name("childProcessDeployment")
-        .addBpmnModel("childProcess.bpmn20.xml", childBpmnModel).deploy();
+    Deployment childDeployment = processEngine.getRepositoryService().createDeployment().name("childProcessDeployment").addBpmnModel("childProcess.bpmn20.xml", childBpmnModel).deploy();
 
-    Deployment masterDeployment = processEngine.getRepositoryService()
-        .createDeployment()
-        .name("masterProcessDeployment")
-        .addBpmnModel("masterProcess.bpmn20.xml", mainBpmnModel).deploy();
+    Deployment masterDeployment = processEngine.getRepositoryService().createDeployment().name("masterProcessDeployment").addBpmnModel("masterProcess.bpmn20.xml", mainBpmnModel).deploy();
 
     suspendProcessDefinitions(childDeployment);
 
@@ -132,7 +115,7 @@ public class CallActivityTest extends ResourceActivitiTestCase {
     }
 
   }
-
+  
   public void testInheritVariablesSubprocess() throws Exception {
     BpmnModel mainBpmnModel = loadBPMNModel(INHERIT_VARIABLES_MAIN_PROCESS_RESOURCE);
     BpmnModel childBpmnModel = loadBPMNModel(INHERIT_VARIABLES_CHILD_PROCESS_RESOURCE);
@@ -220,13 +203,11 @@ public class CallActivityTest extends ResourceActivitiTestCase {
     super.tearDown();
   }
 
-
   protected BpmnModel loadBPMNModel(String bpmnModelFilePath) throws Exception {
     InputStream xmlStream = this.getClass().getClassLoader().getResourceAsStream(bpmnModelFilePath);
     StreamSource xmlSource = new InputStreamSource(xmlStream);
     BpmnModel bpmnModel = new BpmnXMLConverter().convertToBpmnModel(xmlSource, false, false, processEngineConfiguration.getXmlEncoding());
     return bpmnModel;
   }
-
 
 }

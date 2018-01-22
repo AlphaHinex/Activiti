@@ -12,11 +12,12 @@
  */
 package org.activiti.engine.impl.cmd;
 
-import org.activiti.engine.impl.interceptor.CommandContext;
-import org.activiti.engine.impl.persistence.entity.TaskEntity;
-
 import java.util.Date;
 
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
+import org.activiti.engine.impl.interceptor.CommandContext;
+import org.activiti.engine.impl.persistence.entity.TaskEntity;
+import org.activiti.engine.impl.util.Activiti5Util;
 
 /**
  * @author Brian Showers
@@ -31,9 +32,17 @@ public class SetTaskDueDateCmd extends NeedsActiveTaskCmd<Void> {
     super(taskId);
     this.dueDate = dueDate;
   }
-  
+
   protected Void execute(CommandContext commandContext, TaskEntity task) {
-    task.setDueDate(dueDate, true);
+    if (Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, task.getProcessDefinitionId())) {
+      Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+      activiti5CompatibilityHandler.setTaskDueDate(taskId, dueDate);
+      return null;
+    }
+    
+    task.setDueDate(dueDate);
+    commandContext.getHistoryManager().recordTaskDueDateChange(task.getId(), task.getDueDate());
+    commandContext.getTaskEntityManager().update(task);
     return null;
   }
 

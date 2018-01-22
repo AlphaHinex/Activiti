@@ -12,20 +12,19 @@
  */
 package org.activiti.engine.impl.el;
 
-import org.activiti.engine.impl.javax.el.ELContext;
-import org.activiti.engine.impl.javax.el.ELResolver;
-import org.activiti.engine.impl.javax.el.FunctionMapper;
-import org.activiti.engine.impl.javax.el.VariableMapper;
-
+import javax.el.ELContext;
+import javax.el.ELResolver;
+import javax.el.FunctionMapper;
+import javax.el.VariableMapper;
 
 /**
  * @author Tom Baeyens
  * @author Joram Barrez
  */
 public class ActivitiElContext extends ELContext {
-  
+
   protected ELResolver elResolver;
-    
+
   public ActivitiElContext(ELResolver elResolver) {
     this.elResolver = elResolver;
   }
@@ -33,11 +32,11 @@ public class ActivitiElContext extends ELContext {
   public ELResolver getELResolver() {
     return elResolver;
   }
-  
+
   public FunctionMapper getFunctionMapper() {
     return new ActivitiFunctionMapper();
   }
-  
+
   public VariableMapper getVariableMapper() {
     return null;
   }

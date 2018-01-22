@@ -10,81 +10,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.activiti.engine.impl.persistence.entity;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import org.activiti.engine.impl.persistence.AbstractManager;
-
+import org.activiti.engine.impl.variable.VariableType;
 
 /**
- * @author Tom Baeyens
  * @author Joram Barrez
- * @author Saeid Mirzaei
  */
-public class VariableInstanceEntityManager extends AbstractManager {
+public interface VariableInstanceEntityManager extends EntityManager<VariableInstanceEntity> {
 
-  @SuppressWarnings("unchecked")
-  public List<VariableInstanceEntity> findVariableInstancesByTaskId(String taskId) {
-    return getDbSqlSession().selectList("selectVariablesByTaskId", taskId);
-  }
+  VariableInstanceEntity create(String name, VariableType type, Object value);
+
+  List<VariableInstanceEntity> findVariableInstancesByTaskId(String taskId);
   
-  @SuppressWarnings("unchecked")
-  public List<VariableInstanceEntity> findVariableInstancesByTaskIds(Set<String> taskIds) {
-    return getDbSqlSession().selectList("selectVariablesByTaskIds", taskIds);
-  }
+  List<VariableInstanceEntity> findVariableInstancesByTaskIds(Set<String> taskIds);
+
+  List<VariableInstanceEntity> findVariableInstancesByExecutionId(String executionId);
   
-  @SuppressWarnings("unchecked")
-  public List<VariableInstanceEntity> findVariableInstancesByExecutionId(String executionId) {
-    return getDbSqlSession().selectList("selectVariablesByExecutionId", executionId);
-  }
-  
-  @SuppressWarnings("unchecked")
-  public List<VariableInstanceEntity> findVariableInstancesByExecutionIds(Set<String> executionIds) {
-    return getDbSqlSession().selectList("selectVariablesByExecutionIds", executionIds);
-  }
-  
-	public VariableInstanceEntity findVariableInstanceByExecutionAndName(String executionId, String variableName) {
-		Map<String, String> params = new HashMap<String, String>(2);
-		params.put("executionId", executionId);
-		params.put("name", variableName);
-		return (VariableInstanceEntity) getDbSqlSession().selectOne("selectVariableInstanceByExecutionAndName", params);
-	}
-	
-	@SuppressWarnings("unchecked")
-  public List<VariableInstanceEntity> findVariableInstancesByExecutionAndNames(String executionId, Collection<String> names) {
-		Map<String, Object> params = new HashMap<String, Object>(2);
-		params.put("executionId", executionId);
-		params.put("names", names);
-		return getDbSqlSession().selectList("selectVariableInstancesByExecutionAndNames", params);
-	}
-	
-	public VariableInstanceEntity findVariableInstanceByTaskAndName(String taskId, String variableName) {
-		Map<String, String> params = new HashMap<String, String>(2);
-		params.put("taskId", taskId);
-		params.put("name", variableName);
-		return (VariableInstanceEntity) getDbSqlSession().selectOne("selectVariableInstanceByTaskAndName", params);
-	}
-	
-	@SuppressWarnings("unchecked")
-  public List<VariableInstanceEntity> findVariableInstancesByTaskAndNames(String taskId, Collection<String> names) {
-		Map<String, Object> params = new HashMap<String, Object>(2);
-		params.put("taskId", taskId);
-		params.put("names", names);
-		return getDbSqlSession().selectList("selectVariableInstancesByTaskAndNames", params);
-	}
-	
-  public void deleteVariableInstanceByTask(TaskEntity task) {
-    Map<String, VariableInstanceEntity> variableInstances = task.getVariableInstanceEntities();
-    if (variableInstances!=null) {
-      for (VariableInstanceEntity variableInstance: variableInstances.values()) {
-        variableInstance.delete();
-      }
-    }
-  }
+  List<VariableInstanceEntity> findVariableInstancesByExecutionIds(Set<String> executionIds);
+
+  VariableInstanceEntity findVariableInstanceByExecutionAndName(String executionId, String variableName);
+
+  List<VariableInstanceEntity> findVariableInstancesByExecutionAndNames(String executionId, Collection<String> names);
+
+  VariableInstanceEntity findVariableInstanceByTaskAndName(String taskId, String variableName);
+
+  List<VariableInstanceEntity> findVariableInstancesByTaskAndNames(String taskId, Collection<String> names);
+
+  void deleteVariableInstanceByTask(TaskEntity task);
+
 }

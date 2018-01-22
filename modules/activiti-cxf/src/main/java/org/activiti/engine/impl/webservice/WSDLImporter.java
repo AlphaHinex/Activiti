@@ -39,7 +39,6 @@ import org.activiti.bpmn.model.Import;
 import org.activiti.engine.ActivitiException;
 import org.activiti.engine.impl.bpmn.data.SimpleStructureDefinition;
 import org.activiti.engine.impl.bpmn.data.StructureDefinition;
-import org.activiti.engine.impl.bpmn.parser.BpmnParse;
 import org.activiti.engine.impl.bpmn.parser.XMLImporter;
 import org.activiti.engine.impl.util.ReflectUtil;
 import org.w3c.dom.Document;
@@ -70,17 +69,16 @@ public class WSDLImporter implements XMLImporter {
   protected Map<String, StructureDefinition> structures = new HashMap<String, StructureDefinition>();
 
   protected String wsdlLocation;
-  
+
   protected String namespace;
-  
+
   public WSDLImporter() {
     this.namespace = "";
   }
 
-  public void importFrom(Import theImport, BpmnParse parse) {
+  public void importFrom(Import theImport, String sourceSystemId) {
     this.namespace = theImport.getNamespace() == null ? "" : theImport.getNamespace() + ":";
     this.importFrom(theImport.getLocation());
-    this.transferImportsToParse(parse);
   }
 
   public void importFrom(String url) {
@@ -102,7 +100,7 @@ public class WSDLImporter implements XMLImporter {
   /**
    * Parse the WSDL definition using WSDL4J.
    */
-  private Definition parseWSDLDefinition() throws WSDLException {
+  protected Definition parseWSDLDefinition() throws WSDLException {
     WSDLFactory wsdlFactory = WSDLFactory.newInstance();
     WSDLReader reader = wsdlFactory.newWSDLReader();
     reader.setFeature("javax.wsdl.verbose", false);
@@ -114,12 +112,12 @@ public class WSDLImporter implements XMLImporter {
   /**
    * Imports services and operations from the WSDL definition
    */
-  private void importServicesAndOperations(Definition definition) {
+  protected void importServicesAndOperations(Definition definition) {
     for (Object serviceObject : definition.getServices().values()) {
       Service service = (Service) serviceObject;
       WSService wsService = this.importService(service);
       this.wsServices.put(this.namespace + wsService.getName(), wsService);
-      
+
       Port port = (Port) service.getPorts().values().iterator().next();
       for (Object bindOperationObject : port.getBinding().getBindingOperations()) {
         BindingOperation bindOperation = (BindingOperation) bindOperationObject;
@@ -130,15 +128,15 @@ public class WSDLImporter implements XMLImporter {
       }
     }
   }
-  
+
   /**
    * Imports the service from the WSDL service definition
    */
-  private WSService importService(Service service) {
+  protected WSService importService(Service service) {
     String name = service.getQName().getLocalPart();
     Port port = (Port) service.getPorts().values().iterator().next();
     String location = "";
-    
+
     List extensionElements = port.getExtensibilityElements();
     for (Object extension : extensionElements) {
       if (extension instanceof SOAPAddress) {
@@ -151,16 +149,15 @@ public class WSDLImporter implements XMLImporter {
     return wsService;
   }
 
-  private WSOperation processOperation(Operation wsOperation, WSService service) {
+  protected WSOperation processOperation(Operation wsOperation, WSService service) {
     WSOperation operation = new WSOperation(this.namespace + wsOperation.getName(), wsOperation.getName(), service);
     return operation;
   }
 
   /**
-   * Import the Types from the WSDL definition using the same strategy that
-   * Cxf uses taking advantage of JAXB
+   * Import the Types from the WSDL definition using the same strategy that Cxf uses taking advantage of JAXB
    */
-  private void importTypes(Types types) {
+  protected void importTypes(Types types) {
     SchemaCompiler compiler = XJC.createSchemaCompiler();
     ErrorListener elForRun = new ConsoleErrorReporter();
     compiler.setErrorListener(elForRun);
@@ -168,20 +165,19 @@ public class WSDLImporter implements XMLImporter {
     Element rootTypes = this.getRootTypes();
     this.createDefaultStructures(rootTypes);
 
-    
     S2JJAXBModel intermediateModel = this.compileModel(types, compiler, rootTypes);
     Collection<? extends Mapping> mappings = intermediateModel.getMappings();
 
-    for (Mapping mapping : mappings){
+    for (Mapping mapping : mappings) {
       this.importStructure(mapping);
     }
   }
 
-  private void importStructure(Mapping mapping) {
+  protected void importStructure(Mapping mapping) {
     QName qname = mapping.getElement();
     JDefinedClass theClass = (JDefinedClass) mapping.getType().getTypeClass();
     SimpleStructureDefinition structure = (SimpleStructureDefinition) this.structures.get(this.namespace + qname.getLocalPart());
-    
+
     Map<String, JFieldVar> fields = theClass.fields();
     int index = 0;
     for (Entry<String, JFieldVar> entry : fields.entrySet()) {
@@ -191,14 +187,14 @@ public class WSDLImporter implements XMLImporter {
     }
   }
 
-  private S2JJAXBModel compileModel(Types types, SchemaCompiler compiler, Element rootTypes) {
+  protected S2JJAXBModel compileModel(Types types, SchemaCompiler compiler, Element rootTypes) {
     Schema schema = (Schema) types.getExtensibilityElements().get(0);
     compiler.parseSchema(schema.getDocumentBaseURI() + "#types1", rootTypes);
     S2JJAXBModel intermediateModel = compiler.bind();
     return intermediateModel;
   }
 
-  private void createDefaultStructures(Element rootTypes) {
+  protected void createDefaultStructures(Element rootTypes) {
     NodeList complexTypes = rootTypes.getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", "complexType");
     for (int i = 0; i < complexTypes.getLength(); i++) {
       Element element = (Element) complexTypes.item(i);
@@ -208,7 +204,7 @@ public class WSDLImporter implements XMLImporter {
     }
   }
 
-  private Element getRootTypes() {
+  protected Element getRootTypes() {
     try {
       DocumentBuilder docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
       Document doc = docBuilder.parse(this.wsdlLocation);
@@ -224,29 +220,15 @@ public class WSDLImporter implements XMLImporter {
     }
   }
 
-  private void transferImportsToParse(BpmnParse parse) {
-    if (parse != null) {
-      for (StructureDefinition structure : this.structures.values()) {
-        parse.addStructure(structure);
-      }
-      for (WSService service : this.wsServices.values()) {
-        parse.addService(service);
-      }
-      for (WSOperation operation : this.wsOperations.values()) {
-        parse.addOperation(operation);
-      }
-    }
+  public Map<String, StructureDefinition> getStructures() {
+    return this.structures;
   }
 
-  public Collection<StructureDefinition> getStructures() {
-    return this.structures.values();
+  public Map<String, WSService> getServices() {
+    return this.wsServices;
   }
 
-  public Collection<WSService> getServices() {
-    return this.wsServices.values();
-  }
-
-  public Collection<WSOperation> getOperations() {
-    return this.wsOperations.values();
+  public Map<String, WSOperation> getOperations() {
+    return this.wsOperations;
   }
 }

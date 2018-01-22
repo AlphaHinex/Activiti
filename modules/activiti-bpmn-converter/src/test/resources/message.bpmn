@@ -7,10 +7,10 @@
   xmlns:tns2="http://foo.bar.com/Examples"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
  
-	<message id="writeReport" name="newWriteReport" itemRef="tns:writeReportItem"/>
+  <message id="writeReport" name="newWriteReport" itemRef="tns:writeReportItem"/>
   <message id="writeReport2" name="newWriteReport2" itemRef="tns2:writeReportItem2"/>
 
-	<process id="process01" isExecutable="true">
+  <process id="process01" isExecutable="true">
  
         <startEvent id="theStart">
             <messageEventDefinition messageRef="tns:writeReport" />
@@ -18,5 +18,5 @@
  
         <sequenceFlow id="flow1" sourceRef="theStart" targetRef="theEnd" />
  
-	</process>
+  </process>
 </definitions>

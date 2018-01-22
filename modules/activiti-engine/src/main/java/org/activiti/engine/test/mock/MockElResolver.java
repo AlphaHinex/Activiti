@@ -16,13 +16,13 @@ package org.activiti.engine.test.mock;
 import java.beans.FeatureDescriptor;
 import java.util.Iterator;
 
-import org.activiti.engine.impl.javax.el.ELContext;
-import org.activiti.engine.impl.javax.el.ELResolver;
+import javax.el.ELContext;
+import javax.el.ELResolver;
 
 public class MockElResolver extends ELResolver {
 
   @Override
-  public Class< ? > getCommonPropertyType(ELContext context, Object base) {
+  public Class<?> getCommonPropertyType(ELContext context, Object base) {
     return Object.class;
   }
 
@@ -32,7 +32,7 @@ public class MockElResolver extends ELResolver {
   }
 
   @Override
-  public Class< ? > getType(ELContext context, Object base, Object property) {
+  public Class<?> getType(ELContext context, Object base, Object property) {
     return null;
   }
 

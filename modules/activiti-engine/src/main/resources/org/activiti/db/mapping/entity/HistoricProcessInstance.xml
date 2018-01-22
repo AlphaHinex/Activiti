@@ -16,11 +16,11 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.activiti.engine.impl.persistence.entity.HistoricProcessInstanceEntity">
+<mapper namespace="org.activiti.engine.impl.persistence.entity.HistoricProcessInstanceEntityImpl">
 
   <!-- HISTORIC PROCESS INSTANCE INSERT -->
   
-  <insert id="insertHistoricProcessInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricProcessInstanceEntity">
+  <insert id="insertHistoricProcessInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricProcessInstanceEntityImpl">
       insert into ${prefix}ACT_HI_PROCINST (
         ID_,
         PROC_INST_ID_,
@@ -89,7 +89,7 @@
          </foreach>
   </insert>
   
-  <insert id="bulkInsertHistoricProcessInstance_oracle" parameterType="java.util.List">
+  <insert id="bulkInsertHistoricProcessInstance" databaseId="oracle" parameterType="java.util.List">
       INSERT ALL 
         <foreach collection="list" item="historicProcessInstance" index="index">
           INTO ${prefix}ACT_HI_PROCINST (
@@ -128,7 +128,7 @@
 
   <!-- HISTORIC PROCESS INSTANCE UPDATE -->
   
-  <update id="updateHistoricProcessInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricProcessInstanceEntity">
+  <update id="updateHistoricProcessInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricProcessInstanceEntityImpl">
     update ${prefix}ACT_HI_PROCINST set
       PROC_DEF_ID_ = #{processDefinitionId, jdbcType=VARCHAR},
       BUSINESS_KEY_ = #{businessKey, jdbcType=VARCHAR},
@@ -156,7 +156,7 @@
   
   <!-- HISTORIC PROCESS INSTANCE RESULT MAP -->
   
-  <resultMap id="historicProcessInstanceResultMap" type="org.activiti.engine.impl.persistence.entity.HistoricProcessInstanceEntity">
+  <resultMap id="historicProcessInstanceResultMap" type="org.activiti.engine.impl.persistence.entity.HistoricProcessInstanceEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
     <result property="businessKey" column="BUSINESS_KEY_" jdbcType="VARCHAR"/>
@@ -177,7 +177,7 @@
     <result property="name" column="NAME_" jdbcType="VARCHAR" />
   </resultMap>
   
-  <resultMap id="historicProcessInstanceAndVariablesResultMap" type="org.activiti.engine.impl.persistence.entity.HistoricProcessInstanceEntity">
+  <resultMap id="historicProcessInstanceAndVariablesResultMap" type="org.activiti.engine.impl.persistence.entity.HistoricProcessInstanceEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
     <result property="businessKey" column="BUSINESS_KEY_" jdbcType="VARCHAR"/>
@@ -196,7 +196,7 @@
     <result property="deleteReason" column="DELETE_REASON_" jdbcType="VARCHAR" />
     <result property="tenantId" column="TENANT_ID_" jdbcType="VARCHAR" />
     <result property="name" column="NAME_" jdbcType="VARCHAR" />
-    <collection property="queryVariables" column="EXECUTION_ID_" javaType="ArrayList" ofType="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntity">
+    <collection property="queryVariables" column="EXECUTION_ID_" javaType="ArrayList" ofType="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntityImpl">
       <id property="id" column="VAR_ID_"/>
       <result property="name" column="VAR_NAME_" javaType="String" jdbcType="VARCHAR" />
       <result property="variableType" column="VAR_TYPE_" javaType="org.activiti.engine.impl.variable.VariableType" jdbcType="VARCHAR" />
@@ -215,7 +215,7 @@
   <!-- HISTORIC PROCESS INSTANCE SELECT -->
   
   <select id="selectHistoricProcessInstance" resultMap="historicProcessInstanceResultMap">
-    select * from ${prefix}ACT_HI_PROCINST where PROC_INST_ID_ = #{processInstanceId}
+    select * from ${prefix}ACT_HI_PROCINST where PROC_INST_ID_ = #{processInstanceId, jdbcType=VARCHAR}
   </select>
 
   <select id="selectHistoricProcessInstanceIdsByProcessDefinitionId" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultType="string">
@@ -224,9 +224,15 @@
     where PROC_DEF_ID_ = #{parameter}
   </select>
   
+    <select id="selectHistoricProcessInstanceIdsBySuperProcessInstanceId" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="historicProcessInstanceResultMap">
+    select *
+    from ${prefix}ACT_HI_PROCINST 
+    where SUPER_PROCESS_INSTANCE_ID_ = #{parameter}
+  </select>
+  
 
   <select id="selectHistoricProcessInstancesByQueryCriteria" parameterType="org.activiti.engine.impl.HistoricProcessInstanceQueryImpl" resultMap="historicProcessInstanceResultMap">
-    ${limitBefore}
+  	${limitBefore}
     select distinct RES.* ${limitBetween}, DEF.KEY_ as PROC_DEF_KEY_, DEF.NAME_ as PROC_DEF_NAME_, DEF.VERSION_ as PROC_DEF_VERSION_, DEF.DEPLOYMENT_ID_ as DEPLOYMENT_ID_
     <include refid="selectHistoricProcessInstancesByQueryCriteriaSql"/>
     ${orderBy}
@@ -245,7 +251,15 @@
   </sql>
   
   <select id="selectHistoricProcessInstancesWithVariablesByQueryCriteria" parameterType="org.activiti.engine.impl.HistoricProcessInstanceQueryImpl" resultMap="historicProcessInstanceAndVariablesResultMap">
+    <include refid="selectHistoricProcessInstancesWithVariablesByQueryCriteriaColumns"/> 
+    <include refid="selectHistoricProcessInstancesWithVariablesByQueryCriteriaSql"/> 
+    ${orderBy}
+    ${limitAfter}
+  </select>
+  
+  <sql id="selectHistoricProcessInstancesWithVariablesByQueryCriteriaColumns">  
     ${limitBefore}
+   <if test="_databaseId != 'db2' and _databaseId != 'mssql'">
     select distinct RES.*, DEF.KEY_ as PROC_DEF_KEY_, DEF.NAME_ as PROC_DEF_NAME_, DEF.VERSION_ as PROC_DEF_VERSION_, DEF.DEPLOYMENT_ID_ as DEPLOYMENT_ID_,
     VAR.ID_ as VAR_ID_, 
     VAR.NAME_ as VAR_NAME_, 
@@ -261,13 +275,8 @@
     VAR.LAST_UPDATED_TIME_ as VAR_LAST_UPDATED_TIME_, 
     VAR.LONG_ as VAR_LONG_
     ${limitBetween}
-    <include refid="selectHistoricProcessInstancesWithVariablesByQueryCriteriaSql"/> 
-    ${orderBy}
-    ${limitAfter}
-  </select>
-  
-  <select id="selectHistoricProcessInstancesWithVariablesByQueryCriteria_mssql_or_db2" parameterType="org.activiti.engine.impl.HistoricProcessInstanceQueryImpl" resultMap="historicProcessInstanceAndVariablesResultMap">
-    ${limitBefore}
+   </if>
+   <if test="_databaseId == 'db2' || _databaseId == 'mssql'">
     select distinct TEMPRES_ID_ as ID_,
     TEMPRES_BUSINESS_KEY_ as BUSINESS_KEY_, 
     TEMPRES_PROC_DEF_ID_ as PROC_DEF_ID_,
@@ -330,10 +339,8 @@
     VAR.TEXT2_ as TEMPVAR_TEXT2_, 
     VAR.LAST_UPDATED_TIME_ as TEMPVAR_LAST_UPDATED_TIME_, 
     VAR.LONG_ as TEMPVAR_LONG_
-    <include refid="selectHistoricProcessInstancesWithVariablesByQueryCriteriaSql"/> 
-    ${orderBy}
-    ${limitAfter}
-  </select>
+   </if>
+  </sql>
   
   <sql id="selectHistoricProcessInstancesWithVariablesByQueryCriteriaSql">  
     from ${prefix}ACT_HI_PROCINST RES
@@ -363,7 +370,7 @@
       left outer join ${prefix}ACT_RE_PROCDEF DEPLOY_P ON RES.PROC_DEF_ID_ = DEPLOY_P.ID_
     </if>
     <if test="withJobException">
-      left outer join ${prefix}ACT_RU_JOB JOB ON RES.PROC_INST_ID_ = JOB.PROCESS_INSTANCE_ID_
+      left outer join ${prefix}ACT_RU_TIMER_JOB JOB ON RES.PROC_INST_ID_ = JOB.PROCESS_INSTANCE_ID_
     </if>
     <where>
       <if test="processInstanceId != null">
@@ -495,7 +502,7 @@
           </choose>
           #{queryVariableValue.textValue}
           <choose>
-              <when test="queryVariableValue.operator.equals('LIKE') || queryVariableValue.operator.equals('LIKE_IGNORE_CASE')">${wildcardEscapeClause}</when>
+            <when test="queryVariableValue.operator.equals('LIKE') || queryVariableValue.operator.equals('LIKE_IGNORE_CASE')">${wildcardEscapeClause}</when>
           </choose>
         </if>
         <if test="queryVariableValue.textValue2 != null">
@@ -506,7 +513,7 @@
         </choose>
           #{queryVariableValue.textValue2}
           <choose>
-              <when test="queryVariableValue.operator.equals('LIKE')">${wildcardEscapeClause}</when>
+            <when test="queryVariableValue.operator.equals('LIKE')">${wildcardEscapeClause}</when>
           </choose>
         </if>
         <if test="queryVariableValue.longValue != null">
@@ -727,25 +734,9 @@
   </sql>
  
    <select id="selectHistoricProcessInstanceByNativeQuery" parameterType="java.util.Map" resultMap="historicProcessInstanceResultMap">
-   	<if test="resultType == 'LIST_PAGE'">
-   		${limitBefore}
-   	</if>
-    ${sql}
-    <if test="resultType == 'LIST_PAGE'">
-    	${limitAfter}
-    </if>
+   	<include refid="org.activiti.engine.db.common.selectByNativeQuery"/>
   </select>
   
-  <select id="selectHistoricProcessInstanceByNativeQuery_mssql_or_db2" parameterType="java.util.Map" resultMap="historicProcessInstanceResultMap">
-  	<if test="resultType == 'LIST_PAGE'">
-        ${limitBeforeNativeQuery}
-  	</if>
-  	${sql} 
-    <if test="resultType == 'LIST_PAGE'">
-  		${limitAfter}
-  	</if>
-  </select>
-
   <select id="selectHistoricProcessInstanceCountByNativeQuery" parameterType="java.util.Map" resultType="long">
     ${sql}
   </select>

@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.xml.namespace.QName;
 
@@ -28,7 +29,6 @@ import org.apache.cxf.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * A CXF's synchronous web service client
  * 
@@ -39,7 +39,7 @@ public class CxfWebServiceClient implements SyncWebServiceClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(CxfWebServiceClient.class);
     
   protected Client client;
-  
+
   public CxfWebServiceClient(String wsdl) {
     JaxWsDynamicClientFactory dcf = JaxWsDynamicClientFactory.newInstance();
         Enumeration<URL> xjcBindingUrls;
@@ -62,22 +62,22 @@ public class CxfWebServiceClient implements SyncWebServiceClient {
             throw new ActivitiException("An error occurs creating a web-service client for WSDL '" + wsdl + "'.", e);
         }
   }
-  
+
   /**
-   * {@inheritDoc}}
+   * {@inheritDoc}
    */
-  public Object[] send(String methodName, Object[] arguments, java.util.concurrent.ConcurrentMap<QName,URL> overridenEndpointAddresses) throws Exception {
+  public Object[] send(String methodName, Object[] arguments, ConcurrentMap<QName,URL> overridenEndpointAddresses) throws Exception {
     try {
-	    URL newEndpointAddress = null;
-	    if (overridenEndpointAddresses != null) {
-  	    newEndpointAddress = overridenEndpointAddresses
+      URL newEndpointAddress = null;
+      if (overridenEndpointAddresses != null) {
+        newEndpointAddress = overridenEndpointAddresses
                .get(this.client.getEndpoint().getEndpointInfo().getName());
-	    }
-	    
-    	if (newEndpointAddress != null) {
-       		this.client.getRequestContext().put(Message.ENDPOINT_ADDRESS, newEndpointAddress.toExternalForm());
-    	}
-    	return client.invoke(methodName, arguments);
+      }
+      
+      if (newEndpointAddress != null) {
+          this.client.getRequestContext().put(Message.ENDPOINT_ADDRESS, newEndpointAddress.toExternalForm());
+      }
+      return client.invoke(methodName, arguments);
     } catch (Fault e) {
        LOGGER.debug("Technical error calling WS", e);
        throw new ActivitiException(e.getMessage(), e);

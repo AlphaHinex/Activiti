@@ -10,71 +10,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.activiti.engine.impl.persistence.entity;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.activiti.engine.impl.db.HasRevision;
-import org.activiti.engine.impl.db.PersistentObject;
-
 
 /**
  * @author Tijs Rademakers
  */
-public class ProcessDefinitionInfoEntity implements HasRevision, PersistentObject, Serializable {
+public interface ProcessDefinitionInfoEntity extends Entity, HasRevision {
 
-  private static final long serialVersionUID = 1L;
+  String getId();
+
+  void setId(String id);
   
-  protected String id;
-  protected String processDefinitionId;
-  protected int revision = 1;
-  protected String infoJsonId;
+  String getProcessDefinitionId();
 
-  public Object getPersistentState() {
-    Map<String, Object> persistentState = new HashMap<String, Object>();
-    persistentState.put("processDefinitionId", this.processDefinitionId);
-    persistentState.put("infoJsonId", this.infoJsonId);
-    return persistentState;
-  }
+  void setProcessDefinitionId(String processDefinitionId);
 
-  // getters and setters //////////////////////////////////////////////////////
+  String getInfoJsonId();
 
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-  
-  public String getProcessDefinitionId() {
-    return processDefinitionId;
-  }
-
-  public void setProcessDefinitionId(String processDefinitionId) {
-    this.processDefinitionId = processDefinitionId;
-  }
-
-  public int getRevision() {
-    return revision;
-  }
-  
-  public int getRevisionNext() {
-    return revision + 1;
-  }
-  
-  public void setRevision(int revision) {
-    this.revision = revision;
-  }
-
-  public String getInfoJsonId() {
-    return infoJsonId;
-  }
-
-  public void setInfoJsonId(String infoJsonId) {
-    this.infoJsonId = infoJsonId;
-  }
+  void setInfoJsonId(String infoJsonId);
 }

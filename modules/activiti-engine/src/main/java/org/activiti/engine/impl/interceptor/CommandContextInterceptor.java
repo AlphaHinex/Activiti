@@ -20,8 +20,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Tom Baeyens
+ * @author Joram Barrez
  */
 public class CommandContextInterceptor extends AbstractCommandInterceptor {
+  
   private static final Logger log = LoggerFactory.getLogger(CommandContextInterceptor.class);
 
   protected CommandContextFactory commandContextFactory;
@@ -37,49 +39,55 @@ public class CommandContextInterceptor extends AbstractCommandInterceptor {
 
   public <T> T execute(CommandConfig config, Command<T> command) {
     CommandContext context = Context.getCommandContext();
-    
+
     boolean contextReused = false;
-    // We need to check the exception, because the transaction can be in a rollback state,
-    // and some other command is being fired to compensate (eg. decrementing job retries)
-    if (!config.isContextReusePossible() || context == null || context.getException() != null) { 
-    	context = commandContextFactory.createCommandContext(command);    	
-    }  
-    else {
-    	log.debug("Valid context found. Reusing it for the current command '{}'", command.getClass().getCanonicalName());
-    	contextReused = true;
+    // We need to check the exception, because the transaction can be in a
+    // rollback state, and some other command is being fired to compensate (eg. decrementing job retries)
+    if (!config.isContextReusePossible() || context == null || context.getException() != null) {
+      context = commandContextFactory.createCommandContext(command);
+    } else {
+      log.debug("Valid context found. Reusing it for the current command '{}'", command.getClass().getCanonicalName());
+      contextReused = true;
+      context.setReused(true);
     }
 
     try {
+      
       // Push on stack
       Context.setCommandContext(context);
       Context.setProcessEngineConfiguration(processEngineConfiguration);
-      
+      if (processEngineConfiguration.getActiviti5CompatibilityHandler() != null) {
+        Context.setActiviti5CompatibilityHandler(processEngineConfiguration.getActiviti5CompatibilityHandler());
+      }
+
       return next.execute(config, command);
-      
+
     } catch (Exception e) {
-    	
+
       context.exception(e);
       
     } finally {
       try {
-    	  if (!contextReused) {
-    		  context.close();
-    	  }
+        if (!contextReused) {
+          context.close();
+        }
       } finally {
-    	  // Pop from stack
-    	  Context.removeCommandContext();
-    	  Context.removeProcessEngineConfiguration();
-    	  Context.removeBpmnOverrideContext();
+        
+        // Pop from stack
+        Context.removeCommandContext();
+        Context.removeProcessEngineConfiguration();
+        Context.removeBpmnOverrideContext();
+        Context.removeActiviti5CompatibilityHandler();
       }
     }
-    
+
     return null;
   }
-  
+
   public CommandContextFactory getCommandContextFactory() {
     return commandContextFactory;
   }
-  
+
   public void setCommandContextFactory(CommandContextFactory commandContextFactory) {
     this.commandContextFactory = commandContextFactory;
   }

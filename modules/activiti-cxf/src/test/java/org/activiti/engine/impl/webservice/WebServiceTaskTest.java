@@ -48,22 +48,6 @@ public class WebServiceTaskTest extends AbstractWebServiceTaskTest {
     }
 
     @Deployment
-    public void testWebServiceInvocationWithEndpointAddressConfigured() throws Exception {
-
-        assertEquals(-1, webServiceMock.getCount());
-
-        processEngineConfiguration.addWsEndpointAddress(
-                new QName("http://webservice.impl.engine.activiti.org/", "CounterImplPort"),
-                new URL(WEBSERVICE_MOCK_ADDRESS));
-
-        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("webServiceInvocation");
-        waitForJobExecutorToProcessAllJobs(10000L, 250L);
-
-        assertEquals(0, webServiceMock.getCount());
-        assertTrue(processInstance.isEnded());
-    }
-
-    @Deployment
     public void testWebServiceInvocationDataStructure() throws Exception {
 
         final Calendar calendar = Calendar.getInstance();
@@ -71,8 +55,7 @@ public class WebServiceTaskTest extends AbstractWebServiceTaskTest {
         final Date expectedDate = calendar.getTime();
         final Map<String, Object> variables = new HashMap<String, Object>(1);
         variables.put("startDate", expectedDate);
-        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("webServiceInvocationDataStructure",
-                variables);
+        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("webServiceInvocationDataStructure", variables);
         waitForJobExecutorToProcessAllJobs(10000L, 250L);
 
         assertEquals(expectedDate, webServiceMock.getDataStructure().eltDate);
@@ -114,6 +97,22 @@ public class WebServiceTaskTest extends AbstractWebServiceTaskTest {
         } finally {
             server.start();
         }
+    }
+    
+    @Deployment
+    public void testWebServiceInvocationWithEndpointAddressConfigured() throws Exception {
+
+        assertEquals(-1, webServiceMock.getCount());
+
+        processEngineConfiguration.addWsEndpointAddress(
+                new QName("http://webservice.impl.engine.activiti.org/", "CounterImplPort"),
+                new URL(WEBSERVICE_MOCK_ADDRESS));
+
+        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("webServiceInvocation");
+        waitForJobExecutorToProcessAllJobs(10000L, 250L);
+
+        assertEquals(0, webServiceMock.getCount());
+        assertTrue(processInstance.isEnded());
     }
 
 }

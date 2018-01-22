@@ -3,9 +3,9 @@ package org.activiti.crystalball.simulator;
 /* Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,66 +13,56 @@ package org.activiti.crystalball.simulator;
  * limitations under the License.
  */
 
-
 import org.springframework.beans.factory.FactoryBean;
 
 import java.util.Date;
 import java.util.Map;
 
 /**
+ * Simulation event representation
  *
  * @author martin.grofcik
  */
 public class SimulationEvent {
-	
-	/** event type used to notify  AcquireJobsRunnable monitor to continue in execution */
-	public static final String TYPE_ACQUIRE_JOB_NOTIFICATION_EVENT = "ACQUIRE_JOB_NOTIFICATION_EVENT";
-	
-	public static final String TYPE_END_SIMULATION = "END_SIMULATION";
-  public static final String TYPE_BREAK_SIMULATION = "BREAK";
-
-  public static final int PRIORITY_SYSTEM = -1;
 
   private final long simulationTime;
-	private final String type;
-	private final Map<String, Object> properties;
-	private final Object property;
+  private final String type;
+  private final Map<String, Object> properties;
   private final int priority;
 
-	protected SimulationEvent(Builder builder) {
+  protected SimulationEvent(Builder builder) {
     this.simulationTime = builder.simulationTime;
     this.type = builder.type;
     this.properties = builder.properties;
-    this.property = builder.property;
     this.priority = builder.priority;
 
   }
 
-	public Object getProperty() {
-		return property;
-	}
+  public Object getProperty() {
+    return properties.entrySet().iterator().next().getValue();
+  }
 
-	public Object getProperty(String name) {
-		return properties.get(name);
-	}
-	
-	public long getSimulationTime() {
-		return simulationTime;
-	}
+  public Object getProperty(String name) {
+    return properties.get(name);
+  }
 
-	public String getType() {
-		return type;
-	}
+  public long getSimulationTime() {
+    return simulationTime;
+  }
+
+  public String getType() {
+    return type;
+  }
 
   public int getPriority() {
     return priority;
   }
 
   @Override
-	public String toString() {
+  public String toString() {
     String date = hasSimulationTime() ? (new Date(simulationTime)).toString() + ", " : "now ";
-		return  date + type + ", "+priority+", " +property + ", " + properties;
-	}
+    return date + type + ", " + priority + ", " + properties;
+  }
 
   public Map<String, Object> getProperties() {
     return properties;
@@ -98,9 +88,10 @@ public class SimulationEvent {
     }
 
     public Builder simulationTime(long simulationTime) {
-      this.simulationTime=simulationTime;
+      this.simulationTime = simulationTime;
       return this;
     }
+
     public Builder properties(Map<String, Object> properties) {
       this.properties = properties;
       return this;
@@ -121,7 +112,6 @@ public class SimulationEvent {
     }
   }
 
-  
   public static class Factory implements FactoryBean<SimulationEvent> {
     private long simulationTime;
     private String type;
@@ -136,11 +126,7 @@ public class SimulationEvent {
 
     @Override
     public SimulationEvent getObject() throws Exception {
-      return new Builder(this.type).
-        simulationTime(this.simulationTime).
-        properties(this.properties).
-        priority(this.priority).
-        build();
+      return new Builder(this.type).simulationTime(this.simulationTime).properties(this.properties).priority(this.priority).build();
     }
 
     @Override

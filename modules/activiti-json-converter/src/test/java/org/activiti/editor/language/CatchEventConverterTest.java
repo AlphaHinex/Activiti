@@ -11,46 +11,45 @@ import org.activiti.bpmn.model.SignalEventDefinition;
 import org.activiti.bpmn.model.TimerEventDefinition;
 import org.junit.Test;
 
-
 public class CatchEventConverterTest extends AbstractConverterTest {
 
   @Test
-  public void connvertJsonToModel() throws Exception {
+  public void convertJsonToModel() throws Exception {
     BpmnModel bpmnModel = readJsonFile();
     validateModel(bpmnModel);
   }
-  
-  @Test 
+
+  @Test
   public void doubleConversionValidation() throws Exception {
     BpmnModel bpmnModel = readJsonFile();
     bpmnModel = convertToJsonAndBack(bpmnModel);
     validateModel(bpmnModel);
   }
-  
+
   protected String getResource() {
     return "test.catcheventmodel.json";
   }
-  
+
   private void validateModel(BpmnModel model) {
-    
-    FlowElement timerElement = model.getMainProcess().getFlowElement("timer_evt");
+
+    FlowElement timerElement = model.getMainProcess().getFlowElement("timer_evt", true);
     EventDefinition timerEvent = extractEventDefinition(timerElement);
     assertTrue(timerEvent instanceof TimerEventDefinition);
-    TimerEventDefinition ted = (TimerEventDefinition)timerEvent;
+    TimerEventDefinition ted = (TimerEventDefinition) timerEvent;
     assertEquals("PT5M", ted.getTimeDuration());
-    
-    FlowElement signalElement = model.getMainProcess().getFlowElement("signal_evt");
+
+    FlowElement signalElement = model.getMainProcess().getFlowElement("signal_evt", true);
     EventDefinition signalEvent = extractEventDefinition(signalElement);
     assertTrue(signalEvent instanceof SignalEventDefinition);
-    SignalEventDefinition sed = (SignalEventDefinition)signalEvent;
+    SignalEventDefinition sed = (SignalEventDefinition) signalEvent;
     assertEquals("signal_ref", sed.getSignalRef());
-    
-    FlowElement messageElement = model.getMainProcess().getFlowElement("message_evt");
+
+    FlowElement messageElement = model.getMainProcess().getFlowElement("message_evt", true);
     EventDefinition messageEvent = extractEventDefinition(messageElement);
     assertTrue(messageEvent instanceof MessageEventDefinition);
-    MessageEventDefinition med = (MessageEventDefinition)messageEvent;
+    MessageEventDefinition med = (MessageEventDefinition) messageEvent;
     assertEquals("message_ref", med.getMessageRef());
-    
+
   }
-  
+
 }

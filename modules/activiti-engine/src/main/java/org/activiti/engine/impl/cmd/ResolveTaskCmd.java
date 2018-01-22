@@ -17,27 +17,40 @@ import java.util.Map;
 
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.TaskEntity;
-
+import org.activiti.engine.task.DelegationState;
 
 /**
  * @author Tom Baeyens
+ * @author Joram Barrez
  */
 public class ResolveTaskCmd extends NeedsActiveTaskCmd<Void> {
 
   private static final long serialVersionUID = 1L;
 
   protected Map<String, Object> variables;
+  protected Map<String, Object> transientVariables;
 
   public ResolveTaskCmd(String taskId, Map<String, Object> variables) {
     super(taskId);
     this.variables = variables;
   }
   
+  public ResolveTaskCmd(String taskId, Map<String, Object> variables, Map<String, Object> transientVariables) {
+    this(taskId, variables);
+    this.transientVariables = transientVariables;
+  }
+
   protected Void execute(CommandContext commandContext, TaskEntity task) {
     if (variables != null) {
       task.setVariables(variables);
     }
-    task.resolve();
+    if (transientVariables != null) {
+      task.setTransientVariables(transientVariables);
+    }
+    
+    task.setDelegationState(DelegationState.RESOLVED);
+    commandContext.getTaskEntityManager().changeTaskAssignee(task, task.getOwner());
+    
     return null;
   }
 
@@ -45,5 +58,5 @@ public class ResolveTaskCmd extends NeedsActiveTaskCmd<Void> {
   protected String getSuspendedTaskException() {
     return "Cannot resolve a suspended task";
   }
-  
+
 }

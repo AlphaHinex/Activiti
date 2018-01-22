@@ -12,22 +12,14 @@
  */
 package org.activiti.engine.delegate;
 
-import java.io.Serializable;
-
-
-
-
-/** Callback interface to be notified of execution events like starting a process instance,
- * ending an activity instance or taking a transition.
- *  
+/**
+ * Callback interface to be notified of execution events like starting a process instance, ending an activity instance or taking a transition.
+ * 
  * @author Tom Baeyens
  * @author Joram Barrez
+ * @author Yvo Swillens
  */
-public interface ExecutionListener extends Serializable {
+public interface ExecutionListener extends BaseExecutionListener {
 
-  String EVENTNAME_START = "start";
-  String EVENTNAME_END = "end";
-  String EVENTNAME_TAKE = "take";
-
-  void notify(DelegateExecution execution) throws Exception;
+  void notify(DelegateExecution execution);
 }

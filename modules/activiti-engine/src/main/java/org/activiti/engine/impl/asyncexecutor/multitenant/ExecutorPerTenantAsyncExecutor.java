@@ -19,9 +19,10 @@ import java.util.Set;
 
 import org.activiti.engine.impl.asyncexecutor.AsyncExecutor;
 import org.activiti.engine.impl.asyncexecutor.DefaultAsyncJobExecutor;
+import org.activiti.engine.impl.asyncexecutor.JobManager;
+import org.activiti.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.activiti.engine.impl.cfg.multitenant.TenantInfoHolder;
-import org.activiti.engine.impl.interceptor.CommandExecutor;
-import org.activiti.engine.impl.persistence.entity.JobEntity;
+import org.activiti.engine.runtime.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,7 @@ public class ExecutorPerTenantAsyncExecutor implements TenantAwareAsyncExecutor 
   
   protected Map<String, AsyncExecutor> tenantExecutors = new HashMap<String, AsyncExecutor>();
   
-  protected CommandExecutor commandExecutor;
+  protected ProcessEngineConfigurationImpl processEngineConfiguration;
   protected boolean active;
   protected boolean autoActivate;
   
@@ -66,15 +67,16 @@ public class ExecutorPerTenantAsyncExecutor implements TenantAwareAsyncExecutor 
     } else {
       tenantExecutor = tenantAwareAyncExecutorFactory.createAsyncExecutor(tenantId);
     }
+
+    tenantExecutor.setProcessEngineConfiguration(processEngineConfiguration);
     
     if (tenantExecutor instanceof DefaultAsyncJobExecutor) {
       DefaultAsyncJobExecutor defaultAsyncJobExecutor = (DefaultAsyncJobExecutor) tenantExecutor;
       defaultAsyncJobExecutor.setAsyncJobsDueRunnable(new TenantAwareAcquireAsyncJobsDueRunnable(defaultAsyncJobExecutor, tenantInfoHolder, tenantId));
       defaultAsyncJobExecutor.setTimerJobRunnable(new TenantAwareAcquireTimerJobsRunnable(defaultAsyncJobExecutor, tenantInfoHolder, tenantId));
       defaultAsyncJobExecutor.setExecuteAsyncRunnableFactory(new TenantAwareExecuteAsyncRunnableFactory(tenantInfoHolder, tenantId));
+      defaultAsyncJobExecutor.setResetExpiredJobsRunnable(new TenantAwareResetExpiredJobsRunnable(defaultAsyncJobExecutor, tenantInfoHolder, tenantId));
     }
-    
-    tenantExecutor.setCommandExecutor(commandExecutor); // Needs to be done for job executors created after boot. Doesn't hurt on boot.
     
     tenantExecutors.put(tenantId, tenantExecutor);
     
@@ -83,30 +85,36 @@ public class ExecutorPerTenantAsyncExecutor implements TenantAwareAsyncExecutor 
     }
   }
   
-  @Override
-  public void removeTenantAsyncExecutor(String tenantId) {
-    shutdownTenantExecutor(tenantId);
-    tenantExecutors.remove(tenantId);
-  }
+    @Override
+    public void removeTenantAsyncExecutor(String tenantId) {
+      shutdownTenantExecutor(tenantId);
+      tenantExecutors.remove(tenantId);
+    }
   
   protected AsyncExecutor determineAsyncExecutor() {
     return tenantExecutors.get(tenantInfoHolder.getCurrentTenantId());
   }
 
-  public boolean executeAsyncJob(JobEntity job) {
+  public boolean executeAsyncJob(Job job) {
     return determineAsyncExecutor().executeAsyncJob(job);
   }
 
-  public void setCommandExecutor(CommandExecutor commandExecutor) {
-    this.commandExecutor = commandExecutor;
-    for (AsyncExecutor asyncExecutor : tenantExecutors.values()) {
-      asyncExecutor.setCommandExecutor(commandExecutor);
-    }
-  }
-
-  public CommandExecutor getCommandExecutor() {
+  public JobManager getJobManager() {
     // Should never be accessed on this class, should be accessed on the actual AsyncExecutor
     throw new UnsupportedOperationException(); 
+  }
+  
+  @Override
+  public void setProcessEngineConfiguration(ProcessEngineConfigurationImpl processEngineConfiguration) {
+    this.processEngineConfiguration = processEngineConfiguration;
+    for (AsyncExecutor asyncExecutor : tenantExecutors.values()) {
+      asyncExecutor.setProcessEngineConfiguration(processEngineConfiguration);
+    }
+  }
+  
+  @Override
+  public ProcessEngineConfigurationImpl getProcessEngineConfiguration() {
+    throw new UnsupportedOperationException();
   }
 
   public boolean isAutoActivate() {
@@ -134,7 +142,7 @@ public class ExecutorPerTenantAsyncExecutor implements TenantAwareAsyncExecutor 
     }
     active = false;
   }
-
+  
   protected void shutdownTenantExecutor(String tenantId) {
     logger.info("Shutting down async executor for tenant " + tenantId);
     tenantExecutors.get(tenantId).shutdown();
@@ -184,15 +192,13 @@ public class ExecutorPerTenantAsyncExecutor implements TenantAwareAsyncExecutor 
     }
   }
   
-  @Override
   public int getDefaultQueueSizeFullWaitTimeInMillis() {
     return determineAsyncExecutor().getDefaultQueueSizeFullWaitTimeInMillis();
   }
   
-  @Override
-  public void setDefaultQueueSizeFullWaitTimeInMillis(int defaultQueueSizeFullWaitTime) {
+  public void setDefaultQueueSizeFullWaitTimeInMillis(int defaultQueueSizeFullWaitTimeInMillis) {
     for (AsyncExecutor asyncExecutor : tenantExecutors.values()) {
-      asyncExecutor.setDefaultQueueSizeFullWaitTimeInMillis(defaultQueueSizeFullWaitTime);
+      asyncExecutor.setDefaultQueueSizeFullWaitTimeInMillis(defaultQueueSizeFullWaitTimeInMillis);
     }
   }
 
@@ -224,6 +230,30 @@ public class ExecutorPerTenantAsyncExecutor implements TenantAwareAsyncExecutor 
     for (AsyncExecutor asyncExecutor : tenantExecutors.values()) {
       asyncExecutor.setRetryWaitTimeInMillis(retryWaitTimeInMillis);
     }
+  }
+  
+  @Override
+  public int getResetExpiredJobsInterval() {
+    return determineAsyncExecutor().getResetExpiredJobsInterval();
+  }
+  
+  @Override
+  public void setResetExpiredJobsInterval(int resetExpiredJobsInterval) {
+    for (AsyncExecutor asyncExecutor : tenantExecutors.values()) {
+      asyncExecutor.setResetExpiredJobsInterval(resetExpiredJobsInterval);
+    }
+  }
+  
+  @Override
+  public int getResetExpiredJobsPageSize() {
+    return determineAsyncExecutor().getResetExpiredJobsPageSize();
+  }
+  
+  @Override
+  public void setResetExpiredJobsPageSize(int resetExpiredJobsPageSize) {
+    for (AsyncExecutor asyncExecutor : tenantExecutors.values()) {
+      asyncExecutor.setResetExpiredJobsPageSize(resetExpiredJobsPageSize);
+    }    
   }
 
 }

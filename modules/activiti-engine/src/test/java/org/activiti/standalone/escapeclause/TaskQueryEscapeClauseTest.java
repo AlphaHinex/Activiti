@@ -12,6 +12,7 @@
  */
 package org.activiti.standalone.escapeclause;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.activiti.engine.impl.history.HistoryLevel;
@@ -38,14 +39,14 @@ public class TaskQueryEscapeClauseTest extends AbstractEscapeClauseTestCase {
     deploymentOneId = repositoryService
       .createDeployment()
       .tenantId("One%")
-      .addClasspathResource("org/activiti/engine/test/history/oneTaskProcessEscapeClauseTest.bpmn20.xml")
+      .addClasspathResource("org/activiti/standalone/escapeclause/oneTaskProcessEscapeClauseTest.bpmn20.xml")
       .deploy()
       .getId();
 
     deploymentTwoId = repositoryService
       .createDeployment()
       .tenantId("Two_")
-      .addClasspathResource("org/activiti/engine/test/history/oneTaskProcessEscapeClauseTest.bpmn20.xml")
+      .addClasspathResource("org/activiti/standalone/escapeclause/oneTaskProcessEscapeClauseTest.bpmn20.xml")
       .deploy()
       .getId();
     
@@ -377,14 +378,20 @@ public class TaskQueryEscapeClauseTest extends AbstractEscapeClauseTestCase {
         // processDefinitionNameLike
         List<Task> list = taskService.createTaskQuery().processDefinitionNameLike("%\\%%").orderByTaskCreateTime().asc().list();
         assertEquals(2, list.size());
-        assertEquals(task1.getId(), list.get(0).getId());
-        assertEquals(task2.getId(), list.get(1).getId());
+        List<String> taskIds = new ArrayList<String>(2);
+        taskIds.add(list.get(0).getId());
+        taskIds.add(list.get(1).getId());
+        assertTrue(taskIds.contains(task1.getId()));
+        assertTrue(taskIds.contains(task2.getId()));
         
         // orQuery
         list = taskService.createTaskQuery().or().processDefinitionNameLike("%\\%%").processDefinitionId("undefined").orderByTaskCreateTime().asc().list();
         assertEquals(2, list.size());
-        assertEquals(task1.getId(), list.get(0).getId());
-        assertEquals(task2.getId(), list.get(1).getId());
+        taskIds = new ArrayList<String>(2);
+        taskIds.add(list.get(0).getId());
+        taskIds.add(list.get(1).getId());
+        assertTrue(taskIds.contains(task1.getId()));
+        assertTrue(taskIds.contains(task2.getId()));
     }
   }
   

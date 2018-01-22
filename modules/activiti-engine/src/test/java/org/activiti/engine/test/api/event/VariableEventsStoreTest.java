@@ -52,7 +52,6 @@ public class VariableEventsStoreTest extends PluggableActivitiTestCase {
 
   }
 
-
   public void testTaskInstanceVariableEvents() throws Exception {
     Task task = taskService.newTask();
     taskService.saveTask(task);

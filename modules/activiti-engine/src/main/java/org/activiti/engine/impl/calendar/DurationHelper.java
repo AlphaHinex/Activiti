@@ -14,9 +14,12 @@
 
 package org.activiti.engine.impl.calendar;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.xml.datatype.DatatypeFactory;
@@ -29,10 +32,11 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.format.ISODateTimeFormat;
 
 /**
- * helper class for parsing ISO8601 duration format (also recurring) and
- * computing next timer date
+ * helper class for parsing ISO8601 duration format (also recurring) and computing next timer date
  */
 public class DurationHelper {
+  
+  protected static DateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM dd kk:mm:ss z yyyy");
 
   private Calendar start;
   private Calendar end;
@@ -105,7 +109,7 @@ public class DurationHelper {
   }
 
   public DurationHelper(String expressionS, ClockReader clockReader) throws Exception {
-    this(expressionS,-1,clockReader);
+    this(expressionS, -1, clockReader);
   }
 
   public Calendar getCalendarAfter() {
@@ -124,7 +128,7 @@ public class DurationHelper {
   }
 
   public Boolean isValidDate(Date newTimer) {
-    return end==null || end.getTime().after(newTimer) || end.getTime().equals(newTimer);
+    return end == null || end.getTime().after(newTimer) || end.getTime().equals(newTimer);
   }
 
   public Date getDateAfter() {
@@ -162,7 +166,7 @@ public class DurationHelper {
   	
   }
 
-  private Calendar add(Calendar date, Duration duration) {
+  protected Calendar add(Calendar date, Duration duration) {
     Calendar calendar = (Calendar) date.clone();
 
     // duration.addTo does not account for daylight saving time (xerces),
@@ -177,15 +181,26 @@ public class DurationHelper {
     return calendar;
   }
 
-  private Calendar parseDate(String date) throws Exception {
-    return ISODateTimeFormat.dateTimeParser().withZone(DateTimeZone.forTimeZone(clockReader.getCurrentTimeZone())).parseDateTime(date).toCalendar(null);
+  protected Calendar parseDate(String date) throws Exception {
+    Calendar dateCalendar = null;
+    try {
+      dateCalendar = ISODateTimeFormat.dateTimeParser().withZone(DateTimeZone.forTimeZone(
+          clockReader.getCurrentTimeZone())).parseDateTime(date).toCalendar(null);
+      
+    } catch (IllegalArgumentException e) {
+      // try to parse a java.util.date to string back to a java.util.date
+      dateCalendar = new GregorianCalendar();
+      dateCalendar.setTime(DATE_FORMAT.parse(date));
+    }
+    
+    return dateCalendar;
   }
 
-  private Duration parsePeriod(String period) throws Exception {
+  protected Duration parsePeriod(String period) throws Exception {
     return datatypeFactory.newDuration(period);
   }
 
-  private boolean isDuration(String time) {
+  protected boolean isDuration(String time) {
     return time.startsWith("P");
   }
 

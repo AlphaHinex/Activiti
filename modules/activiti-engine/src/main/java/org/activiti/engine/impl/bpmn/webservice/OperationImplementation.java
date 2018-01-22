@@ -28,7 +28,7 @@ public interface OperationImplementation {
    * @return the id of this implementation
    */
   String getId();
-  
+
   /**
    * @return the name of this implementation
    */
@@ -37,10 +37,13 @@ public interface OperationImplementation {
   /**
    * Sends the message on behalf of operation
    * 
-   * @param message the message to be sent
-   * @param operation the operation that is interested on sending the message
-   * @param overridenEndpointAddresses a not null map of overriden enpoint addresses. The key is the endpoint qualified name.
+   * @param message
+   *          the message to be sent
+   * @param operation
+   *          the operation that is interested on sending the message
+   * @param overridenEndpointAddresses 
+   *          a not null map of overriden enpoint addresses. The key is the endpoint qualified name.
    * @return the resulting message
    */
-  MessageInstance sendFor(MessageInstance message, Operation operation, final ConcurrentMap<QName, URL> overridenEndpointAddresses) throws Exception;
+  MessageInstance sendFor(MessageInstance message, Operation operation, ConcurrentMap<QName, URL> overridenEndpointAddresses) throws Exception;
 }

@@ -12,16 +12,16 @@
  */
 package org.activiti.crystalball.simulator.delegate;
 
-import org.activiti.engine.impl.pvm.delegate.ActivityBehavior;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
+import org.activiti.engine.delegate.DelegateExecution;
+import org.activiti.engine.impl.delegate.ActivityBehavior;
 
 /**
  * @author martin.grofcik
  */
 public abstract class AbstractSimulationActivityBehavior implements ActivityBehavior {
 
-	public AbstractSimulationActivityBehavior() {
-	}
-	
-	abstract public void execute(ActivityExecution execution) throws Exception;
+  public AbstractSimulationActivityBehavior() {
+  }
+
+  abstract public void execute(DelegateExecution execution);
 }

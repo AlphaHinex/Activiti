@@ -13,60 +13,89 @@
 
 package org.activiti.engine.impl.bpmn.behavior;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.activiti.bpmn.model.Activity;
+import org.activiti.bpmn.model.CompensateEventDefinition;
+import org.activiti.bpmn.model.FlowElement;
+import org.activiti.bpmn.model.FlowElementsContainer;
+import org.activiti.bpmn.model.Process;
+import org.activiti.bpmn.model.ThrowEvent;
+import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.impl.bpmn.helper.ScopeUtil;
-import org.activiti.engine.impl.bpmn.parser.CompensateEventDefinition;
+import org.activiti.engine.impl.context.Context;
+import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.CompensateEventSubscriptionEntity;
-import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
-import org.activiti.engine.impl.pvm.process.ActivityImpl;
-
+import org.activiti.engine.impl.persistence.entity.EventSubscriptionEntityManager;
+import org.activiti.engine.impl.util.ProcessDefinitionUtil;
+import org.apache.commons.lang3.StringUtils;
 
 /**
- * @author Daniel Meyer
+ * @author Tijs Rademakers
+ * @author Joram Barrez
  */
 public class IntermediateThrowCompensationEventActivityBehavior extends FlowNodeActivityBehavior {
 
+  private static final long serialVersionUID = 1L;
+  
   protected final CompensateEventDefinition compensateEventDefinition;
 
   public IntermediateThrowCompensationEventActivityBehavior(CompensateEventDefinition compensateEventDefinition) {
     this.compensateEventDefinition = compensateEventDefinition;
   }
-  
+
   @Override
-  public void execute(ActivityExecution execution) throws Exception {
+  public void execute(DelegateExecution execution) {
+    ThrowEvent throwEvent = (ThrowEvent) execution.getCurrentFlowElement();
+    
+    /*
+     * From the BPMN 2.0 spec:
+     * 
+     * The Activity to be compensated MAY be supplied.
+     *  
+     * If an Activity is not supplied, then the compensation is broadcast to all completed Activities in 
+     * the current Sub- Process (if present), or the entire Process instance (if at the global level). This “throws” the compensation.
+     */
     final String activityRef = compensateEventDefinition.getActivityRef();
-            
-    ExecutionEntity scopeExecution = ScopeUtil.findScopeExecutionForScope((ExecutionEntity)execution, (ActivityImpl)execution.getActivity());
     
-    List<CompensateEventSubscriptionEntity> eventSubscriptions;
+    CommandContext commandContext = Context.getCommandContext();
+    EventSubscriptionEntityManager eventSubscriptionEntityManager = commandContext.getEventSubscriptionEntityManager();
     
-    if(activityRef != null) {          
-      eventSubscriptions = scopeExecution.getCompensateEventSubscriptions(activityRef);
+    List<CompensateEventSubscriptionEntity> eventSubscriptions = new ArrayList<CompensateEventSubscriptionEntity>();
+    if (StringUtils.isNotEmpty(activityRef)) {
+      
+      // If an activity ref is provided, only that activity is compensated
+      eventSubscriptions.addAll(eventSubscriptionEntityManager
+          .findCompensateEventSubscriptionsByProcessInstanceIdAndActivityId(execution.getProcessInstanceId(), activityRef));
+      
     } else {
-      eventSubscriptions = scopeExecution.getCompensateEventSubscriptions();
+      
+      // If no activity ref is provided, it is broadcast to the current sub process / process instance
+      Process process = ProcessDefinitionUtil.getProcess(execution.getProcessDefinitionId());
+      
+      FlowElementsContainer flowElementsContainer = null;
+      if (throwEvent.getSubProcess() == null) {
+        flowElementsContainer = process;
+      } else {
+        flowElementsContainer = throwEvent.getSubProcess();
+      }
+      
+      for (FlowElement flowElement : flowElementsContainer.getFlowElements()) {
+        if (flowElement instanceof Activity) {
+          eventSubscriptions.addAll(eventSubscriptionEntityManager
+              .findCompensateEventSubscriptionsByProcessInstanceIdAndActivityId(execution.getProcessInstanceId(), flowElement.getId()));
+        }
+      }
+      
     }
-        
-    if(eventSubscriptions.isEmpty()) {
+    
+    if (eventSubscriptions.isEmpty()) {
       leave(execution);
     } else {
       // TODO: implement async (waitForCompletion=false in bpmn)
-      ScopeUtil.throwCompensationEvent(eventSubscriptions, execution, false );
+      ScopeUtil.throwCompensationEvent(eventSubscriptions, execution, false);
+      leave(execution);
     }
-        
   }
-  
-  public void signal(ActivityExecution execution, String signalName, Object signalData) throws Exception {
-   
-    // join compensating executions    
-    if(execution.getExecutions().isEmpty()) {
-      leave(execution);   
-    } else {      
-      ((ExecutionEntity)execution).forceUpdate();  
-    }
-    
-  }
-  
-
 }

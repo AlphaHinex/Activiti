@@ -12,17 +12,17 @@
  */
 package org.activiti.spring.integration;
 
-import org.activiti.engine.ProcessEngine;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
-import org.springframework.integration.gateway.MessagingGatewaySupport;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+
+import org.activiti.engine.ProcessEngine;
+import org.activiti.engine.delegate.DelegateExecution;
+import org.springframework.integration.gateway.MessagingGatewaySupport;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 /**
  * As a process enters a wait-state, this forwards the
@@ -57,7 +57,7 @@ public class ActivitiInboundGateway extends MessagingGatewaySupport {
     }
 
     public void execute(IntegrationActivityBehavior receiveTaskActivityBehavior,
-                        ActivityExecution execution) throws Exception {
+                        DelegateExecution execution) {
         Map<String, Object> stringObjectMap = new HashMap<String, Object>();
         stringObjectMap.put(executionId, execution.getId());
 
@@ -77,7 +77,7 @@ public class ActivitiInboundGateway extends MessagingGatewaySupport {
         }
     }
 
-    public void signal(IntegrationActivityBehavior receiveTaskActivityBehavior, ActivityExecution execution, String signalName, Object data) {
+    public void signal(IntegrationActivityBehavior receiveTaskActivityBehavior, DelegateExecution execution, String signalName, Object data) {
         receiveTaskActivityBehavior.leave(execution);
     }
 

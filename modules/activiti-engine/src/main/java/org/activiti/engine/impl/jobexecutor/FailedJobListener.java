@@ -13,42 +13,63 @@
 
 package org.activiti.engine.impl.jobexecutor;
 
-import org.activiti.engine.impl.cfg.TransactionListener;
+import org.activiti.engine.delegate.event.ActivitiEventType;
+import org.activiti.engine.delegate.event.impl.ActivitiEventBuilder;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandConfig;
 import org.activiti.engine.impl.interceptor.CommandContext;
+import org.activiti.engine.impl.interceptor.CommandContextCloseListener;
 import org.activiti.engine.impl.interceptor.CommandExecutor;
+import org.activiti.engine.runtime.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * @author Frederik Heremans
  * @author Saeid Mirzaei
+ * @author Joram Barrez
  */
-public class FailedJobListener implements TransactionListener {
+public class FailedJobListener implements CommandContextCloseListener {
+  
   private static final Logger log = LoggerFactory.getLogger(FailedJobListener.class);
 
   protected CommandExecutor commandExecutor;
-  protected String jobId;
-  protected Throwable exception;
-  
-  public FailedJobListener(CommandExecutor commandExecutor, String jobId) {
-    this.commandExecutor = commandExecutor;
-    this.jobId = jobId;
-  }
-  
-  public void execute(CommandContext commandContext) {
-    CommandConfig commandConfig = commandExecutor.getDefaultConfig().transactionRequiresNew();
-	  FailedJobCommandFactory failedJobCommandFactory = commandContext.getFailedJobCommandFactory();
-	  Command<Object> cmd = failedJobCommandFactory.getCommand(jobId, exception);
+  protected Job job;
 
-	  log.trace("Using FailedJobCommandFactory '" + failedJobCommandFactory.getClass() + "' and command of type '" + cmd.getClass() + "'");
-	  commandExecutor.execute(commandConfig, cmd);
+  public FailedJobListener(CommandExecutor commandExecutor, Job job) {
+    this.commandExecutor = commandExecutor;
+    this.job = job;
   }
-  
-  public void setException(Throwable exception) {
-    this.exception = exception;
+
+  @Override
+  public void closing(CommandContext commandContext) {
+  }
+
+  @Override
+  public void afterSessionsFlush(CommandContext commandContext) {
+  }
+
+  @Override
+  public void closed(CommandContext context) {
+    if (context.getEventDispatcher().isEnabled()) {
+      context.getEventDispatcher().dispatchEvent(
+          ActivitiEventBuilder.createEntityEvent(ActivitiEventType.JOB_EXECUTION_SUCCESS, job));
+    }
+  }
+
+  @Override
+  public void closeFailure(CommandContext commandContext) {
+    if (commandContext.getEventDispatcher().isEnabled()) {
+      commandContext.getEventDispatcher().dispatchEvent(ActivitiEventBuilder.createEntityExceptionEvent(
+        ActivitiEventType.JOB_EXECUTION_FAILURE, job, commandContext.getException()));
+    }
+    
+    CommandConfig commandConfig = commandExecutor.getDefaultConfig().transactionRequiresNew();
+    FailedJobCommandFactory failedJobCommandFactory = commandContext.getFailedJobCommandFactory();
+    Command<Object> cmd = failedJobCommandFactory.getCommand(job.getId(), commandContext.getException());
+
+    log.trace("Using FailedJobCommandFactory '" + failedJobCommandFactory.getClass() + "' and command of type '" + cmd.getClass() + "'");
+    commandExecutor.execute(commandConfig, cmd);
   }
 
 }

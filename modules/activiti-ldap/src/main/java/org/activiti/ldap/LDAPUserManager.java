@@ -30,43 +30,43 @@ import org.activiti.engine.identity.User;
 import org.activiti.engine.identity.UserQuery;
 import org.activiti.engine.impl.Page;
 import org.activiti.engine.impl.UserQueryImpl;
+import org.activiti.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.activiti.engine.impl.context.Context;
 import org.activiti.engine.impl.persistence.AbstractManager;
-import org.activiti.engine.impl.persistence.entity.IdentityInfoEntity;
 import org.activiti.engine.impl.persistence.entity.UserEntity;
-import org.activiti.engine.impl.persistence.entity.UserIdentityManager;
+import org.activiti.engine.impl.persistence.entity.UserEntityImpl;
+import org.activiti.engine.impl.persistence.entity.UserEntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Implementation of the {@link UserIdentityManager} interface specifically for LDAP.
+ * Implementation of the {@link UserEntityManager} interface specifically for LDAP.
  * 
  * Note that only a few methods are actually implemented, as many of the operations 
  * (save, update, etc.) are done on the LDAP system directly. 
  * 
  * @author Joram Barrez
  */
-public class LDAPUserManager extends AbstractManager implements UserIdentityManager {
+public class LDAPUserManager extends AbstractManager implements UserEntityManager {
 
   private static Logger logger = LoggerFactory.getLogger(LDAPUserManager.class);
 
   protected LDAPConfigurator ldapConfigurator;
 
-  public LDAPUserManager(LDAPConfigurator ldapConfigurator) {
+  public LDAPUserManager(ProcessEngineConfigurationImpl processEngineConfiguration, LDAPConfigurator ldapConfigurator) {
+    super(processEngineConfiguration);
     this.ldapConfigurator = ldapConfigurator;
   }
-  
+
   @Override
   public User createNewUser(String userId) {
     throw new ActivitiException("LDAP user manager doesn't support creating a new user");
   }
-
-
+  
   @Override
-  public void insertUser(User user) {
-    throw new ActivitiException("LDAP user manager doesn't support inserting a new user");
+  public UserEntity create() {
+    throw new ActivitiException("LDAP user manager doesn't support creating a new user");
   }
-
 
   @Override
   public void updateUser(User updatedUser) {
@@ -74,30 +74,39 @@ public class LDAPUserManager extends AbstractManager implements UserIdentityMana
   }
   
   @Override
-  public boolean isNewUser(User user) {
-  	throw new ActivitiException("LDAP user manager doesn't support adding or updating a user");
+  public UserEntity update(UserEntity entity) {
+    throw new ActivitiException("LDAP user manager doesn't support updating a user");
+  }
+  
+  @Override
+  public UserEntity update(UserEntity entity, boolean fireUpdateEvent) {
+    throw new ActivitiException("LDAP user manager doesn't support updating a user");
   }
 
+  @Override
+  public boolean isNewUser(User user) {
+    throw new ActivitiException("LDAP user manager doesn't support adding or updating a user");
+  }
 
   @Override
-  public UserEntity findUserById(final String userId) {
+  public UserEntity findById(final String userId) {
     LDAPTemplate ldapTemplate = new LDAPTemplate(ldapConfigurator);
     return ldapTemplate.execute(new LDAPCallBack<UserEntity>() {
 
       public UserEntity executeInContext(InitialDirContext initialDirContext) {
         try {
-        
+
           String searchExpression = ldapConfigurator.getLdapQueryBuilder().buildQueryByUserId(ldapConfigurator, userId);
 
           String baseDn = ldapConfigurator.getUserBaseDn() != null ? ldapConfigurator.getUserBaseDn() : ldapConfigurator.getBaseDn();
-          NamingEnumeration< ? > namingEnum = initialDirContext.search(baseDn, searchExpression, createSearchControls());
-          UserEntity user = new UserEntity();
+          NamingEnumeration<?> namingEnum = initialDirContext.search(baseDn, searchExpression, createSearchControls());
+          UserEntity user = new UserEntityImpl();
           while (namingEnum.hasMore()) { // Should be only one
             SearchResult result = (SearchResult) namingEnum.next();
             mapSearchResultToUser(result, user);
           }
           namingEnum.close();
-          
+
           return user;
 
         } catch (NamingException ne) {
@@ -109,19 +118,17 @@ public class LDAPUserManager extends AbstractManager implements UserIdentityMana
     });
   }
 
-
   @Override
-  public void deleteUser(String userId) {
-    throw new ActivitiException("LDAP user manager doesn't support deleting a user");
+  public void deletePicture(User user) {
+    throw new ActivitiException("LDAP user manager doesn't support deleting a user picture");
   }
-
 
   @Override
   public List<User> findUserByQueryCriteria(final UserQueryImpl query, final Page page) {
-    
+
     if (query.getId() != null) {
       List<User> result = new ArrayList<User>();
-      result.add(findUserById(query.getId()));
+      result.add(findById(query.getId()));
       return result;
     } else if (query.getFullNameLike() != null){
       
@@ -129,71 +136,72 @@ public class LDAPUserManager extends AbstractManager implements UserIdentityMana
       
       LDAPTemplate ldapTemplate = new LDAPTemplate(ldapConfigurator);
       return ldapTemplate.execute(new LDAPCallBack<List<User>>() {
-        
+
         public List<User> executeInContext(InitialDirContext initialDirContext) {
           List<User> result = new ArrayList<User>();
           try {
             String searchExpression = ldapConfigurator.getLdapQueryBuilder().buildQueryByFullNameLike(ldapConfigurator, fullNameLike);
             String baseDn = ldapConfigurator.getUserBaseDn() != null ? ldapConfigurator.getUserBaseDn() : ldapConfigurator.getBaseDn();
-            NamingEnumeration< ? > namingEnum = initialDirContext.search(baseDn, searchExpression, createSearchControls());
-            
-            while (namingEnum.hasMore()) { 
+            NamingEnumeration<?> namingEnum = initialDirContext.search(baseDn, searchExpression, createSearchControls());
+
+            while (namingEnum.hasMore()) {
               SearchResult searchResult = (SearchResult) namingEnum.next();
-              
-              UserEntity user = new UserEntity();
+
+              UserEntity user = new UserEntityImpl();
               mapSearchResultToUser(searchResult, user);
               result.add(user);
-              
+
             }
             namingEnum.close();
-            
+
           } catch (NamingException ne) {
             logger.debug("Could not execute LDAP query: " + ne.getMessage(), ne);
             return null;
           }
           return result;
         }
-        
+
       });
-      
+
     } else {
       throw new ActivitiIllegalArgumentException("Query is currently not supported by LDAPUserManager.");
     }
-    
+
   }
-  
-  protected void mapSearchResultToUser( SearchResult result, UserEntity user) throws NamingException {
+
+  protected void mapSearchResultToUser(SearchResult result, UserEntity user) throws NamingException {
     if (ldapConfigurator.getUserIdAttribute() != null) {
       user.setId(result.getAttributes().get(ldapConfigurator.getUserIdAttribute()).get().toString());
     }
     if (ldapConfigurator.getUserFirstNameAttribute() != null) {
-    	try{
-    		user.setFirstName(result.getAttributes().get(ldapConfigurator.getUserFirstNameAttribute()).get().toString());
-    	} catch(NullPointerException e){
-    		user.setFirstName("");
-    	}
-    }
-    if (ldapConfigurator.getUserLastNameAttribute() != null) {
-    	try{
-    		user.setLastName(result.getAttributes().get(ldapConfigurator.getUserLastNameAttribute()).get().toString());
-    	} catch(NullPointerException e){
-    		user.setLastName("");
-    	}
-    }
-    if (ldapConfigurator.getUserEmailAttribute() != null) {
       try {
-        user.setEmail(result.getAttributes().get(ldapConfigurator.getUserEmailAttribute()).get().toString());
-      } catch(NullPointerException e){
-    		user.setEmail("");
+        user.setFirstName(result.getAttributes().get(ldapConfigurator.getUserFirstNameAttribute()).get().toString());
+      } catch (NullPointerException e) {
+        user.setFirstName("");
       }
     }
-  }
-  
-  @Override
-  public long findUserCountByQueryCriteria(UserQueryImpl query) {
-    return findUserByQueryCriteria(query, null).size(); // Is there a generic way to do counts in ldap?
+    if (ldapConfigurator.getUserLastNameAttribute() != null) {
+      try {
+        user.setLastName(result.getAttributes().get(ldapConfigurator.getUserLastNameAttribute()).get().toString());
+      } catch (NullPointerException e) {
+        user.setLastName("");
+      }
+    }
+    if (ldapConfigurator.getUserEmailAttribute() != null) {
+        try {
+            user.setEmail(result.getAttributes().get(ldapConfigurator.getUserEmailAttribute()).get().toString());
+        }catch(NullPointerException e){
+    		user.setEmail("");
+    	}
+    }
   }
 
+  @Override
+  public long findUserCountByQueryCriteria(UserQueryImpl query) {
+    return findUserByQueryCriteria(query, null).size(); // Is there a
+                                                        // generic way to do
+                                                        // counts in ldap?
+  }
 
   @Override
   public List<Group> findGroupsByUser(String userId) {
@@ -206,21 +214,6 @@ public class LDAPUserManager extends AbstractManager implements UserIdentityMana
   }
 
   @Override
-  public IdentityInfoEntity findUserInfoByUserIdAndKey(String userId, String key) {
-    throw new ActivitiException("LDAP user manager doesn't support querying");
-  }
-
-  @Override
-  public List<String> findUserInfoKeysByUserIdAndType(String userId, String type) {
-    throw new ActivitiException("LDAP user manager doesn't support querying");
-  }
-
-  @Override
-  public List<User> findPotentialStarterUsers(String proceDefId) {
-    throw new ActivitiException("LDAP user manager doesn't support querying");
-  }
-
-  @Override
   public List<User> findUsersByNativeQuery(Map<String, Object> parameterMap, int firstResult, int maxResults) {
     throw new ActivitiException("LDAP user manager doesn't support querying");
   }
@@ -229,26 +222,26 @@ public class LDAPUserManager extends AbstractManager implements UserIdentityMana
   public long findUserCountByNativeQuery(Map<String, Object> parameterMap) {
     throw new ActivitiException("LDAP user manager doesn't support querying");
   }
-  
+
   @Override
   public void setUserPicture(String userId, Picture picture) {
-  	throw new ActivitiException("LDAP user manager doesn't support user pictures");
+    throw new ActivitiException("LDAP user manager doesn't support user pictures");
   }
-  
+
   @Override
   public Picture getUserPicture(String userId) {
-  	logger.debug("LDAP user manager doesn't support user pictures. Returning null");
-  	return null;
+    logger.debug("LDAP user manager doesn't support user pictures. Returning null");
+    return null;
   }
 
   @Override
   public Boolean checkPassword(final String userId, final String password) {
-	  
-	  // Extra password check, see http://forums.activiti.org/comment/22312
-  	if (password == null || password.length() == 0) {
-  		throw new ActivitiException("Null or empty passwords are not allowed!");
-  	}
-	  
+
+    // Extra password check, see http://forums.activiti.org/comment/22312
+    if (password == null || password.length() == 0) {
+      throw new ActivitiException("Null or empty passwords are not allowed!");
+    }
+
     try {
       LDAPTemplate ldapTemplate = new LDAPTemplate(ldapConfigurator);
       return ldapTemplate.execute(new LDAPCallBack<Boolean>() {
@@ -265,9 +258,8 @@ public class LDAPUserManager extends AbstractManager implements UserIdentityMana
 
             String searchExpression = ldapConfigurator.getLdapQueryBuilder().buildQueryByUserId(ldapConfigurator, userId);
             String baseDn = ldapConfigurator.getUserBaseDn() != null ? ldapConfigurator.getUserBaseDn() : ldapConfigurator.getBaseDn();
-            NamingEnumeration< ? > namingEnum = initialDirContext.search(baseDn, 
-                    searchExpression, createSearchControls());
-            
+            NamingEnumeration<?> namingEnum = initialDirContext.search(baseDn, searchExpression, createSearchControls());
+
             while (namingEnum.hasMore()) { // Should be only one
               SearchResult result = (SearchResult) namingEnum.next();
               userDn = result.getNameInNamespace();
@@ -279,7 +271,8 @@ public class LDAPUserManager extends AbstractManager implements UserIdentityMana
             return false;
           }
 
-          // Now we have the user DN, we can need to create a connection it
+          // Now we have the user DN, we can need to create a
+          // connection it
           // ('bind' in ldap lingo)
           // to check if the user is valid
           if (userDn != null) {
@@ -287,7 +280,8 @@ public class LDAPUserManager extends AbstractManager implements UserIdentityMana
             try {
               verificationContext = LDAPConnectionUtil.createDirectoryContext(ldapConfigurator, userDn, password);
             } catch (ActivitiException e) {
-              // Do nothing, an exception will be thrown if the login fails
+              // Do nothing, an exception will be thrown if the
+              // login fails
             }
 
             if (verificationContext != null) {
@@ -312,6 +306,31 @@ public class LDAPUserManager extends AbstractManager implements UserIdentityMana
     searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
     searchControls.setTimeLimit(ldapConfigurator.getSearchTimeLimit());
     return searchControls;
+  }
+
+  @Override
+  public void insert(UserEntity entity) {
+    throw new ActivitiException("Unsupported by LDAP user manager");    
+  }
+
+  @Override
+  public void insert(UserEntity entity, boolean fireCreateEvent) {
+    throw new ActivitiException("Unsupported by LDAP user manager");
+  }
+
+  @Override
+  public void delete(String id) {
+    throw new ActivitiException("Unsupported by LDAP user manager");
+  }
+
+  @Override
+  public void delete(UserEntity entity) {
+    throw new ActivitiException("Unsupported by LDAP user manager");
+  }
+
+  @Override
+  public void delete(UserEntity entity, boolean fireDeleteEvent) {
+    throw new ActivitiException("Unsupported by LDAP user manager");
   }
 
 }

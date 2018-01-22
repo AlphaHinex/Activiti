@@ -6,13 +6,13 @@
   <name>Activiti - Upgrade Fetcher</name>
   <groupId>org.activiti</groupId>
   <artifactId>activiti-upgrade-fetcher</artifactId>
-  <version>5.22.0</version>
+  <version>6.0.0</version>
 
   <parent>
     <groupId>org.activiti</groupId>
     <artifactId>activiti-root</artifactId>
     <relativePath>../..</relativePath>
-    <version>5.22.0</version>
+    <version>6.0.0</version>
   </parent>
 
   <dependencies>
@@ -35,8 +35,8 @@
       <dependencies>
         <dependency>
           <groupId>com.oracle.jdbc</groupId>
-          <artifactId>ojdbc5</artifactId>
-          <version>11.2.0.1.0</version>
+          <artifactId>ojdbc7</artifactId>
+          <version>12.1.0.1</version>
         </dependency>
       </dependencies>
     </profile>

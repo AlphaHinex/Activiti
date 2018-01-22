@@ -12,6 +12,7 @@
  */
 package org.activiti.test.scripting.secure;
 
+import org.activiti.engine.impl.util.CollectionUtil;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
 import org.junit.Assert;
@@ -19,6 +20,8 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * @author Joram Barrez
@@ -85,7 +88,7 @@ public class SecureScriptingTest extends SecureScriptingBaseTest {
     deployProcessDefinition("test-secure-script-use-variableScope-and-vars.bpmn20.xml");
 
     addWhiteListedClass("java.lang.Integer");
-    addWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntity");
+    addWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl");
 
     Map<String, Object> vars = new HashMap<String, Object>();
     vars.put("a", 123);
@@ -115,7 +118,7 @@ public class SecureScriptingTest extends SecureScriptingBaseTest {
   public void testExecutionListener2() {
     deployProcessDefinition("test-secure-script-execution-listener2.bpmn20.xml");
     
-    removeWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntity");
+    removeWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl");
     try {
       runtimeService.startProcessInstanceByKey("secureScripting");
       Assert.fail(); // Expecting exception
@@ -124,13 +127,13 @@ public class SecureScriptingTest extends SecureScriptingBaseTest {
     }
     
     try {
-      addWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntity");
+      addWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl");
       ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("secureScripting");
       Assert.assertEquals("testValue", runtimeService.getVariable(processInstance.getId(), "test"));
     } catch(Exception e) {
       Assert.fail();
     } finally {
-      removeWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntity");
+      removeWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl");
     }
   }
   
@@ -152,6 +155,45 @@ public class SecureScriptingTest extends SecureScriptingBaseTest {
     
     task = taskService.createTaskQuery().singleResult();
     Assert.assertNotNull(task);
+  }
+
+  @Test
+  public void testDynamicScript() {
+    addWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl");
+
+    deployProcessDefinition("test-dynamic-secure-script.bpmn20.xml");
+
+    ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("testDynamicScript", CollectionUtil.map("a", 20, "b", 22));
+    Assert.assertEquals(42.0, runtimeService.getVariable(processInstance.getId(), "test"));
+    taskService.complete(taskService.createTaskQuery().singleResult().getId());
+    assertProcessEnded(processInstance.getId());
+
+    String processDefinitionId = processInstance.getProcessDefinitionId();
+    ObjectNode infoNode = dynamicBpmnService.changeScriptTaskScript("script1", "var sum = c + d;\nexecution.setVariable('test2', sum);");
+    dynamicBpmnService.saveProcessDefinitionInfo(processDefinitionId, infoNode);
+
+    processInstance = runtimeService.startProcessInstanceByKey("testDynamicScript", CollectionUtil.map("c", 10, "d", 12));
+    Assert.assertEquals(22.0, runtimeService.getVariable(processInstance.getId(), "test2"));
+    taskService.complete(taskService.createTaskQuery().singleResult().getId());
+    assertProcessEnded(processInstance.getId());
+    removeWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl");
+  }
+
+  @Test
+  public void testExecution() {
+	addWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl");
+    deployProcessDefinition("test-secure-script-execution.bpmn20.xml");
+    String processInstanceId = runtimeService.startProcessInstanceByKey("secureScripting").getId();
+    Task task = taskService.createTaskQuery().processInstanceId(processInstanceId).singleResult();
+    Assert.assertNotNull(task);
+    taskService.complete(task.getId());
+    removeWhiteListedClass("org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl");
+  }
+  
+  @Test
+  public void testUsingBean() {
+    deployProcessDefinition("test-secure-script-bean.bpmn20.xml");
+    runtimeService.startProcessInstanceByKey("secureScripting");
   }
 
 }

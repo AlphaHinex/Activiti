@@ -96,7 +96,7 @@ public class DefaultProcessDiagramCanvas {
   // Fonts
   protected static Font LABEL_FONT = null;
   protected static Font ANNOTATION_FONT = null;
-
+  
   // Strokes
   protected static Stroke THICK_TASK_BORDER_STROKE = new BasicStroke(3.0f);
   protected static Stroke GATEWAY_TYPE_STROKE = new BasicStroke(3.0f);
@@ -167,7 +167,7 @@ public class DefaultProcessDiagramCanvas {
       this.labelFontName = labelFontName;
     }
     if (annotationFontName != null) {
-        this.annotationFontName = annotationFontName;
+      this.annotationFontName = annotationFontName;
     }
     this.customClassLoader = customClassLoader;
     

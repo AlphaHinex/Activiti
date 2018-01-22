@@ -325,7 +325,7 @@ public class MessageEventsAndNewVersionDeploymentsTest extends PluggableActiviti
     
     repositoryService.deleteDeployment(deploymentId4, true);
     runtimeService.startProcessInstanceByMessage("myStartMessage");
-    assertEquals(1, runtimeService.createExecutionQuery().count());
+    assertEquals(1, runtimeService.createProcessInstanceQuery().count());
     cleanup(deploymentId1);
   }
 

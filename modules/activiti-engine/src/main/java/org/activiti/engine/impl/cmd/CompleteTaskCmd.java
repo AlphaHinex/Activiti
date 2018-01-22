@@ -14,32 +14,47 @@ package org.activiti.engine.impl.cmd;
 
 import java.util.Map;
 
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.TaskEntity;
-
+import org.activiti.engine.impl.util.Activiti5Util;
 
 /**
  * @author Joram Barrez
  */
-public class CompleteTaskCmd extends NeedsActiveTaskCmd<Void> {
-      
+public class CompleteTaskCmd extends AbstractCompleteTaskCmd {
+
   private static final long serialVersionUID = 1L;
   protected Map<String, Object> variables;
+  protected Map<String, Object> transientVariables;
   protected boolean localScope;
-  
+
   public CompleteTaskCmd(String taskId, Map<String, Object> variables) {
     super(taskId);
     this.variables = variables;
   }
-  
+
   public CompleteTaskCmd(String taskId, Map<String, Object> variables, boolean localScope) {
-    super(taskId);
-    this.variables = variables;
+    this(taskId, variables);
     this.localScope = localScope;
   }
   
+  public CompleteTaskCmd(String taskId, Map<String, Object> variables, Map<String, Object> transientVariables) {
+    this(taskId, variables);
+    this.transientVariables = transientVariables;
+  }
+
   protected Void execute(CommandContext commandContext, TaskEntity task) {
-    if (variables!=null) {
+    // Backwards compatibility
+    if (task.getProcessDefinitionId() != null) {
+      if (Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, task.getProcessDefinitionId())) {
+        Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+        activiti5CompatibilityHandler.completeTask(task, variables, localScope);
+        return null;
+      }
+    }
+    
+    if (variables != null) {
     	if (localScope) {
     		task.setVariablesLocal(variables);
     	} else if (task.getExecutionId() != null) {
@@ -49,10 +64,18 @@ public class CompleteTaskCmd extends NeedsActiveTaskCmd<Void> {
     	}
     }
     
-    task.complete(variables, localScope);
+    if (transientVariables != null) {
+      if (localScope) {
+        task.setTransientVariablesLocal(transientVariables);
+      } else {
+        task.setTransientVariables(transientVariables);
+      }
+    }
+
+    executeTaskComplete(commandContext, task, variables, localScope);
     return null;
   }
-  
+
   @Override
   protected String getSuspendedTaskException() {
     return "Cannot complete a suspended task";

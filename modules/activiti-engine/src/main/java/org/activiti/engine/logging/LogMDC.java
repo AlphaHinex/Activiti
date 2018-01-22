@@ -1,6 +1,6 @@
 package org.activiti.engine.logging;
 
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
+import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
 import org.slf4j.MDC;
 
 /**
@@ -17,7 +17,7 @@ public class LogMDC {
   public static final String LOG_MDC_BUSINESS_KEY = "mdcBusinessKey";
   public static final String LOG_MDC_TASK_ID = "mdcTaskId";
 
-  static boolean enabled = false;
+  static boolean enabled;
 
   public static boolean isMDCEnabled() {
     return enabled;
@@ -27,16 +27,15 @@ public class LogMDC {
     enabled = b;
   }
 
-  public static void putMDCExecution(ActivityExecution e) {
+  public static void putMDCExecution(ExecutionEntity e) {
     if (e.getId() != null)
       MDC.put(LOG_MDC_EXECUTION_ID, e.getId());
     if (e.getProcessDefinitionId() != null)
       MDC.put(LOG_MDC_PROCESSDEFINITION_ID, e.getProcessDefinitionId());
     if (e.getProcessInstanceId() != null)
       MDC.put(LOG_MDC_PROCESSINSTANCE_ID, e.getProcessInstanceId());
-    if (e.getProcessBusinessKey() != null)
-      MDC.put(LOG_MDC_BUSINESS_KEY, e.getProcessBusinessKey());
-    
+    if (e.getProcessInstanceBusinessKey() != null)
+      MDC.put(LOG_MDC_BUSINESS_KEY, e.getProcessInstanceBusinessKey());
 
   }
 

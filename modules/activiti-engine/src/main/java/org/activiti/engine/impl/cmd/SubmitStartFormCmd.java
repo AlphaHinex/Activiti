@@ -13,14 +13,18 @@
 
 package org.activiti.engine.impl.cmd;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.form.StartFormHandler;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
 import org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity;
+import org.activiti.engine.impl.util.Activiti5Util;
+import org.activiti.engine.impl.util.FormHandlerUtil;
+import org.activiti.engine.impl.util.ProcessInstanceHelper;
 import org.activiti.engine.runtime.ProcessInstance;
-
 
 /**
  * @author Tom Baeyens
@@ -29,32 +33,48 @@ import org.activiti.engine.runtime.ProcessInstance;
 public class SubmitStartFormCmd extends NeedsActiveProcessDefinitionCmd<ProcessInstance> {
 
   private static final long serialVersionUID = 1L;
-  
+
   protected final String businessKey;
   protected Map<String, String> properties;
-  
+
   public SubmitStartFormCmd(String processDefinitionId, String businessKey, Map<String, String> properties) {
     super(processDefinitionId);
     this.businessKey = businessKey;
     this.properties = properties;
   }
-  
+
   protected ProcessInstance execute(CommandContext commandContext, ProcessDefinitionEntity processDefinition) {
+    if (Activiti5Util.isActiviti5ProcessDefinition(commandContext, processDefinition)) {
+      Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+      return activiti5CompatibilityHandler.submitStartFormData(processDefinition.getId(), businessKey, properties);
+    }
+    
     ExecutionEntity processInstance = null;
+    ProcessInstanceHelper processInstanceHelper = commandContext.getProcessEngineConfiguration().getProcessInstanceHelper();
+    
+    // TODO: backwards compatibility? Only create the process instance and not start it? How?
     if (businessKey != null) {
-      processInstance = processDefinition.createProcessInstance(businessKey);
+      processInstance = (ExecutionEntity) processInstanceHelper.createProcessInstance(processDefinition, businessKey, null, null, null);
     } else {
-      processInstance = processDefinition.createProcessInstance();
+      processInstance = (ExecutionEntity) processInstanceHelper.createProcessInstance(processDefinition, null, null, null, null);
     }
 
-    commandContext.getHistoryManager()
-      .reportFormPropertiesSubmitted(processInstance, properties, null);
-    
-    StartFormHandler startFormHandler = processDefinition.getStartFormHandler();
-    startFormHandler.submitFormProperties(properties, processInstance);
+    commandContext.getHistoryManager().recordFormPropertiesSubmitted(processInstance.getExecutions().get(0), properties, null);
 
-    processInstance.start();
+    StartFormHandler startFormHandler = FormHandlerUtil.getStartFormHandler(commandContext, processDefinition); 
+    startFormHandler.submitFormProperties(properties, processInstance);
     
+    processInstanceHelper.startProcessInstance(processInstance, commandContext, convertPropertiesToVariablesMap());
+
     return processInstance;
   }
+  
+  protected Map<String, Object> convertPropertiesToVariablesMap() {
+    Map<String, Object> vars = new HashMap<String, Object>(properties.size());
+    for (String key : properties.keySet()) {
+      vars.put(key, properties.get(key));
+    }
+    return vars;
+  }
+  
 }

@@ -21,14 +21,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * @author Josh Long
  * @author Joram Barrez
- * @author Vedran Pavic
  */
 @ConfigurationProperties("spring.activiti")
 public class ActivitiProperties {
 
   private boolean checkProcessDefinitions = true;
-  private boolean jobExecutorActivate = false;
-  private boolean asyncExecutorEnabled = true;
   private boolean asyncExecutorActivate = true;
   private boolean restApiEnabled;
   private String deploymentName;
@@ -41,8 +38,8 @@ public class ActivitiProperties {
   private boolean mailServerUseTls;
   private String databaseSchemaUpdate = "true";
   private String databaseSchema;
-  protected boolean isDbIdentityUsed = true;
-  protected boolean isDbHistoryUsed = true;
+  private boolean isDbIdentityUsed = true;
+  private boolean isDbHistoryUsed = true;
   private HistoryLevel historyLevel = HistoryLevel.AUDIT;
   private String processDefinitionLocationPrefix = "classpath:/processes/";
   private List<String> processDefinitionLocationSuffixes = Arrays.asList("**.bpmn20.xml", "**.bpmn");
@@ -51,22 +48,6 @@ public class ActivitiProperties {
   private boolean jpaEnabled = true; // true by default
   private List<String> customMybatisMappers;
   private List<String> customMybatisXMLMappers;
-
-  public boolean isJobExecutorActivate() {
-    return jobExecutorActivate;
-  }
-
-  public void setJobExecutorActivate(boolean jobExecutorActivate) {
-    this.jobExecutorActivate = jobExecutorActivate;
-  }
-
-  public boolean isAsyncExecutorEnabled() {
-    return asyncExecutorEnabled;
-  }
-
-  public void setAsyncExecutorEnabled(boolean asyncExecutorEnabled) {
-    this.asyncExecutorEnabled = asyncExecutorEnabled;
-  }
 
   public boolean isAsyncExecutorActivate() {
     return asyncExecutorActivate;
@@ -144,16 +125,16 @@ public class ActivitiProperties {
     return isDbIdentityUsed;
   }
 
-  public void setDbIdentityUsed(boolean dbIdentityUsed) {
-    isDbIdentityUsed = dbIdentityUsed;
+  public void setDbIdentityUsed(boolean isDbIdentityUsed) {
+    this.isDbIdentityUsed = isDbIdentityUsed;
   }
 
   public boolean isDbHistoryUsed() {
     return isDbHistoryUsed;
   }
 
-  public void setDbHistoryUsed(boolean dbHistoryUsed) {
-    isDbHistoryUsed = dbHistoryUsed;
+  public void setDbHistoryUsed(boolean isDbHistoryUsed) {
+    this.isDbHistoryUsed = isDbHistoryUsed;
   }
 
   public HistoryLevel getHistoryLevel() {

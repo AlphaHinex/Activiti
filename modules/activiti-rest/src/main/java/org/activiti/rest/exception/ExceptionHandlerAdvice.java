@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @ControllerAdvice
 public class ExceptionHandlerAdvice {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionHandlerAdvice.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionHandlerAdvice.class);
   
   @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE) // 415
   @ExceptionHandler(ActivitiContentNotSupportedException.class)
@@ -29,35 +29,40 @@ public class ExceptionHandlerAdvice {
     return new ErrorInfo("Content is not supported", e);
   }
 
-  @ResponseStatus(HttpStatus.CONFLICT) // 409
+  @ResponseStatus(HttpStatus.CONFLICT)
+  // 409
   @ExceptionHandler(ActivitiConflictException.class)
   @ResponseBody
   public ErrorInfo handleConflict(ActivitiConflictException e) {
     return new ErrorInfo("Conflict", e);
   }
-  
-  @ResponseStatus(HttpStatus.CONFLICT) // 409
+
+  @ResponseStatus(HttpStatus.CONFLICT)
+  // 409
   @ExceptionHandler(ActivitiTaskAlreadyClaimedException.class)
   @ResponseBody
   public ErrorInfo handleTaskAlreadyClaimed(ActivitiTaskAlreadyClaimedException e) {
     return new ErrorInfo("Task was already claimed", e);
   }
-  
-  @ResponseStatus(HttpStatus.NOT_FOUND)  // 404
+
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  // 404
   @ExceptionHandler(ActivitiObjectNotFoundException.class)
   @ResponseBody
   public ErrorInfo handleNotFound(ActivitiObjectNotFoundException e) {
-      return new ErrorInfo("Not found", e);
+    return new ErrorInfo("Not found", e);
   }
-  
-  @ResponseStatus(HttpStatus.FORBIDDEN)  // 403
+
+  @ResponseStatus(HttpStatus.FORBIDDEN)
+  // 403
   @ExceptionHandler(ActivitiForbiddenException.class)
   @ResponseBody
   public ErrorInfo handleForbidden(ActivitiForbiddenException e) {
-      return new ErrorInfo("Forbidden", e);
+    return new ErrorInfo("Forbidden", e);
   }
-  
-  @ResponseStatus(HttpStatus.BAD_REQUEST) // 400
+
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  // 400
   @ExceptionHandler(ActivitiIllegalArgumentException.class)
   @ResponseBody
   public ErrorInfo handleIllegal(ActivitiIllegalArgumentException e) {

@@ -16,54 +16,59 @@ import java.io.Serializable;
 
 import org.activiti.engine.ActivitiIllegalArgumentException;
 import org.activiti.engine.ActivitiObjectNotFoundException;
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.ProcessDefinitionEntity;
+import org.activiti.engine.impl.util.Activiti5Util;
 import org.activiti.engine.repository.ProcessDefinition;
-
 
 /**
  * @author Tijs Rademakers
  */
 public class AddIdentityLinkForProcessDefinitionCmd implements Command<Void>, Serializable {
-  
+
   private static final long serialVersionUID = 1L;
 
   protected String processDefinitionId;
-  
+
   protected String userId;
-  
+
   protected String groupId;
-  
+
   public AddIdentityLinkForProcessDefinitionCmd(String processDefinitionId, String userId, String groupId) {
     validateParams(userId, groupId, processDefinitionId);
     this.processDefinitionId = processDefinitionId;
     this.userId = userId;
     this.groupId = groupId;
   }
-  
+
   protected void validateParams(String userId, String groupId, String processDefinitionId) {
-    if(processDefinitionId == null) {
+    if (processDefinitionId == null) {
       throw new ActivitiIllegalArgumentException("processDefinitionId is null");
     }
-    
+
     if (userId == null && groupId == null) {
       throw new ActivitiIllegalArgumentException("userId and groupId cannot both be null");
     }
   }
-  
+
   public Void execute(CommandContext commandContext) {
-    ProcessDefinitionEntity processDefinition = commandContext
-      .getProcessDefinitionEntityManager()
-      .findProcessDefinitionById(processDefinitionId);
-    
+    ProcessDefinitionEntity processDefinition = commandContext.getProcessDefinitionEntityManager().findById(processDefinitionId);
+
     if (processDefinition == null) {
       throw new ActivitiObjectNotFoundException("Cannot find process definition with id " + processDefinitionId, ProcessDefinition.class);
     }
     
-    processDefinition.addIdentityLink(userId, groupId);
-    
-    return null;  
+    if (Activiti5Util.isActiviti5ProcessDefinition(commandContext, processDefinition)) {
+      Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+      activiti5CompatibilityHandler.addCandidateStarter(processDefinitionId, userId, groupId);
+      return null;
+    }
+
+    commandContext.getIdentityLinkEntityManager().addIdentityLink(processDefinition, userId, groupId);
+
+    return null;
   }
-  
+
 }

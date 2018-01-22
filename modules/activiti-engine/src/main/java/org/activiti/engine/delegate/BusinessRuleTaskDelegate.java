@@ -12,7 +12,7 @@
  */
 package org.activiti.engine.delegate;
 
-import org.activiti.engine.impl.pvm.delegate.ActivityBehavior;
+import org.activiti.engine.impl.delegate.ActivityBehavior;
 
 public interface BusinessRuleTaskDelegate extends ActivityBehavior {
   

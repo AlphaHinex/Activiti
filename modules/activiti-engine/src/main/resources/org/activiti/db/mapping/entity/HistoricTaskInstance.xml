@@ -16,11 +16,11 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntity">
+<mapper namespace="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntityImpl">
   
   <!-- HISTORIC TASK INSTANCE INSERT -->
   
-  <insert id="insertHistoricTaskInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntity">
+  <insert id="insertHistoricTaskInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntityImpl">
       insert into ${prefix}ACT_HI_TASKINST (
         ID_,
         PROC_DEF_ID_,
@@ -113,7 +113,7 @@
         </foreach>
   </insert>
 
-  <insert id="bulkInsertHistoricTaskInstance_oracle" parameterType="java.util.List">
+  <insert id="bulkInsertHistoricTaskInstance" databaseId="oracle" parameterType="java.util.List">
       INSERT ALL 
         <foreach collection="list" item="historicTask" index="index">
           INTO ${prefix}ACT_HI_TASKINST (
@@ -164,7 +164,7 @@
 
   <!-- HISTORIC TASK INSTANCE UPDATE -->
   
-  <update id="updateHistoricTaskInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntity">
+  <update id="updateHistoricTaskInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntityImpl">
     update ${prefix}ACT_HI_TASKINST set
       PROC_DEF_ID_ = #{processDefinitionId, jdbcType=VARCHAR},
       EXECUTION_ID_ = #{executionId, jdbcType=VARCHAR},
@@ -187,7 +187,7 @@
 
   <!-- HISTORIC TASK INSTANCE DELETE -->
   
-  <delete id="deleteHistoricTaskInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntity">
+  <delete id="deleteHistoricTaskInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntityImpl">
     delete from ${prefix}ACT_HI_TASKINST where ID_ = #{id}
   </delete>
   
@@ -200,7 +200,7 @@
   
   <!-- HISTORIC TASK INSTANCE RESULT MAP -->
 
-  <resultMap id="historicTaskInstanceResultMap" type="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntity">
+  <resultMap id="historicTaskInstanceResultMap" type="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="processDefinitionId" column="PROC_DEF_ID_" jdbcType="VARCHAR" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
@@ -223,7 +223,7 @@
     <result property="tenantId" column="TENANT_ID_" jdbcType="VARCHAR" />
   </resultMap>
   
-  <resultMap id="historicTaskInstanceAndVariablesResultMap" type="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntity">
+  <resultMap id="historicTaskInstanceAndVariablesResultMap" type="org.activiti.engine.impl.persistence.entity.HistoricTaskInstanceEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="processDefinitionId" column="PROC_DEF_ID_" jdbcType="VARCHAR" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
@@ -244,7 +244,7 @@
     <result property="dueDate" column="DUE_DATE_" jdbcType="TIMESTAMP" />
     <result property="category" column="CATEGORY_" jdbcType="VARCHAR" />
     <result property="tenantId" column="TENANT_ID_" jdbcType="VARCHAR" />
-    <collection property="queryVariables" column="TASK_ID_" javaType="ArrayList" ofType="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntity">
+    <collection property="queryVariables" column="TASK_ID_" javaType="ArrayList" ofType="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntityImpl">
       <id property="id" column="VAR_ID_"/>
       <result property="name" column="VAR_NAME_" javaType="String" jdbcType="VARCHAR" />
       <result property="variableType" column="VAR_TYPE_" javaType="org.activiti.engine.impl.variable.VariableType" jdbcType="VARCHAR" />
@@ -270,8 +270,8 @@
     select * from ${prefix}ACT_HI_TASKINST where PARENT_TASK_ID_ = #{parameter}
   </select>
   
-  <select id="selectHistoricTaskInstanceIdsByProcessInstanceId" resultType="string" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" >
-    select ID_ 
+  <select id="selectHistoricTaskInstancesByProcessInstanceId" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="historicTaskInstanceResultMap" >
+    select *
     from ${prefix}ACT_HI_TASKINST 
     where PROC_INST_ID_ = #{parameter}
   </select>
@@ -285,7 +285,7 @@
   </select>
   
   <select id="selectHistoricTaskInstanceCountByQueryCriteria" parameterType="org.activiti.engine.impl.HistoricTaskInstanceQueryImpl" resultType="long">
-    select count(RES.ID_)
+    select count(DISTINCT RES.ID_)
     <include refid="selectHistoricTaskInstancesByQueryCriteriaSql"/>
   </select>
   
@@ -295,20 +295,23 @@
   </sql>
   
   <select id="selectHistoricTaskInstancesWithVariablesByQueryCriteria" parameterType="org.activiti.engine.impl.HistoricTaskInstanceQueryImpl" resultMap="historicTaskInstanceAndVariablesResultMap">
-    ${limitBefore}
+    <include refid="selectHistoricTaskInstancesWithVariablesByQueryCriteriaColumns"/>
+    <include refid="selectHistoricTaskInstancesWithVariablesByQueryCriteriaSql"/> 
+    ${orderBy}
+    ${limitAfter}
+  </select>
+  
+  <sql id="selectHistoricTaskInstancesWithVariablesByQueryCriteriaColumns">
+  ${limitBefore}
+   <if test="_databaseId != 'db2' and _databaseId != 'mssql'">
     select distinct RES.*,
     VAR.ID_ as VAR_ID_, VAR.NAME_ as VAR_NAME_, VAR.VAR_TYPE_ as VAR_TYPE_, VAR.REV_ as VAR_REV_,
     VAR.PROC_INST_ID_ as VAR_PROC_INST_ID_, VAR.EXECUTION_ID_ as VAR_EXECUTION_ID_, VAR.TASK_ID_ as VAR_TASK_ID_,
     VAR.BYTEARRAY_ID_ as VAR_BYTEARRAY_ID_, VAR.DOUBLE_ as VAR_DOUBLE_, 
     VAR.TEXT_ as VAR_TEXT_, VAR.TEXT2_ as VAR_TEXT2_, VAR.LAST_UPDATED_TIME_ as VAR_LAST_UPDATED_TIME_, VAR.LONG_ as VAR_LONG_
     ${limitBetween}
-    <include refid="selectHistoricTaskInstancesWithVariablesByQueryCriteriaSql"/> 
-    ${orderBy}
-    ${limitAfter}
-  </select>
-  
-  <select id="selectHistoricTaskInstancesWithVariablesByQueryCriteria_mssql_or_db2" parameterType="org.activiti.engine.impl.HistoricTaskInstanceQueryImpl" resultMap="historicTaskInstanceAndVariablesResultMap">
-    ${limitBefore}
+   </if>
+   <if test="_databaseId == 'db2' || _databaseId == 'mssql'">
     select distinct TEMPRES_ID_ as ID_,
     TEMPRES_PROC_DEF_ID_ as PROC_DEF_ID_, TEMPRES_PROC_INST_ID_ as PROC_INST_ID_, TEMPRES_EXECUTION_ID_ as EXECUTION_ID_,
     TEMPRES_NAME_ as NAME_, TEMPRES_PARENT_TASK_ID_ as PARENT_TASK_ID_,
@@ -333,10 +336,8 @@
     VAR.PROC_INST_ID_ as TEMPVAR_PROC_INST_ID_, VAR.EXECUTION_ID_ as TEMPVAR_EXECUTION_ID_, VAR.TASK_ID_ as TEMPVAR_TASK_ID_,
     VAR.BYTEARRAY_ID_ as TEMPVAR_BYTEARRAY_ID_, VAR.DOUBLE_ as TEMPVAR_DOUBLE_, 
     VAR.TEXT_ as TEMPVAR_TEXT_, VAR.TEXT2_ as TEMPVAR_TEXT2_, VAR.LAST_UPDATED_TIME_ as TEMPVAR_LAST_UPDATED_TIME_, VAR.LONG_ as TEMPVAR_LONG_
-    <include refid="selectHistoricTaskInstancesWithVariablesByQueryCriteriaSql"/> 
-    ${orderBy}
-    ${limitAfter}
-  </select>
+   </if>
+  </sql>
   
   <sql id="selectHistoricTaskInstancesWithVariablesByQueryCriteriaSql">  
     from ${prefix}ACT_HI_TASKINST RES
@@ -357,7 +358,7 @@
   </sql>
   
   <sql id="commonSelectHistoricTaskInstancesByQueryCriteriaSql">
-    <if test="candidateUser != null || candidateGroups != null">
+    <if test="candidateUser != null || candidateGroups != null || involvedGroups != null">
       inner join ${prefix}ACT_HI_IDENTITYLINK HI on HI.TASK_ID_ = RES.ID_
     </if>
     <if test="processFinished || processUnfinished || processInstanceBusinessKey != null || processInstanceBusinessKeyLike != null || processInstanceBusinessKeyLikeIgnoreCase != null">
@@ -380,8 +381,12 @@
       </choose>       
     </foreach>
     <foreach collection="orQueryObjects" index="orIndex" item="orQueryObject">
-      <if test="orQueryObject.candidateUser != null || orQueryObject.candidateGroups != null">
-        inner join ${prefix}ACT_HI_IDENTITYLINK HI_OR${orIndex} on HI_OR${orIndex}.TASK_ID_ = RES.ID_
+      <if test="orQueryObject.candidateUser != null || orQueryObject.candidateGroups != null || orQueryObject.involvedGroups != null">
+        <choose>
+          <when test="orQueryObject.involvedGroups != null">left</when>
+          <otherwise>inner</otherwise>
+        </choose>
+         join ${prefix}ACT_HI_IDENTITYLINK HI_OR${orIndex} on HI_OR${orIndex}.TASK_ID_ = RES.ID_
       </if>
       <if test="orQueryObject.processFinished || orQueryObject.processUnfinished || orQueryObject.processInstanceBusinessKey != null || orQueryObject.processInstanceBusinessKeyLike != null || orQueryObject.processInstanceBusinessKeyLikeIgnoreCase != null">
         inner join ${prefix}ACT_HI_PROCINST HPI_OR${orIndex} ON RES.PROC_INST_ID_ = HPI_OR${orIndex}.ID_
@@ -540,6 +545,13 @@
       <if test="taskAssigneeLikeIgnoreCase != null">
         and lower(RES.ASSIGNEE_) like #{taskAssigneeLikeIgnoreCase}${wildcardEscapeClause}
       </if>
+      <if test="taskAssigneeIds != null &amp;&amp; taskAssigneeIds.size() &gt; 0">
+        and RES.ASSIGNEE_ IN
+        <foreach item="assigneeId" index="index" collection="taskAssigneeIds" 
+                 open="(" separator="," close=")">
+          #{assigneeId}
+        </foreach>
+	  </if>
       <if test="taskPriority != null">
         and RES.PRIORITY_ = #{taskPriority}
       </if>
@@ -624,11 +636,23 @@
         )
       </if>
       <if test="involvedUser != null">
-        and (
+        and
+        (
           exists(select LINK.USER_ID_ from ${prefix}ACT_HI_IDENTITYLINK LINK where USER_ID_ = #{involvedUser} and LINK.TASK_ID_ = RES.ID_)
           or RES.ASSIGNEE_ = #{involvedUser}
           or RES.OWNER_ = #{involvedUser}
-          )
+        )
+      </if>
+      <if test="involvedGroups != null &amp;&amp; involvedGroups.size() &gt; 0">
+        and
+        (
+          HI.TYPE_ = 'participant'
+          and
+          HI.GROUP_ID_ IN
+          <foreach item="group" index="index" collection="involvedGroups" open="(" separator="," close=")">
+            #{group}
+          </foreach>
+        )
       </if>
       <foreach item="queryVar" collection="queryVariableValues" index="index">
         <if test="!queryVar.local">
@@ -835,6 +859,13 @@
            <if test="orQueryObject.taskAssigneeLikeIgnoreCase != null">
             or RES.ASSIGNEE_ like #{orQueryObject.taskAssigneeLikeIgnoreCase}${wildcardEscapeClause}
           </if>
+          <if test="orQueryObject.taskAssigneeIds != null &amp;&amp; orQueryObject.taskAssigneeIds.size() &gt; 0">
+	        or RES.ASSIGNEE_ IN
+	        <foreach item="assigneeId" index="index" collection="orQueryObject.taskAssigneeIds" 
+	                 open="(" separator="," close=")">
+	          #{assigneeId}
+	        </foreach>
+		  </if>
           <if test="orQueryObject.taskPriority != null">
             or RES.PRIORITY_ = #{orQueryObject.taskPriority}
           </if>
@@ -919,11 +950,23 @@
             ))
           </if>
           <if test="orQueryObject.involvedUser != null">
-            or (
+            or
+            (
               exists(select LINK.USER_ID_ from ${prefix}ACT_HI_IDENTITYLINK LINK where USER_ID_ = #{orQueryObject.involvedUser} and LINK.TASK_ID_ = RES.ID_)
               or RES.ASSIGNEE_ = #{orQueryObject.involvedUser}
               or RES.OWNER_ = #{orQueryObject.involvedUser}
-              )
+            )
+          </if>
+          <if test="orQueryObject.involvedGroups != null &amp;&amp; orQueryObject.involvedGroups.size() &gt; 0">
+            or
+            (
+              HI_OR${orIndex}.TYPE_ = 'participant'
+              and
+              HI_OR${orIndex}.GROUP_ID_ IN
+              <foreach item="group" index="index" collection="orQueryObject.involvedGroups" open="(" separator="," close=")">
+                #{group}
+              </foreach>
+            )
           </if>
           <foreach item="queryVar" collection="orQueryObject.queryVariableValues" index="index">
             or
@@ -1017,25 +1060,9 @@
   </sql>
 
   <select id="selectHistoricTaskInstanceByNativeQuery" parameterType="java.util.Map" resultMap="historicTaskInstanceResultMap">
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitBefore}
-    </if>
-    ${sql}
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitAfter}
-    </if>
+    <include refid="org.activiti.engine.db.common.selectByNativeQuery"/>
   </select>
   
-  <select id="selectHistoricTaskInstanceByNativeQuery_mssql_or_db2" parameterType="java.util.Map" resultMap="historicTaskInstanceResultMap">
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitBeforeNativeQuery}
-    </if>
-    ${sql} 
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitAfter}
-    </if>
-  </select>
-
   <select id="selectHistoricTaskInstanceCountByNativeQuery" parameterType="java.util.Map" resultType="long">
     ${sql}
   </select>

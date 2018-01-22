@@ -1,0 +1,9 @@
+archivesBaseName = 'activiti-bpmn-model'
+
+task pack(type: Jar, dependsOn: mvnPkg) {
+    from 'target/classes'
+}
+
+artifacts {
+    archives pack
+}

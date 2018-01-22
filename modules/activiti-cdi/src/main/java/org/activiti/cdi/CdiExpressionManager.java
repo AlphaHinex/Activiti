@@ -12,23 +12,22 @@
  */
 package org.activiti.cdi;
 
+import javax.el.ArrayELResolver;
+import javax.el.BeanELResolver;
+import javax.el.CompositeELResolver;
+import javax.el.ELResolver;
+import javax.el.ListELResolver;
+import javax.el.MapELResolver;
+
 import org.activiti.cdi.impl.el.CdiResolver;
 import org.activiti.engine.delegate.VariableScope;
 import org.activiti.engine.impl.el.ExpressionManager;
 import org.activiti.engine.impl.el.VariableScopeElResolver;
-import org.activiti.engine.impl.javax.el.ArrayELResolver;
-import org.activiti.engine.impl.javax.el.BeanELResolver;
-import org.activiti.engine.impl.javax.el.CompositeELResolver;
-import org.activiti.engine.impl.javax.el.ELResolver;
-import org.activiti.engine.impl.javax.el.ListELResolver;
-import org.activiti.engine.impl.javax.el.MapELResolver;
 
 /**
  * {@link ExpressionManager} for resolving Cdi-managed beans.
  * 
- * This {@link ExpressionManager} implementation performs lazy lookup of the
- * Cdi-BeanManager and can thus be configured using the spring-based
- * configuration of the process engine:
+ * This {@link ExpressionManager} implementation performs lazy lookup of the Cdi-BeanManager and can thus be configured using the spring-based configuration of the process engine:
  * 
  * <pre>
  * &lt;property name="expressionManager"&gt;
@@ -44,9 +43,9 @@ public class CdiExpressionManager extends ExpressionManager {
   protected ELResolver createElResolver(VariableScope variableScope) {
     CompositeELResolver compositeElResolver = new CompositeELResolver();
     compositeElResolver.add(new VariableScopeElResolver(variableScope));
-    
+
     compositeElResolver.add(new CdiResolver());
-    
+
     compositeElResolver.add(new ArrayELResolver());
     compositeElResolver.add(new ListELResolver());
     compositeElResolver.add(new MapELResolver());

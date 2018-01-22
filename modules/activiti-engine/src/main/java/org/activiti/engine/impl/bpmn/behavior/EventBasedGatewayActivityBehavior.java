@@ -13,18 +13,14 @@
 
 package org.activiti.engine.impl.bpmn.behavior;
 
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
-
+import org.activiti.engine.delegate.DelegateExecution;
 
 /**
  * @author Daniel Meyer
+ * @author Joram Barrez
  */
 public class EventBasedGatewayActivityBehavior extends FlowNodeActivityBehavior {
   
-  @Override
-  public void execute(ActivityExecution execution) throws Exception {
-    // the event based gateway doesn't really do anything
-    // ignoring outgoing sequence flows (they're only parsed for the diagram)
-  }
-  
+  private static final long serialVersionUID = 1L;
+
 }

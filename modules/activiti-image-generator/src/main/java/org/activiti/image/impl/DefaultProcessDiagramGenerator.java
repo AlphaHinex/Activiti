@@ -421,7 +421,9 @@ public class DefaultProcessDiagramGenerator implements ProcessDiagramGenerator {
     return generateDiagram(bpmnModel, imageType, highLightedActivities, Collections.<String>emptyList(), scaleFactor);
   }
   
-  public InputStream generateDiagram(BpmnModel bpmnModel, String imageType, String activityFontName, String labelFontName, String annotationFontName, ClassLoader customClassLoader) {
+  public InputStream generateDiagram(BpmnModel bpmnModel, String imageType, String activityFontName, 
+      String labelFontName, String annotationFontName, ClassLoader customClassLoader) {
+    
     return generateDiagram(bpmnModel, imageType, Collections.<String>emptyList(), Collections.<String>emptyList(), 
         activityFontName, labelFontName, annotationFontName, customClassLoader, 1.0);
   }
@@ -489,6 +491,10 @@ public class DefaultProcessDiagramGenerator implements ProcessDiagramGenerator {
     }
     
     // Draw activities and their sequence-flows
+    for (FlowNode flowNode : bpmnModel.getProcesses().get(0).findFlowElementsOfType(FlowNode.class)) {
+      drawActivity(processDiagramCanvas, bpmnModel, flowNode, highLightedActivities, highLightedFlows, scaleFactor);
+    }
+    
     for (Process process: bpmnModel.getProcesses()) {
       for (FlowNode flowNode : process.findFlowElementsOfType(FlowNode.class)) {
         drawActivity(processDiagramCanvas, bpmnModel, flowNode, highLightedActivities, highLightedFlows, scaleFactor);
@@ -773,6 +779,7 @@ public class DefaultProcessDiagramGenerator implements ProcessDiagramGenerator {
   }
   
   protected void drawArtifact(DefaultProcessDiagramCanvas processDiagramCanvas, BpmnModel bpmnModel, Artifact artifact) {
+
     ArtifactDrawInstruction drawInstruction = artifactDrawInstructions.get(artifact.getClass());
     if (drawInstruction != null) {
       drawInstruction.draw(processDiagramCanvas, bpmnModel, artifact);

@@ -20,36 +20,39 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author Tijs Rademakers
+ * @author Joram Barrez
  */
 public class BpmnModel {
-  
+
   protected Map<String, List<ExtensionAttribute>> definitionsAttributes = new LinkedHashMap<String, List<ExtensionAttribute>>();
-	protected List<Process> processes = new ArrayList<Process>();
-	protected Map<String, GraphicInfo> locationMap = new LinkedHashMap<String, GraphicInfo>();
-	protected Map<String, GraphicInfo> labelLocationMap = new LinkedHashMap<String, GraphicInfo>();
-	protected Map<String, List<GraphicInfo>> flowLocationMap = new LinkedHashMap<String, List<GraphicInfo>>();
-	protected List<Signal> signals = new ArrayList<Signal>();
-	protected Map<String, MessageFlow> messageFlowMap = new LinkedHashMap<String, MessageFlow>();
-	protected Map<String, Message> messageMap = new LinkedHashMap<String, Message>();
-	protected Map<String, String> errorMap = new LinkedHashMap<String, String>();
-	protected Map<String, ItemDefinition> itemDefinitionMap = new LinkedHashMap<String, ItemDefinition>();
-	protected Map<String, DataStore> dataStoreMap = new LinkedHashMap<String, DataStore>();
-	protected List<Pool> pools = new ArrayList<Pool>();
-	protected List<Import> imports = new ArrayList<Import>();
-	protected List<Interface> interfaces = new ArrayList<Interface>();
-	protected List<Artifact> globalArtifacts = new ArrayList<Artifact>();
-	protected List<Resource> resources = new ArrayList<Resource>();
-	protected Map<String, String> namespaceMap = new LinkedHashMap<String, String>();
-	protected String targetNamespace;
-	protected List<String> userTaskFormTypes;
+  protected List<Process> processes = new ArrayList<Process>();
+  protected Map<String, GraphicInfo> locationMap = new LinkedHashMap<String, GraphicInfo>();
+  protected Map<String, GraphicInfo> labelLocationMap = new LinkedHashMap<String, GraphicInfo>();
+  protected Map<String, List<GraphicInfo>> flowLocationMap = new LinkedHashMap<String, List<GraphicInfo>>();
+  protected List<Signal> signals = new ArrayList<Signal>();
+  protected Map<String, MessageFlow> messageFlowMap = new LinkedHashMap<String, MessageFlow>();
+  protected Map<String, Message> messageMap = new LinkedHashMap<String, Message>();
+  protected Map<String, String> errorMap = new LinkedHashMap<String, String>();
+  protected Map<String, ItemDefinition> itemDefinitionMap = new LinkedHashMap<String, ItemDefinition>();
+  protected Map<String, DataStore> dataStoreMap = new LinkedHashMap<String, DataStore>();
+  protected List<Pool> pools = new ArrayList<Pool>();
+  protected List<Import> imports = new ArrayList<Import>();
+  protected List<Interface> interfaces = new ArrayList<Interface>();
+  protected List<Artifact> globalArtifacts = new ArrayList<Artifact>();
+  protected List<Resource> resources = new ArrayList<Resource>();
+  protected Map<String, String> namespaceMap = new LinkedHashMap<String, String>();
+  protected String targetNamespace;
+  protected String sourceSystemId;
+  protected List<String> userTaskFormTypes;
   protected List<String> startEventFormTypes;
-	protected int nextFlowIdCounter = 1;
-	
-	
-	public Map<String, List<ExtensionAttribute>> getDefinitionsAttributes() {
+  protected int nextFlowIdCounter = 1;
+  protected Object eventSupport;
+
+  public Map<String, List<ExtensionAttribute>> getDefinitionsAttributes() {
     return definitionsAttributes;
   }
 
@@ -57,7 +60,7 @@ public class BpmnModel {
     List<ExtensionAttribute> attributes = getDefinitionsAttributes().get(name);
     if (attributes != null && !attributes.isEmpty()) {
       for (ExtensionAttribute attribute : attributes) {
-        if ( namespace.equals(attribute.getNamespace()))
+        if (namespace.equals(attribute.getNamespace()))
           return attribute.getValue();
       }
     }
@@ -79,22 +82,22 @@ public class BpmnModel {
     this.definitionsAttributes = attributes;
   }
 
-	public Process getMainProcess() {
-	  if (!getPools().isEmpty()) {
-	    return getProcess(getPools().get(0).getId());
-	  } else {
-	    return getProcess(null);
-	  }
-	}
+  public Process getMainProcess() {
+    if (!getPools().isEmpty()) {
+      return getProcess(getPools().get(0).getId());
+    } else {
+      return getProcess(null);
+    }
+  }
 
-	public Process getProcess(String poolRef) {
-	  for (Process process : processes) {
-	    boolean foundPool = false;
-	    for (Pool pool : pools) {
+  public Process getProcess(String poolRef) {
+    for (Process process : processes) {
+      boolean foundPool = false;
+      for (Pool pool : pools) {
         if (StringUtils.isNotEmpty(pool.getProcessRef()) && pool.getProcessRef().equalsIgnoreCase(process.getId())) {
-          
-          if(poolRef != null) {
-            if(pool.getId().equalsIgnoreCase(poolRef)) {
+
+          if (poolRef != null) {
+            if (pool.getId().equalsIgnoreCase(poolRef)) {
               foundPool = true;
             }
           } else {
@@ -102,18 +105,18 @@ public class BpmnModel {
           }
         }
       }
-	    
-	    if(poolRef == null && foundPool == false) {
-	      return process;
-	    } else if(poolRef != null && foundPool == true) {
-	      return process;
-	    }
-	  }
-	  
-	  return null;
+
+      if (poolRef == null && foundPool == false) {
+        return process;
+      } else if (poolRef != null && foundPool == true) {
+        return process;
+      }
+    }
+
+    return null;
   }
-	
-	public Process getProcessById(String id) {
+
+  public Process getProcessById(String id) {
     for (Process process : processes) {
       if (process.getId().equals(id)) {
         return process;
@@ -121,30 +124,30 @@ public class BpmnModel {
     }
     return null;
   }
-	
-	public List<Process> getProcesses() {
-	  return processes;
-	}
-	
-	public void addProcess(Process process) {
-	  processes.add(process);
-	}
-	
-	public Pool getPool(String id) {
-	  Pool foundPool = null;
-	  if (StringUtils.isNotEmpty(id)) {
-  	  for (Pool pool : pools) {
+
+  public List<Process> getProcesses() {
+    return processes;
+  }
+
+  public void addProcess(Process process) {
+    processes.add(process);
+  }
+
+  public Pool getPool(String id) {
+    Pool foundPool = null;
+    if (StringUtils.isNotEmpty(id)) {
+      for (Pool pool : pools) {
         if (id.equals(pool.getId())) {
           foundPool = pool;
           break;
         }
       }
-	  }
-	  return foundPool;
-	}
-	
-	public Lane getLane(String id) {
-	  Lane foundLane = null;
+    }
+    return foundPool;
+  }
+
+  public Lane getLane(String id) {
+    Lane foundLane = null;
     if (StringUtils.isNotEmpty(id)) {
       for (Process process : processes) {
         for (Lane lane : process.getLanes()) {
@@ -160,35 +163,35 @@ public class BpmnModel {
     }
     return foundLane;
   }
-	
-	public FlowElement getFlowElement(String id) {
-	  FlowElement foundFlowElement = null;
-	  for (Process process : processes) {
-	    foundFlowElement = process.getFlowElement(id);
-	    if (foundFlowElement != null) {
-	      break;
-	    }
-	  }
-	  
-	  if (foundFlowElement == null) {
-	    for (Process process : processes) {
-	      for (FlowElement flowElement : process.findFlowElementsOfType(SubProcess.class)) {
-	        foundFlowElement = getFlowElementInSubProcess(id, (SubProcess) flowElement);
-	        if (foundFlowElement != null) {
-	          break;
-	        }
-	      }
-	      if (foundFlowElement != null) {
+
+  public FlowElement getFlowElement(String id) {
+    FlowElement foundFlowElement = null;
+    for (Process process : processes) {
+      foundFlowElement = process.getFlowElement(id);
+      if (foundFlowElement != null) {
+        break;
+      }
+    }
+
+    if (foundFlowElement == null) {
+      for (Process process : processes) {
+        for (FlowElement flowElement : process.findFlowElementsOfType(SubProcess.class)) {
+          foundFlowElement = getFlowElementInSubProcess(id, (SubProcess) flowElement);
+          if (foundFlowElement != null) {
+            break;
+          }
+        }
+        if (foundFlowElement != null) {
           break;
         }
-	    }
-	  }
-	  
-	  return foundFlowElement;
-	}
-	
-	protected FlowElement getFlowElementInSubProcess(String id, SubProcess subProcess) {
-	  FlowElement foundFlowElement = subProcess.getFlowElement(id);
+      }
+    }
+
+    return foundFlowElement;
+  }
+
+  protected FlowElement getFlowElementInSubProcess(String id, SubProcess subProcess) {
+    FlowElement foundFlowElement = subProcess.getFlowElement(id);
     if (foundFlowElement == null) {
       for (FlowElement flowElement : subProcess.getFlowElements()) {
         if (flowElement instanceof SubProcess) {
@@ -200,17 +203,17 @@ public class BpmnModel {
       }
     }
     return foundFlowElement;
-	}
-	
-	public Artifact getArtifact(String id) {
-	  Artifact foundArtifact = null;
+  }
+
+  public Artifact getArtifact(String id) {
+    Artifact foundArtifact = null;
     for (Process process : processes) {
       foundArtifact = process.getArtifact(id);
       if (foundArtifact != null) {
         break;
       }
     }
-    
+
     if (foundArtifact == null) {
       for (Process process : processes) {
         for (FlowElement flowElement : process.findFlowElementsOfType(SubProcess.class)) {
@@ -224,10 +227,10 @@ public class BpmnModel {
         }
       }
     }
-    
+
     return foundArtifact;
   }
-  
+
   protected Artifact getArtifactInSubProcess(String id, SubProcess subProcess) {
     Artifact foundArtifact = subProcess.getArtifact(id);
     if (foundArtifact == null) {
@@ -242,54 +245,54 @@ public class BpmnModel {
     }
     return foundArtifact;
   }
-	
-	public void addGraphicInfo(String key, GraphicInfo graphicInfo) {
-		locationMap.put(key, graphicInfo);
-	}
-	
-	public GraphicInfo getGraphicInfo(String key) {
-		return locationMap.get(key);
-	}
-	
-	public void removeGraphicInfo(String key) {
+
+  public void addGraphicInfo(String key, GraphicInfo graphicInfo) {
+    locationMap.put(key, graphicInfo);
+  }
+
+  public GraphicInfo getGraphicInfo(String key) {
+    return locationMap.get(key);
+  }
+
+  public void removeGraphicInfo(String key) {
     locationMap.remove(key);
   }
-	
-	public List<GraphicInfo> getFlowLocationGraphicInfo(String key) {
+
+  public List<GraphicInfo> getFlowLocationGraphicInfo(String key) {
     return flowLocationMap.get(key);
   }
-	
-	public void removeFlowGraphicInfoList(String key) {
-	  flowLocationMap.remove(key);
+
+  public void removeFlowGraphicInfoList(String key) {
+    flowLocationMap.remove(key);
   }
-	
-	public Map<String, GraphicInfo> getLocationMap() {
-		return locationMap;
-	}
-	
-	public Map<String, List<GraphicInfo>> getFlowLocationMap() {
+
+  public Map<String, GraphicInfo> getLocationMap() {
+    return locationMap;
+  }
+
+  public Map<String, List<GraphicInfo>> getFlowLocationMap() {
     return flowLocationMap;
   }
-	
-	public GraphicInfo getLabelGraphicInfo(String key) {
+
+  public GraphicInfo getLabelGraphicInfo(String key) {
     return labelLocationMap.get(key);
   }
-	
-	public void addLabelGraphicInfo(String key, GraphicInfo graphicInfo) {
-		labelLocationMap.put(key, graphicInfo);
-	}
-	
-	public void removeLabelGraphicInfo(String key) {
-	  labelLocationMap.remove(key);
+
+  public void addLabelGraphicInfo(String key, GraphicInfo graphicInfo) {
+    labelLocationMap.put(key, graphicInfo);
   }
-	
-	public Map<String, GraphicInfo> getLabelLocationMap() {
+
+  public void removeLabelGraphicInfo(String key) {
+    labelLocationMap.remove(key);
+  }
+
+  public Map<String, GraphicInfo> getLabelLocationMap() {
     return labelLocationMap;
   }
-	
-	public void addFlowGraphicInfoList(String key, List<GraphicInfo> graphicInfoList) {
-		flowLocationMap.put(key, graphicInfoList);
-	}
+
+  public void addFlowGraphicInfoList(String key, List<GraphicInfo> graphicInfoList) {
+    flowLocationMap.put(key, graphicInfoList);
+  }
 
   public Collection<Resource> getResources() {
     return resources;
@@ -322,39 +325,39 @@ public class BpmnModel {
   }
 
   public Collection<Signal> getSignals() {
-  	return signals;
+    return signals;
   }
-  
+
   public void setSignals(Collection<Signal> signalList) {
     if (signalList != null) {
       signals.clear();
       signals.addAll(signalList);
     }
   }
-  
+
   public void addSignal(Signal signal) {
     if (signal != null) {
-    	signals.add(signal);
+      signals.add(signal);
     }
   }
-  
+
   public boolean containsSignalId(String signalId) {
     return getSignal(signalId) != null;
   }
-  
+
   public Signal getSignal(String id) {
     for (Signal signal : signals) {
-    	if (id.equals(signal.getId())) {
-    		return signal;
-    	}
+      if (id.equals(signal.getId())) {
+        return signal;
+      }
     }
     return null;
   }
-  
+
   public Map<String, MessageFlow> getMessageFlows() {
     return messageFlowMap;
   }
-  
+
   public void setMessageFlows(Map<String, MessageFlow> messageFlows) {
     this.messageFlowMap = messageFlows;
   }
@@ -364,11 +367,11 @@ public class BpmnModel {
       messageFlowMap.put(messageFlow.getId(), messageFlow);
     }
   }
-  
+
   public MessageFlow getMessageFlow(String id) {
     return messageFlowMap.get(id);
   }
-  
+
   public boolean containsMessageFlowId(String messageFlowId) {
     return messageFlowMap.containsKey(messageFlowId);
   }
@@ -376,7 +379,7 @@ public class BpmnModel {
   public Collection<Message> getMessages() {
     return messageMap.values();
   }
-  
+
   public void setMessages(Collection<Message> messageList) {
     if (messageList != null) {
       messageMap.clear();
@@ -407,16 +410,14 @@ public class BpmnModel {
     return result;
   }
 
-
-
   public boolean containsMessageId(String messageId) {
     return messageMap.containsKey(messageId);
   }
-  
+
   public Map<String, String> getErrors() {
     return errorMap;
   }
-  
+
   public void setErrors(Map<String, String> errorMap) {
     this.errorMap = errorMap;
   }
@@ -426,15 +427,15 @@ public class BpmnModel {
       errorMap.put(errorRef, errorCode);
     }
   }
-  
+
   public boolean containsErrorRef(String errorRef) {
     return errorMap.containsKey(errorRef);
   }
-  
+
   public Map<String, ItemDefinition> getItemDefinitions() {
     return itemDefinitionMap;
   }
-  
+
   public void setItemDefinitions(Map<String, ItemDefinition> itemDefinitionMap) {
     this.itemDefinitionMap = itemDefinitionMap;
   }
@@ -444,19 +445,19 @@ public class BpmnModel {
       itemDefinitionMap.put(id, item);
     }
   }
-  
+
   public boolean containsItemDefinitionId(String id) {
     return itemDefinitionMap.containsKey(id);
   }
-  
+
   public Map<String, DataStore> getDataStores() {
     return dataStoreMap;
   }
-  
+
   public void setDataStores(Map<String, DataStore> dataStoreMap) {
     this.dataStoreMap = dataStoreMap;
   }
-  
+
   public DataStore getDataStore(String id) {
     DataStore dataStore = null;
     if (dataStoreMap.containsKey(id)) {
@@ -470,7 +471,7 @@ public class BpmnModel {
       dataStoreMap.put(id, dataStore);
     }
   }
-  
+
   public boolean containsDataStore(String id) {
     return dataStoreMap.containsKey(id);
   }
@@ -478,11 +479,11 @@ public class BpmnModel {
   public List<Pool> getPools() {
     return pools;
   }
-  
+
   public void setPools(List<Pool> pools) {
     this.pools = pools;
   }
-  
+
   public List<Import> getImports() {
     return imports;
   }
@@ -510,19 +511,19 @@ public class BpmnModel {
   public void addNamespace(String prefix, String uri) {
     namespaceMap.put(prefix, uri);
   }
-  
+
   public boolean containsNamespacePrefix(String prefix) {
     return namespaceMap.containsKey(prefix);
   }
-  
+
   public String getNamespace(String prefix) {
     return namespaceMap.get(prefix);
   }
-  
+
   public Map<String, String> getNamespaces() {
     return namespaceMap;
   }
-  
+
   public String getTargetNamespace() {
     return targetNamespace;
   }
@@ -530,20 +531,37 @@ public class BpmnModel {
   public void setTargetNamespace(String targetNamespace) {
     this.targetNamespace = targetNamespace;
   }
-  
+
+  public String getSourceSystemId() {
+    return sourceSystemId;
+  }
+
+  public void setSourceSystemId(String sourceSystemId) {
+    this.sourceSystemId = sourceSystemId;
+  }
+
   public List<String> getUserTaskFormTypes() {
     return userTaskFormTypes;
   }
-  
+
   public void setUserTaskFormTypes(List<String> userTaskFormTypes) {
     this.userTaskFormTypes = userTaskFormTypes;
   }
-  
+
   public List<String> getStartEventFormTypes() {
     return startEventFormTypes;
   }
-  
+
   public void setStartEventFormTypes(List<String> startEventFormTypes) {
     this.startEventFormTypes = startEventFormTypes;
+  }
+
+  @JsonIgnore
+  public Object getEventSupport() {
+    return eventSupport;
+  }
+
+  public void setEventSupport(Object eventSupport) {
+    this.eventSupport = eventSupport;
   }
 }

@@ -1,0 +1,30 @@
+archivesBaseName = 'activiti-web-designer'
+
+task pack(type: Jar) {
+    metaInf {
+        into 'resources'
+        from 'src/main/webapp'
+        exclude 'editor/editor-app/configuration/kis-toolbar-custom-actions.js'
+        exclude 'editor/editor-app/configuration/properties/assignment-display-template.html'
+        exclude 'editor/editor-app/configuration/properties/assignment-popup.html'
+        exclude 'editor/editor-app/configuration/properties-assignment-controller.js'
+        exclude 'editor/editor-app/configuration/toolbar-custom-actions.js'
+        exclude 'editor/scripts/editor-directives.js'
+        exclude 'editor/scripts/services/auth-services.js'
+        exclude 'editor/scripts/services/identity-services.js'
+        exclude 'scripts/app-cfg.js'
+        exclude 'scripts/common/services/authentication-service.js'
+    }
+    manifest {
+        attributes('Created-By': 'Gradle',
+                   'Specification-Title': 'Activiti Web Designer',
+                   'Specification-Version': version,
+                   'Implementation-Title': 'Activiti Web Designer from App',
+                   'Implementation-Version': version,
+                   'Implementation-URL': 'https://github.com/propersoft-cn/Activiti/tree/web-designer-v6')
+    }
+}
+
+artifacts {
+    archives pack
+}

@@ -13,6 +13,10 @@
 
 package org.activiti.rest.service.api.runtime.process;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.Authorization;
+
 import java.util.List;
 import java.util.Map;
 
@@ -34,47 +38,53 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author Tijs Rademakers
  */
 @RestController
+@Api(tags = { "Process Definitions" }, description = "Manage Process Definitions", authorizations = { @Authorization(value = "basicAuth") })
 public class ProcessDefinitionPropertiesResource {
-  
+
   @Autowired
   protected FormService formService;
-  
+
   @Autowired
   protected ObjectMapper objectMapper;
-  
-  @RequestMapping(value="/process-definition/{processDefinitionId}/properties", method = RequestMethod.GET, produces="application/json")
-  public ObjectNode getStartFormProperties(@PathVariable String processDefinitionId) {
+
+  /* @ApiOperation(value = "Get start form properties", tags = {"Process Definitions"})
+   @ApiResponses(value = {
+           @ApiResponse(code = 200, message = "Indicates request was successful and the properties are returned"),
+           @ApiResponse(code = 404, message = "Indicates the requested process definition was not found.")
+   })*/
+  @RequestMapping(value = "/process-definition/{processDefinitionId}/properties", method = RequestMethod.GET, produces = "application/json")
+  public ObjectNode getStartFormProperties(@ApiParam(name = "processDefinitionId") @PathVariable String processDefinitionId) {
     StartFormData startFormData = formService.getStartFormData(processDefinitionId);
-    
+
     ObjectNode responseJSON = objectMapper.createObjectNode();
-    
+
     ArrayNode propertiesJSON = objectMapper.createArrayNode();
-    
-    if(startFormData != null) {
-    
+
+    if (startFormData != null) {
+
       List<FormProperty> properties = startFormData.getFormProperties();
-      
+
       for (FormProperty property : properties) {
         ObjectNode propertyJSON = objectMapper.createObjectNode();
         propertyJSON.put("id", property.getId());
         propertyJSON.put("name", property.getName());
-        
+
         if (property.getValue() != null) {
           propertyJSON.put("value", property.getValue());
         } else {
           propertyJSON.putNull("value");
         }
-        
-        if(property.getType() != null) {
+
+        if (property.getType() != null) {
           propertyJSON.put("type", property.getType().getName());
-          
+
           if (property.getType() instanceof EnumFormType) {
             @SuppressWarnings("unchecked")
             Map<String, String> valuesMap = (Map<String, String>) property.getType().getInformation("values");
             if (valuesMap != null) {
               ArrayNode valuesArray = objectMapper.createArrayNode();
               propertyJSON.put("enumValues", valuesArray);
-              
+
               for (String key : valuesMap.keySet()) {
                 ObjectNode valueJSON = objectMapper.createObjectNode();
                 valueJSON.put("id", key);
@@ -83,19 +93,19 @@ public class ProcessDefinitionPropertiesResource {
               }
             }
           }
-          
+
         } else {
           propertyJSON.put("type", "String");
         }
-        
+
         propertyJSON.put("required", property.isRequired());
         propertyJSON.put("readable", property.isReadable());
         propertyJSON.put("writable", property.isWritable());
-  
+
         propertiesJSON.add(propertyJSON);
       }
     }
-  
+
     responseJSON.put("data", propertiesJSON);
     return responseJSON;
   }

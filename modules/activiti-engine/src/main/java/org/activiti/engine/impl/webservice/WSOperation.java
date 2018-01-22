@@ -32,26 +32,26 @@ import org.slf4j.LoggerFactory;
 public class WSOperation implements OperationImplementation {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(WSOperation.class);
-  
+
   protected String id;
 
   protected String name;
-  
+
   protected WSService service;
 
-    public WSOperation(String id, String operationName, WSService service) {
+  public WSOperation(String id, String operationName, WSService service) {
     this.id = id;
     this.name = operationName;
     this.service = service;
   }
-  
+
   /**
    * {@inheritDoc}
    */
   public String getId() {
     return this.id;
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -62,7 +62,7 @@ public class WSOperation implements OperationImplementation {
   /**
    * {@inheritDoc}
    */
-  public MessageInstance sendFor(MessageInstance message, Operation operation, final ConcurrentMap<QName, URL> overridenEndpointAddresses) throws Exception {
+    public MessageInstance sendFor(MessageInstance message, Operation operation, ConcurrentMap<QName, URL> overridenEndpointAddresses) throws Exception {
     Object[] arguments = this.getArguments(message);
     Object[] results = this.safeSend(arguments, overridenEndpointAddresses);
     return this.createResponseMessage(results, operation);
@@ -72,14 +72,17 @@ public class WSOperation implements OperationImplementation {
     return message.getStructureInstance().toArray();
   }
   
-  private Object[] safeSend(Object[] arguments, final ConcurrentMap<QName, URL> overridenEndpointAddresses) throws Exception {
-    Object[] results = this.service.getClient().send(this.name, arguments, overridenEndpointAddresses);
+    private Object[] safeSend(Object[] arguments, ConcurrentMap<QName, URL> overridenEndpointAddresses) throws Exception {
+    Object[] results = null;
+
+    results = this.service.getClient().send(this.name, arguments, overridenEndpointAddresses);
+
     if (results == null) {
       results = new Object[] {};
     }
     return results;
   }
-  
+
   private MessageInstance createResponseMessage(Object[] results, Operation operation) {
     MessageInstance message = null;
     MessageDefinition outMessage = operation.getOutMessage();

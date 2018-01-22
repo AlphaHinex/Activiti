@@ -18,6 +18,19 @@ import java.io.Reader;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import javax.el.ArrayELResolver;
+import javax.el.BeanELResolver;
+import javax.el.CompositeELResolver;
+import javax.el.ELContext;
+import javax.el.ELException;
+import javax.el.ELResolver;
+import javax.el.ExpressionFactory;
+import javax.el.FunctionMapper;
+import javax.el.ListELResolver;
+import javax.el.MapELResolver;
+import javax.el.ResourceBundleELResolver;
+import javax.el.ValueExpression;
+import javax.el.VariableMapper;
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -30,31 +43,17 @@ import javax.script.SimpleBindings;
 
 import org.activiti.engine.ActivitiException;
 import org.activiti.engine.impl.bpmn.data.ItemInstance;
+import org.activiti.engine.impl.el.DynamicBeanPropertyELResolver;
 import org.activiti.engine.impl.el.ExpressionFactoryResolver;
-import org.activiti.engine.impl.javax.el.ArrayELResolver;
-import org.activiti.engine.impl.javax.el.BeanELResolver;
-import org.activiti.engine.impl.javax.el.CompositeELResolver;
-import org.activiti.engine.impl.javax.el.DynamicBeanPropertyELResolver;
-import org.activiti.engine.impl.javax.el.ELContext;
-import org.activiti.engine.impl.javax.el.ELException;
-import org.activiti.engine.impl.javax.el.ELResolver;
-import org.activiti.engine.impl.javax.el.ExpressionFactory;
-import org.activiti.engine.impl.javax.el.FunctionMapper;
-import org.activiti.engine.impl.javax.el.JsonNodeELResolver;
-import org.activiti.engine.impl.javax.el.ListELResolver;
-import org.activiti.engine.impl.javax.el.MapELResolver;
-import org.activiti.engine.impl.javax.el.ResourceBundleELResolver;
-import org.activiti.engine.impl.javax.el.ValueExpression;
-import org.activiti.engine.impl.javax.el.VariableMapper;
-import org.activiti.engine.impl.juel.SimpleResolver;
+import org.activiti.engine.impl.el.JsonNodeELResolver;
 import org.activiti.engine.impl.util.ReflectUtil;
 
+import de.odysseus.el.util.SimpleResolver;
 
 /**
  * ScriptEngine that used JUEL for script evaluation and compilation (JSR-223).
  * 
- * Uses EL 1.1 if available, to resolve expressions. Otherwise it reverts to EL
- * 1.0, using {@link ExpressionFactoryResolver}.
+ * Uses EL 1.1 if available, to resolve expressions. Otherwise it reverts to EL 1.0, using {@link ExpressionFactoryResolver}.
  * 
  * @author Frederik Heremans
  */
@@ -79,7 +78,7 @@ public class JuelScriptEngine extends AbstractScriptEngine implements Compilable
   }
 
   public CompiledScript compile(Reader reader) throws ScriptException {
-    // Create a String based on the reader and complile it
+    // Create a String based on the reader and compile it
     return compile(readFully(reader));
   }
 
@@ -213,9 +212,9 @@ public class JuelScriptEngine extends AbstractScriptEngine implements Compilable
   }
 
   public static void importFunctions(ScriptContext ctx, String namespace, Object obj) {
-    Class< ? > clazz = null;
+    Class<?> clazz = null;
     if (obj instanceof Class) {
-      clazz = (Class< ? >) obj;
+      clazz = (Class<?>) obj;
     } else if (obj instanceof String) {
       try {
         clazz = ReflectUtil.loadClass((String) obj);
@@ -259,8 +258,7 @@ public class JuelScriptEngine extends AbstractScriptEngine implements Compilable
   }
 
   /**
-   * ValueMapper that uses the ScriptContext to get variable values or value
-   * expressions.
+   * ValueMapper that uses the ScriptContext to get variable values or value expressions.
    * 
    * @author Frederik Heremans
    */

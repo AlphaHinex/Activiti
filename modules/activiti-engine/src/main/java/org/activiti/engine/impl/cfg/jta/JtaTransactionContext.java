@@ -23,13 +23,9 @@ import javax.transaction.TransactionManager;
 import org.activiti.engine.ActivitiException;
 import org.activiti.engine.impl.cfg.TransactionContext;
 import org.activiti.engine.impl.cfg.TransactionListener;
-import org.activiti.engine.impl.cfg.TransactionPropagation;
 import org.activiti.engine.impl.cfg.TransactionState;
 import org.activiti.engine.impl.context.Context;
-import org.activiti.engine.impl.interceptor.Command;
-import org.activiti.engine.impl.interceptor.CommandConfig;
 import org.activiti.engine.impl.interceptor.CommandContext;
-import org.activiti.engine.impl.interceptor.CommandExecutor;
 
 /**
  * @author Daniel Meyer
@@ -71,7 +67,7 @@ public class JtaTransactionContext implements TransactionContext {
 
   public void addTransactionListener(TransactionState transactionState, final TransactionListener transactionListener) {
     Transaction transaction = getTransaction();
-    CommandContext commandContext = Context.getCommandContext();    
+    CommandContext commandContext = Context.getCommandContext();
     try {
       transaction.registerSynchronization(new TransactionStateSynchronization(transactionState, transactionListener, commandContext));
     } catch (IllegalStateException e) {
@@ -80,14 +76,14 @@ public class JtaTransactionContext implements TransactionContext {
       throw new ActivitiException("RollbackException while registering synchronization ", e);
     } catch (SystemException e) {
       throw new ActivitiException("SystemException while registering synchronization ", e);
-    }   
+    }
   }
-  
+
   public static class TransactionStateSynchronization implements Synchronization {
-        
+
     protected final TransactionListener transactionListener;
     protected final TransactionState transactionState;
-    private final CommandContext commandContext;    
+    private final CommandContext commandContext;
 
     public TransactionStateSynchronization(TransactionState transactionState, TransactionListener transactionListener, CommandContext commandContext) {
       this.transactionState = transactionState;
@@ -96,32 +92,19 @@ public class JtaTransactionContext implements TransactionContext {
     }
 
     public void beforeCompletion() {
-      if(TransactionState.COMMITTING.equals(transactionState) 
-         || TransactionState.ROLLINGBACK.equals(transactionState)) {
+      if (TransactionState.COMMITTING.equals(transactionState) || TransactionState.ROLLINGBACK.equals(transactionState)) {
         transactionListener.execute(commandContext);
       }
     }
 
     public void afterCompletion(int status) {
-      if(Status.STATUS_ROLLEDBACK == status && TransactionState.ROLLED_BACK.equals(transactionState)) {
-        executeTransactionListenerInNewCommandContext();
-      } else if(Status.STATUS_COMMITTED == status && TransactionState.COMMITTED.equals(transactionState)) {
-        executeTransactionListenerInNewCommandContext();
+      if (Status.STATUS_ROLLEDBACK == status && TransactionState.ROLLED_BACK.equals(transactionState)) {
+        transactionListener.execute(commandContext);
+      } else if (Status.STATUS_COMMITTED == status && TransactionState.COMMITTED.equals(transactionState)) {
+        transactionListener.execute(commandContext);
       }
     }
 
-    protected void executeTransactionListenerInNewCommandContext() {
-      CommandExecutor commandExecutor = commandContext.getProcessEngineConfiguration().getCommandExecutor(); 
-      CommandConfig commandConfig = new CommandConfig(false, TransactionPropagation.REQUIRES_NEW); 
-      commandExecutor.execute(commandConfig, new Command<Void>() {
-        public Void execute(CommandContext commandContext) {
-          transactionListener.execute(commandContext);
-          return null;
-        }
-      });
-    }
-    
   }
-  
 
 }

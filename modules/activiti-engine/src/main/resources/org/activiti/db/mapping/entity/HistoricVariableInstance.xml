@@ -16,11 +16,11 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntity">
+<mapper namespace="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntityImpl">
 
   <!-- HISTORIC PROCESS VARIABLE INSERT -->
   
-  <insert id="insertHistoricVariableInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntity">
+  <insert id="insertHistoricVariableInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntityImpl">
     insert into ${prefix}ACT_HI_VARINST (ID_, PROC_INST_ID_, EXECUTION_ID_, TASK_ID_, NAME_, REV_, VAR_TYPE_, BYTEARRAY_ID_, DOUBLE_, LONG_ , TEXT_, TEXT2_, CREATE_TIME_, LAST_UPDATED_TIME_)
     values (
       #{id, jdbcType=VARCHAR},
@@ -61,7 +61,7 @@
        </foreach>
   </insert>
 
-  <insert id="bulkInsertHistoricVariableInstance_oracle" parameterType="java.util.List">
+  <insert id="bulkInsertHistoricVariableInstance" databaseId="oracle" parameterType="java.util.List">
     INSERT ALL 
       <foreach collection="list" item="historicVariable" index="index">
       INTO ${prefix}ACT_HI_VARINST (ID_, PROC_INST_ID_, EXECUTION_ID_, TASK_ID_, NAME_, REV_,
@@ -86,7 +86,7 @@
 
   <!-- HISTORIC PROCESS VARIABLE UPDATE -->
   
-  <update id="updateHistoricVariableInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntity">
+  <update id="updateHistoricVariableInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntityImpl">
     update ${prefix}ACT_HI_VARINST set
       REV_ = #{revisionNext, jdbcType=INTEGER},
       BYTEARRAY_ID_ = #{byteArrayRef, typeHandler=ByteArrayRefTypeHandler},
@@ -102,7 +102,7 @@
   
   <!-- HISTORIC PROCESS VARIABLE DELETE -->
 
-  <delete id="deleteHistoricVariableInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntity">
+  <delete id="deleteHistoricVariableInstance" parameterType="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntityImpl">
     delete from ${prefix}ACT_HI_VARINST where ID_ = #{id} and REV_ = #{revision}
   </delete>
   
@@ -114,7 +114,7 @@
   </delete>
   
   <!-- HISTORIC PROCESS VARIABLE RESULTMAP -->
-  <resultMap id="historicProcessVariableResultMap" type="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntity">
+  <resultMap id="historicProcessVariableResultMap" type="org.activiti.engine.impl.persistence.entity.HistoricVariableInstanceEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
     <result property="executionId" column="EXECUTION_ID_" jdbcType="VARCHAR" />
@@ -207,7 +207,7 @@
           <otherwise><include refid="executionVariableOperator" /></otherwise>
         </choose>
           #{queryVariableValue.textValue2}
-          <choose>
+           <choose>
             <when test="queryVariableValue.operator.equals('LIKE') || queryVariableValue.operator.equals('LIKE_IGNORE_CASE')">${wildcardEscapeClause}</when>
           </choose>
         </if>
@@ -250,25 +250,17 @@
   <select id="selectHistoricVariableInstanceByVariableInstanceId" resultMap="historicProcessVariableResultMap">
     select * from ${prefix}ACT_HI_VARINST where ID_ = #{variableInstanceId}
   </select>
-
-  <select id="selectHistoricVariableInstanceByNativeQuery" parameterType="java.util.Map" resultMap="historicProcessVariableResultMap">
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitBefore}
-    </if>
-    ${sql}
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitAfter}
-    </if>
+  
+  <select id="selectHistoricVariableInstanceByProcessInstanceId" resultMap="historicProcessVariableResultMap">
+    select * from ${prefix}ACT_HI_VARINST where PROC_INST_ID_ = #{parameter}
+  </select>
+  
+  <select id="selectHistoricVariableInstanceByTaskId" resultMap="historicProcessVariableResultMap">
+    select * from ${prefix}ACT_HI_VARINST where TASK_ID_ = #{parameter}
   </select>
 
-  <select id="selectHistoricVariableInstanceByNativeQuery_mssql_or_db2" parameterType="java.util.Map" resultMap="historicProcessVariableResultMap">
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitBeforeNativeQuery}
-    </if>
-    ${sql}
-    <if test="resultType == 'LIST_PAGE'">
-      ${limitAfter}
-    </if>
+  <select id="selectHistoricVariableInstanceByNativeQuery" parameterType="java.util.Map" resultMap="historicProcessVariableResultMap">
+    <include refid="org.activiti.engine.db.common.selectByNativeQuery"/>
   </select>
 
   <select id="selectHistoricVariableInstanceCountByNativeQuery" parameterType="java.util.Map" resultType="long">

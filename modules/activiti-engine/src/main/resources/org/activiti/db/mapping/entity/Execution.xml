@@ -2,12 +2,12 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
   
-<mapper namespace="org.activiti.engine.impl.persistence.entity.ExecutionEntity">
+<mapper namespace="org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl">
 
   <!-- EXECUTION INSERT -->
 
-  <insert id="insertExecution" parameterType="org.activiti.engine.impl.persistence.entity.ExecutionEntity">
-    insert into ${prefix}ACT_RU_EXECUTION (ID_, REV_, PROC_INST_ID_, BUSINESS_KEY_, PROC_DEF_ID_, ACT_ID_, IS_ACTIVE_, IS_CONCURRENT_, IS_SCOPE_,IS_EVENT_SCOPE_, PARENT_ID_, SUPER_EXEC_, SUSPENSION_STATE_, CACHED_ENT_STATE_, TENANT_ID_, NAME_)
+  <insert id="insertExecution" parameterType="org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl">
+    insert into ${prefix}ACT_RU_EXECUTION (ID_, REV_, PROC_INST_ID_, BUSINESS_KEY_, PROC_DEF_ID_, ACT_ID_, IS_ACTIVE_, IS_CONCURRENT_, IS_SCOPE_,IS_EVENT_SCOPE_, IS_MI_ROOT_, PARENT_ID_, SUPER_EXEC_, ROOT_PROC_INST_ID_, SUSPENSION_STATE_, TENANT_ID_, NAME_, START_TIME_, START_USER_ID_, IS_COUNT_ENABLED_, EVT_SUBSCR_COUNT_, TASK_COUNT_, JOB_COUNT_, TIMER_JOB_COUNT_, SUSP_JOB_COUNT_, DEADLETTER_JOB_COUNT_, VAR_COUNT_, ID_LINK_COUNT_)
     values (
       #{id ,jdbcType=VARCHAR},
       1,
@@ -19,17 +19,29 @@
       #{isConcurrent ,jdbcType=BOOLEAN},
       #{isScope ,jdbcType=BOOLEAN},
       #{isEventScope ,jdbcType=BOOLEAN},
+      #{isMultiInstanceRoot, jdbcType=BOOLEAN},
       #{parentId, jdbcType=VARCHAR},
       #{superExecutionId, jdbcType=VARCHAR},
+      #{rootProcessInstanceId, jdbcType=VARCHAR},
       #{suspensionState, jdbcType=INTEGER},
-      #{cachedEntityState, jdbcType=INTEGER},
       #{tenantId, jdbcType=VARCHAR},
-      #{name, jdbcType=VARCHAR}
+      #{name, jdbcType=VARCHAR},
+      #{startTime, jdbcType=TIMESTAMP},
+      #{startUserId, jdbcType=VARCHAR},
+      #{isCountEnabled, jdbcType=BOOLEAN},
+      #{eventSubscriptionCount, jdbcType=INTEGER},
+      #{taskCount, jdbcType=INTEGER},
+      #{jobCount, jdbcType=INTEGER},
+      #{timerJobCount, jdbcType=INTEGER},
+      #{suspendedJobCount, jdbcType=INTEGER},
+      #{deadLetterJobCount, jdbcType=INTEGER},
+      #{variableCount, jdbcType=INTEGER},
+      #{identityLinkCount, jdbcType=INTEGER}
     )
   </insert>
 
   <insert id="bulkInsertExecution" parameterType="java.util.List">
-    insert into ${prefix}ACT_RU_EXECUTION (ID_, REV_, PROC_INST_ID_, BUSINESS_KEY_, PROC_DEF_ID_, ACT_ID_, IS_ACTIVE_, IS_CONCURRENT_, IS_SCOPE_,IS_EVENT_SCOPE_, PARENT_ID_, SUPER_EXEC_, SUSPENSION_STATE_, CACHED_ENT_STATE_, TENANT_ID_, NAME_)
+    insert into ${prefix}ACT_RU_EXECUTION (ID_, REV_, PROC_INST_ID_, BUSINESS_KEY_, PROC_DEF_ID_, ACT_ID_, IS_ACTIVE_, IS_CONCURRENT_, IS_SCOPE_,IS_EVENT_SCOPE_, IS_MI_ROOT_, PARENT_ID_, SUPER_EXEC_, ROOT_PROC_INST_ID_, SUSPENSION_STATE_, TENANT_ID_, NAME_, START_TIME_, START_USER_ID_, IS_COUNT_ENABLED_, EVT_SUBSCR_COUNT_, TASK_COUNT_, JOB_COUNT_, TIMER_JOB_COUNT_, SUSP_JOB_COUNT_, DEADLETTER_JOB_COUNT_, VAR_COUNT_, ID_LINK_COUNT_)
     values 
       <foreach collection="list" item="execution" index="index" separator=",">
         (#{execution.id ,jdbcType=VARCHAR},
@@ -42,20 +54,32 @@
          #{execution.isConcurrent ,jdbcType=BOOLEAN},
          #{execution.isScope ,jdbcType=BOOLEAN},
          #{execution.isEventScope ,jdbcType=BOOLEAN},
+         #{execution.isMultiInstanceRoot, jdbcType=BOOLEAN},
          #{execution.parentId, jdbcType=VARCHAR},
          #{execution.superExecutionId, jdbcType=VARCHAR},
+         #{execution.rootProcessInstanceId, jdbcType=VARCHAR},
          #{execution.suspensionState, jdbcType=INTEGER},
-         #{execution.cachedEntityState, jdbcType=INTEGER},
          #{execution.tenantId, jdbcType=VARCHAR},
-         #{execution.name, jdbcType=VARCHAR})
+         #{execution.name, jdbcType=VARCHAR},
+         #{execution.startTime, jdbcType=TIMESTAMP},
+         #{execution.startUserId, jdbcType=VARCHAR},
+         #{execution.isCountEnabled, jdbcType=BOOLEAN},
+         #{execution.eventSubscriptionCount, jdbcType=INTEGER},
+         #{execution.taskCount, jdbcType=INTEGER},
+         #{execution.jobCount, jdbcType=INTEGER},
+         #{execution.timerJobCount, jdbcType=INTEGER},
+         #{execution.suspendedJobCount, jdbcType=INTEGER},
+         #{execution.deadLetterJobCount, jdbcType=INTEGER},
+         #{execution.variableCount, jdbcType=INTEGER},
+         #{execution.identityLinkCount, jdbcType=INTEGER})
       </foreach>
   </insert>
 
-  <insert id="bulkInsertExecution_oracle" parameterType="java.util.List">
+  <insert id="bulkInsertExecution" databaseId="oracle" parameterType="java.util.List">
     INSERT ALL 
       <foreach collection="list" item="execution" index="index">
         into ${prefix}ACT_RU_EXECUTION (ID_, REV_, PROC_INST_ID_, BUSINESS_KEY_, PROC_DEF_ID_, ACT_ID_,
-        IS_ACTIVE_, IS_CONCURRENT_, IS_SCOPE_,IS_EVENT_SCOPE_, PARENT_ID_, SUPER_EXEC_, SUSPENSION_STATE_, CACHED_ENT_STATE_, TENANT_ID_, NAME_) VALUES 
+        IS_ACTIVE_, IS_CONCURRENT_, IS_SCOPE_,IS_EVENT_SCOPE_, IS_MI_ROOT_, PARENT_ID_, SUPER_EXEC_, ROOT_PROC_INST_ID_, SUSPENSION_STATE_, TENANT_ID_, NAME_, START_TIME_, START_USER_ID_, IS_COUNT_ENABLED_, EVT_SUBSCR_COUNT_, TASK_COUNT_, JOB_COUNT_, TIMER_JOB_COUNT_, SUSP_JOB_COUNT_, DEADLETTER_JOB_COUNT_, VAR_COUNT_, ID_LINK_COUNT_) VALUES
             (#{execution.id ,jdbcType=VARCHAR},
              1,
              #{execution.processInstanceId, jdbcType=VARCHAR},
@@ -66,19 +90,31 @@
              #{execution.isConcurrent ,jdbcType=BOOLEAN},
              #{execution.isScope ,jdbcType=BOOLEAN},
              #{execution.isEventScope ,jdbcType=BOOLEAN},
+             #{execution.isMultiInstanceRoot, jdbcType=BOOLEAN},
              #{execution.parentId, jdbcType=VARCHAR},
              #{execution.superExecutionId, jdbcType=VARCHAR},
+             #{execution.rootProcessInstanceId, jdbcType=VARCHAR},
              #{execution.suspensionState, jdbcType=INTEGER},
-             #{execution.cachedEntityState, jdbcType=INTEGER},
              #{execution.tenantId, jdbcType=VARCHAR},
-             #{execution.name, jdbcType=VARCHAR})
+             #{execution.name, jdbcType=VARCHAR},
+             #{execution.startTime, jdbcType=TIMESTAMP},
+             #{execution.startUserId, jdbcType=VARCHAR},
+             #{execution.isCountEnabled, jdbcType=BOOLEAN},
+             #{execution.eventSubscriptionCount, jdbcType=INTEGER},
+             #{execution.taskCount, jdbcType=INTEGER},
+             #{execution.jobCount, jdbcType=INTEGER},
+             #{execution.timerJobCount, jdbcType=INTEGER},
+             #{execution.suspendedJobCount, jdbcType=INTEGER},
+             #{execution.deadLetterJobCount, jdbcType=INTEGER},
+             #{execution.variableCount, jdbcType=INTEGER},
+             #{execution.identityLinkCount, jdbcType=INTEGER})
       </foreach>
     SELECT * FROM dual
   </insert>
 
   <!-- EXECUTION UPDATE -->
   
-  <update id="updateExecution" parameterType="org.activiti.engine.impl.persistence.entity.ExecutionEntity">
+  <update id="updateExecution" parameterType="org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl">
     update ${prefix}ACT_RU_EXECUTION set
       REV_ = #{revisionNext, jdbcType=INTEGER},
       BUSINESS_KEY_ = #{businessKey, jdbcType=VARCHAR},
@@ -88,11 +124,21 @@
       IS_CONCURRENT_ = #{isConcurrent, jdbcType=BOOLEAN},
       IS_SCOPE_ = #{isScope, jdbcType=BOOLEAN},
       IS_EVENT_SCOPE_ = #{isEventScope, jdbcType=BOOLEAN},
+      IS_MI_ROOT_ = #{isMultiInstanceRoot, jdbcType=BOOLEAN},
       PARENT_ID_ = #{parentId, jdbcType=VARCHAR},
       SUPER_EXEC_ = #{superExecutionId, jdbcType=VARCHAR},
+      ROOT_PROC_INST_ID_ = #{rootProcessInstanceId, jdbcType=VARCHAR},
       SUSPENSION_STATE_ = #{suspensionState, jdbcType=INTEGER},
-      CACHED_ENT_STATE_ = #{cachedEntityState, jdbcType=INTEGER},
-      NAME_ = #{name, jdbcType=VARCHAR}
+      NAME_ = #{name, jdbcType=VARCHAR},
+      IS_COUNT_ENABLED_ = #{isCountEnabled, jdbcType=BOOLEAN},
+      EVT_SUBSCR_COUNT_ = #{eventSubscriptionCount, jdbcType=INTEGER}, 
+      TASK_COUNT_ = #{taskCount, jdbcType=INTEGER}, 
+      JOB_COUNT_ = #{jobCount, jdbcType=INTEGER},
+      TIMER_JOB_COUNT_ = #{timerJobCount, jdbcType=INTEGER},
+      SUSP_JOB_COUNT_ = #{suspendedJobCount, jdbcType=INTEGER},
+      DEADLETTER_JOB_COUNT_ = #{deadLetterJobCount, jdbcType=INTEGER},
+      VAR_COUNT_ = #{variableCount, jdbcType=INTEGER},
+      ID_LINK_COUNT_ = #{identityLinkCount, jdbcType=INTEGER}
     where ID_ = #{id, jdbcType=VARCHAR}
       and REV_ = #{revision, jdbcType=INTEGER}
   </update>
@@ -110,8 +156,8 @@
   </update>
   
   <!-- See http://stackoverflow.com/questions/4429319/you-cant-specify-target-table-for-update-in-from-clause
-       Tested this on MySQL 5.6: does NOT use a temporary table (so good, performance0 -->
-  <update id="updateExecutionTenantIdForDeployment_mysql" parameterType="java.util.Map">
+       Tested this on MySQL 5.6: does NOT use a temporary table (so good, performance) -->
+  <update id="updateExecutionTenantIdForDeployment" databaseId="mysql" parameterType="java.util.Map">
     update ${prefix}ACT_RU_EXECUTION set
       TENANT_ID_ = #{tenantId, jdbcType=VARCHAR}
     where
@@ -145,15 +191,27 @@
     where ID_ = #{id}
   </update>
   
+  <update id="updateExecutionRelatedEntityCountEnabled" parameterType="boolean">
+    update ${prefix}ACT_RU_EXECUTION 
+    set IS_COUNT_ENABLED_ = #{parameter, jdbcType=BOOLEAN}
+  </update>
+  
   <!-- EXECUTION DELETE -->
   
-  <delete id="deleteExecution" parameterType="org.activiti.engine.impl.persistence.entity.ExecutionEntity">
+  <delete id="deleteExecution" parameterType="org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl">
     delete from ${prefix}ACT_RU_EXECUTION where ID_ = #{id} and REV_ = #{revision}
+  </delete>
+  
+  <delete id="bulkDeleteExecution" parameterType="java.util.Collection">
+    delete from ${prefix}ACT_RU_EXECUTION where
+     <foreach item="execution" collection="list" index="index" separator=" or ">
+        ID_ = #{execution.id, jdbcType=VARCHAR}
+    </foreach>
   </delete>
   
   <!-- EXECUTION RESULTMAP -->
   
-  <resultMap id="executionResultMap" type="org.activiti.engine.impl.persistence.entity.ExecutionEntity">
+  <resultMap id="executionResultMap" type="org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="revision" column="REV_" jdbcType="INTEGER" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
@@ -164,15 +222,27 @@
     <result property="isConcurrent" column="IS_CONCURRENT_" jdbcType="BOOLEAN" />
     <result property="isScope" column="IS_SCOPE_" jdbcType="BOOLEAN" />
     <result property="isEventScope" column="IS_EVENT_SCOPE_" jdbcType="BOOLEAN" />
+    <result property="isMultiInstanceRoot" column="IS_MI_ROOT_" jdbcType="BOOLEAN" />
     <result property="parentId" column="PARENT_ID_" jdbcType="VARCHAR" />
     <result property="superExecutionId" column="SUPER_EXEC_" jdbcType="VARCHAR" />
+    <result property="rootProcessInstanceId" column="ROOT_PROC_INST_ID_" jdbcType="VARCHAR" />
     <result property="suspensionState" column="SUSPENSION_STATE_" jdbcType="INTEGER"/>
-    <result property="cachedEntityState" column="CACHED_ENT_STATE_" jdbcType="INTEGER"/>
     <result property="tenantId" column="TENANT_ID_" jdbcType="VARCHAR" />
     <result property="name" column="NAME_" jdbcType="VARCHAR" />
+    <result property="startTime" column="START_TIME_" jdbcType="TIMESTAMP" />
+    <result property="startUserId" column="START_USER_ID_" jdbcType="VARCHAR" />
+    <result property="isCountEnabled" column="IS_COUNT_ENABLED_" jdbcType="BOOLEAN" />
+    <result property="eventSubscriptionCount" column="EVT_SUBSCR_COUNT_" jdbcType="INTEGER" />
+    <result property="taskCount" column="TASK_COUNT_" jdbcType="INTEGER" />
+    <result property="jobCount" column="JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="timerJobCount" column="TIMER_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="suspendedJobCount" column="SUSP_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="deadLetterJobCount" column="DEADLETTER_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="variableCount" column="VAR_COUNT_" jdbcType="INTEGER" />
+    <result property="identityLinkCount" column="ID_LINK_COUNT_" jdbcType="INTEGER" />
   </resultMap>
   
-  <resultMap id="processInstanceResultMap" type="org.activiti.engine.impl.persistence.entity.ExecutionEntity">
+  <resultMap id="processInstanceResultMap" type="org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="revision" column="REV_" jdbcType="INTEGER" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
@@ -190,16 +260,28 @@
     <result property="isConcurrent" column="IS_CONCURRENT_" jdbcType="BOOLEAN" />
     <result property="isScope" column="IS_SCOPE_" jdbcType="BOOLEAN" />
     <result property="isEventScope" column="IS_EVENT_SCOPE_" jdbcType="BOOLEAN" />
+    <result property="isMultiInstanceRoot" column="IS_MI_ROOT_" jdbcType="BOOLEAN" />
     <result property="parentId" column="PARENT_ID_" jdbcType="VARCHAR" />
     <result property="superExecutionId" column="SUPER_EXEC_" jdbcType="VARCHAR" />
+    <result property="rootProcessInstanceId" column="ROOT_PROC_INST_ID_" jdbcType="VARCHAR" />
     <result property="suspensionState" column="SUSPENSION_STATE_" jdbcType="INTEGER"/>
-    <result property="cachedEntityState" column="CACHED_ENT_STATE_" jdbcType="INTEGER"/>
     <result property="tenantId" column="TENANT_ID_" jdbcType="VARCHAR" />
     <result property="name" column="NAME_" jdbcType="VARCHAR" />
     <result property="lockTime" column="LOCK_TIME_" jdbcType="TIMESTAMP" />
+    <result property="startTime" column="START_TIME_" jdbcType="TIMESTAMP" />
+    <result property="startUserId" column="START_USER_ID_" jdbcType="VARCHAR" />
+    <result property="isCountEnabled" column="IS_COUNT_ENABLED_" jdbcType="BOOLEAN" />
+    <result property="eventSubscriptionCount" column="EVT_SUBSCR_COUNT_" jdbcType="INTEGER" />
+    <result property="taskCount" column="TASK_COUNT_" jdbcType="INTEGER" />
+    <result property="jobCount" column="JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="timerJobCount" column="TIMER_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="suspendedJobCount" column="SUSP_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="deadLetterJobCount" column="DEADLETTER_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="variableCount" column="VAR_COUNT_" jdbcType="INTEGER" />
+    <result property="identityLinkCount" column="ID_LINK_COUNT_" jdbcType="INTEGER" />
   </resultMap>
   
-  <resultMap id="executionAndVariablesResultMap" type="org.activiti.engine.impl.persistence.entity.ExecutionEntity">
+  <resultMap id="executionAndVariablesResultMap" type="org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="revision" column="REV_" jdbcType="INTEGER" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
@@ -210,13 +292,25 @@
     <result property="isConcurrent" column="IS_CONCURRENT_" jdbcType="BOOLEAN" />
     <result property="isScope" column="IS_SCOPE_" jdbcType="BOOLEAN" />
     <result property="isEventScope" column="IS_EVENT_SCOPE_" jdbcType="BOOLEAN" />
+    <result property="isMultiInstanceRoot" column="IS_MI_ROOT_" jdbcType="BOOLEAN" />
     <result property="parentId" column="PARENT_ID_" jdbcType="VARCHAR" />
     <result property="superExecutionId" column="SUPER_EXEC_" jdbcType="VARCHAR" />
+    <result property="rootProcessInstanceId" column="ROOT_PROC_INST_ID_" jdbcType="VARCHAR" />
     <result property="suspensionState" column="SUSPENSION_STATE_" jdbcType="INTEGER"/>
-    <result property="cachedEntityState" column="CACHED_ENT_STATE_" jdbcType="INTEGER"/>
     <result property="tenantId" column="TENANT_ID_" jdbcType="VARCHAR" />
     <result property="name" column="NAME_" jdbcType="VARCHAR" />
-    <collection property="queryVariables" column="EXECUTION_ID_" javaType="ArrayList" ofType="org.activiti.engine.impl.persistence.entity.VariableInstanceEntity">
+    <result property="startTime" column="START_TIME_" jdbcType="TIMESTAMP" />
+    <result property="startUserId" column="START_USER_ID_" jdbcType="VARCHAR" />
+    <result property="isCountEnabled" column="IS_COUNT_ENABLED_" jdbcType="BOOLEAN" />
+    <result property="eventSubscriptionCount" column="EVT_SUBSCR_COUNT_" jdbcType="INTEGER" />
+    <result property="taskCount" column="TASK_COUNT_" jdbcType="INTEGER" />
+    <result property="jobCount" column="JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="timerJobCount" column="TIMER_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="suspendedJobCount" column="SUSP_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="deadLetterJobCount" column="DEADLETTER_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="variableCount" column="VAR_COUNT_" jdbcType="INTEGER" />
+    <result property="identityLinkCount" column="ID_LINK_COUNT_" jdbcType="INTEGER" />
+    <collection property="queryVariables" column="EXECUTION_ID_" javaType="ArrayList" ofType="org.activiti.engine.impl.persistence.entity.VariableInstanceEntityImpl">
       <id property="id" column="VAR_ID_"/>
       <result property="name" column="VAR_NAME_" javaType="String" jdbcType="VARCHAR" />
       <result property="type" column="VAR_TYPE_" javaType="org.activiti.engine.impl.variable.VariableType" jdbcType="VARCHAR" />
@@ -232,7 +326,7 @@
     </collection>
   </resultMap>
   
-  <resultMap id="processInstanceAndVariablesResultMap" type="org.activiti.engine.impl.persistence.entity.ExecutionEntity">
+  <resultMap id="processInstanceAndVariablesResultMap" type="org.activiti.engine.impl.persistence.entity.ExecutionEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR" />
     <result property="revision" column="REV_" jdbcType="INTEGER" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
@@ -247,14 +341,26 @@
     <result property="isConcurrent" column="IS_CONCURRENT_" jdbcType="BOOLEAN" />
     <result property="isScope" column="IS_SCOPE_" jdbcType="BOOLEAN" />
     <result property="isEventScope" column="IS_EVENT_SCOPE_" jdbcType="BOOLEAN" />
+    <result property="isMultiInstanceRoot" column="IS_MI_ROOT_" jdbcType="BOOLEAN" />
     <result property="parentId" column="PARENT_ID_" jdbcType="VARCHAR" />
     <result property="superExecutionId" column="SUPER_EXEC_" jdbcType="VARCHAR" />
+    <result property="rootProcessInstanceId" column="ROOT_PROC_INST_ID_" jdbcType="VARCHAR" />
     <result property="suspensionState" column="SUSPENSION_STATE_" jdbcType="INTEGER"/>
-    <result property="cachedEntityState" column="CACHED_ENT_STATE_" jdbcType="INTEGER"/>
     <result property="tenantId" column="TENANT_ID_" jdbcType="VARCHAR" />
     <result property="name" column="NAME_" jdbcType="VARCHAR" />
     <result property="lockTime" column="LOCK_TIME_" jdbcType="TIMESTAMP" />
-    <collection property="queryVariables" column="EXECUTION_ID_" javaType="ArrayList" ofType="org.activiti.engine.impl.persistence.entity.VariableInstanceEntity">
+    <result property="startTime" column="START_TIME_" jdbcType="TIMESTAMP" />
+    <result property="startUserId" column="START_USER_ID_" jdbcType="VARCHAR" />
+    <result property="isCountEnabled" column="IS_COUNT_ENABLED_" jdbcType="BOOLEAN" />
+    <result property="eventSubscriptionCount" column="EVT_SUBSCR_COUNT_" jdbcType="INTEGER" />
+    <result property="taskCount" column="TASK_COUNT_" jdbcType="INTEGER" />
+    <result property="jobCount" column="JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="timerJobCount" column="TIMER_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="suspendedJobCount" column="SUSP_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="deadLetterJobCount" column="DEADLETTER_JOB_COUNT_" jdbcType="INTEGER" />
+    <result property="variableCount" column="VAR_COUNT_" jdbcType="INTEGER" />
+    <result property="identityLinkCount" column="ID_LINK_COUNT_" jdbcType="INTEGER" />
+    <collection property="queryVariables" column="EXECUTION_ID_" javaType="ArrayList" ofType="org.activiti.engine.impl.persistence.entity.VariableInstanceEntityImpl">
       <id property="id" column="VAR_ID_"/>
       <result property="name" column="VAR_NAME_" javaType="String" jdbcType="VARCHAR" />
       <result property="type" column="VAR_TYPE_" javaType="org.activiti.engine.impl.variable.VariableType" jdbcType="VARCHAR" />
@@ -272,13 +378,28 @@
   
   <!-- EXECUTION SELECT -->
   
+  <select id="selectExecutionsWithSameRootProcessInstanceId" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="executionResultMap">
+    select * from ${prefix}ACT_RU_EXECUTION
+    where ROOT_PROC_INST_ID_ = (select ROOT_PROC_INST_ID_ from ${prefix}ACT_RU_EXECUTION where ID_ = #{parameter})
+  </select>
+  
   <select id="selectExecution" parameterType="string" resultMap="executionResultMap">
-    select * from ${prefix}ACT_RU_EXECUTION where ID_ = #{id}
+    select * from ${prefix}ACT_RU_EXECUTION where ID_ = #{id, jdbcType=VARCHAR}
   </select>
   
   <select id="selectExecutionsByParentExecutionId" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="executionResultMap">
     select * from ${prefix}ACT_RU_EXECUTION
     where PARENT_ID_ = #{parameter}
+  </select>
+  
+  <select id="selectExecutionsByRootProcessInstanceId" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="executionResultMap">
+    select * from ${prefix}ACT_RU_EXECUTION
+    where ROOT_PROC_INST_ID_ = #{parameter}
+  </select>
+  
+  <select id="selectChildExecutionsByProcessInstanceId" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="executionResultMap">
+    select * from ${prefix}ACT_RU_EXECUTION
+    where PROC_INST_ID_ = #{parameter} and PARENT_ID_ is not null
   </select>
   
   <select id="selectExecutionsByProcessInstanceId" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="executionResultMap">
@@ -290,6 +411,31 @@
     select ID_
     from ${prefix}ACT_RU_EXECUTION
     where PROC_DEF_ID_ = #{parameter} and PARENT_ID_ is null
+  </select>
+  
+  <select id="selectInactiveExecutionsForProcessInstance" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="executionResultMap">
+  	select *
+  	from ${prefix}ACT_RU_EXECUTION
+  	where PROC_INST_ID_ = #{parameter.processInstanceId}	
+  	and IS_ACTIVE_ = #{parameter.isActive}
+  </select>
+  
+  <select id="selectInactiveExecutionsInActivityAndProcessInstance" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="executionResultMap">
+  	select *
+  	from ${prefix}ACT_RU_EXECUTION
+  	where ACT_ID_ = #{parameter.activityId}
+  	and PROC_INST_ID_ = #{parameter.processInstanceId}
+  	and IS_ACTIVE_ = #{parameter.isActive}
+  </select>
+  
+  <select id="selectExecutionsByParentExecutionAndActivityIds" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="executionResultMap">
+    select *
+    from ${prefix}ACT_RU_EXECUTION
+    where PARENT_ID_ = #{parameter.parentExecutionId}
+    and ACT_ID_ in 
+    <foreach item="activityId" collection="parameter.activityIds" open="(" separator="," close=")">
+          #{activityId}
+    </foreach>
   </select>
   
   <select id="selectExecutionsByQueryCriteria" parameterType="org.activiti.engine.impl.ExecutionQueryImpl" resultMap="executionResultMap">
@@ -326,49 +472,82 @@
   </sql>
   
   <select id="selectProcessInstanceWithVariablesByQueryCriteria" parameterType="org.activiti.engine.impl.ProcessInstanceQueryImpl" resultMap="processInstanceAndVariablesResultMap">
-    ${limitBefore}
+    <include refid="selectProcessInstanceWithVariablesByQueryCriteriaColumns"/> 
+    <include refid="selectProcessInstanceWithVariablesByQueryCriteriaSql"/> 
+    ${orderBy}
+    ${limitAfter}
+  </select>
+  
+  <sql id="selectProcessInstanceWithVariablesByQueryCriteriaColumns">
+   ${limitBefore}
+   <if test="_databaseId != 'db2' and _databaseId != 'mssql'">  
     select distinct RES.*, P.KEY_ as ProcessDefinitionKey, P.ID_ as ProcessDefinitionId, P.NAME_ as ProcessDefinitionName, P.VERSION_ as ProcessDefinitionVersion, P.DEPLOYMENT_ID_ as DeploymentId, 
     VAR.ID_ as VAR_ID_, VAR.NAME_ as VAR_NAME_, VAR.TYPE_ as VAR_TYPE_, VAR.REV_ as VAR_REV_,
     VAR.PROC_INST_ID_ as VAR_PROC_INST_ID_, VAR.EXECUTION_ID_ as VAR_EXECUTION_ID_, VAR.TASK_ID_ as VAR_TASK_ID_,
     VAR.BYTEARRAY_ID_ as VAR_BYTEARRAY_ID_, VAR.DOUBLE_ as VAR_DOUBLE_, 
     VAR.TEXT_ as VAR_TEXT_, VAR.TEXT2_ as VAR_TEXT2_, VAR.LONG_ as VAR_LONG_
     ${limitBetween}
-    <include refid="selectProcessInstanceWithVariablesByQueryCriteriaSql"/> 
-    ${orderBy}
-    ${limitAfter}
-  </select>
-  
-  <select id="selectProcessInstanceWithVariablesByQueryCriteria_mssql_or_db2" parameterType="org.activiti.engine.impl.ProcessInstanceQueryImpl" resultMap="processInstanceAndVariablesResultMap">
-    ${limitBefore}
+   </if>
+   <if test="_databaseId == 'db2' || _databaseId == 'mssql'">
     select distinct TEMPRES_ID_ as ID_, TEMPP_KEY_ as ProcessDefinitionKey, TEMPP_ID_ as ProcessDefinitionId, TEMPP_NAME_ as ProcessDefinitionName, TEMPP_VERSION_ as ProcessDefinitionVersion, TEMPP_DEPLOYMENT_ID_ as DeploymentId, 
     TEMPRES_REV_ as REV_, TEMPRES_ACT_ID_ as ACT_ID_,
     TEMPRES_BUSINESS_KEY_ as BUSINESS_KEY_, TEMPRES_IS_ACTIVE_ as IS_ACTIVE_,
     TEMPRES_IS_CONCURRENT_ as IS_CONCURRENT_, TEMPRES_IS_SCOPE_ as IS_SCOPE_,
-    TEMPRES_IS_EVENT_SCOPE_ as IS_EVENT_SCOPE_, TEMPRES_PARENT_ID_ as PARENT_ID_, 
-    TEMPRES_PROC_INST_ID_ as PROC_INST_ID_, TEMPRES_SUPER_EXEC_ as SUPER_EXEC_, 
-    TEMPRES_PROC_DEF_ID_ as PROC_DEF_ID_, TEMPRES_NAME_ as NAME_, TEMPRES_TENANT_ID_ as TENANT_ID_,
-    TEMPRES_SUSPENSION_STATE_ as SUSPENSION_STATE_, TEMPRES_CACHED_ENT_STATE_ as CACHED_ENT_STATE_,
+    TEMPRES_IS_EVENT_SCOPE_ as IS_EVENT_SCOPE_, TEMPRES_IS_MI_ROOT_ as IS_MI_ROOT_, 
+    TEMPRES_PARENT_ID_ as PARENT_ID_, TEMPRES_PROC_INST_ID_ as PROC_INST_ID_, 
+    TEMPRES_SUPER_EXEC_ as SUPER_EXEC_, TEMPRES_PROC_DEF_ID_ as PROC_DEF_ID_, 
+    TEMPRES_NAME_ as NAME_, TEMPRES_TENANT_ID_ as TENANT_ID_,
+    TEMPRES_SUSPENSION_STATE_ as SUSPENSION_STATE_,
+    TEMPRES_START_TIME_ as START_TIME_, TEMPRES_START_USER_ID_ as START_USER_ID_,
+    TEMPRES_IS_COUNT_ENABLED_ as IS_COUNT_ENABLED_,
+    TEMPRES_EVT_SUBSCR_COUNT_ as EVT_SUBSCR_COUNT_, 
+    TEMPRES_TASK_COUNT_ as TASK_COUNT_, 
+    TEMPRES_JOB_COUNT_ as JOB_COUNT_, 
+    TEMPRES_TIMER_JOB_ as TIMER_JOB_COUNT_,
+    TEMPRES_SUSP_JOB_COUNT_ as SUSP_JOB_COUNT_, 
+    TEMPRES_DEADLETTER_JOB_COUNT_ as DEADLETTER_JOB_COUNT_, 
+    TEMPRES_VAR_COUNT_ as VAR_COUNT_, 
+    TEMPRES_ID_LINK_COUNT_ as ID_LINK_COUNT_,
     TEMPVAR_ID_ as VAR_ID_, TEMPVAR_NAME_ as VAR_NAME_, TEMPVAR_TYPE_ as VAR_TYPE_, TEMPVAR_REV_ as VAR_REV_,
     TEMPVAR_PROC_INST_ID_ as VAR_PROC_INST_ID_, TEMPVAR_EXECUTION_ID_ as VAR_EXECUTION_ID_, TEMPVAR_TASK_ID_ as VAR_TASK_ID_,
     TEMPVAR_BYTEARRAY_ID_ as VAR_BYTEARRAY_ID_, TEMPVAR_DOUBLE_ as VAR_DOUBLE_, 
     TEMPVAR_TEXT_ as VAR_TEXT_, TEMPVAR_TEXT2_ as VAR_TEXT2_, TEMPVAR_LONG_ as VAR_LONG_
-    ${limitOuterJoinBetween}
+     ${limitOuterJoinBetween}
     RES.ID_ as TEMPRES_ID_, RES.REV_ as TEMPRES_REV_, P.KEY_ as TEMPP_KEY_, P.ID_ as TEMPP_ID_, P.NAME_ as TEMPP_NAME_, P.VERSION_ as TEMPP_VERSION_, P.DEPLOYMENT_ID_ as TEMPP_DEPLOYMENT_ID_,
-    RES.ACT_ID_ as TEMPRES_ACT_ID_, RES.PROC_INST_ID_ as TEMPRES_PROC_INST_ID_, 
-    RES.BUSINESS_KEY_ as TEMPRES_BUSINESS_KEY_, RES.IS_ACTIVE_ as TEMPRES_IS_ACTIVE_,
-    RES.IS_CONCURRENT_ as TEMPRES_IS_CONCURRENT_, RES.IS_SCOPE_ as TEMPRES_IS_SCOPE_,
-    RES.IS_EVENT_SCOPE_ as TEMPRES_IS_EVENT_SCOPE_, RES.PARENT_ID_ as TEMPRES_PARENT_ID_,
-    RES.SUPER_EXEC_ as TEMPRES_SUPER_EXEC_, RES.SUSPENSION_STATE_ as TEMPRES_SUSPENSION_STATE_,
-    RES.CACHED_ENT_STATE_ as TEMPRES_CACHED_ENT_STATE_,
-    RES.PROC_DEF_ID_ as TEMPRES_PROC_DEF_ID_, RES.NAME_ as TEMPRES_NAME_, RES.TENANT_ID_ as TEMPRES_TENANT_ID_,
+    
+    RES.ACT_ID_ as TEMPRES_ACT_ID_, 
+    RES.PROC_INST_ID_ as TEMPRES_PROC_INST_ID_, 
+    RES.BUSINESS_KEY_ as TEMPRES_BUSINESS_KEY_, 
+    RES.IS_ACTIVE_ as TEMPRES_IS_ACTIVE_,
+    RES.IS_CONCURRENT_ as TEMPRES_IS_CONCURRENT_, 
+    RES.IS_SCOPE_ as TEMPRES_IS_SCOPE_,
+    RES.IS_EVENT_SCOPE_ as TEMPRES_IS_EVENT_SCOPE_, 
+    RES.IS_MI_ROOT_ as TEMPRES_IS_MI_ROOT_,
+    RES.PARENT_ID_ as TEMPRES_PARENT_ID_, 
+    RES.SUPER_EXEC_ as TEMPRES_SUPER_EXEC_, 
+    RES.SUSPENSION_STATE_ as TEMPRES_SUSPENSION_STATE_, 
+    RES.PROC_DEF_ID_ as TEMPRES_PROC_DEF_ID_, 
+    RES.NAME_ as TEMPRES_NAME_, 
+    RES.TENANT_ID_ as TEMPRES_TENANT_ID_,
+    RES.START_TIME_ as TEMPRES_START_TIME_, 
+    RES.START_USER_ID_ as TEMPRES_START_USER_ID_,
+    
+    RES.IS_COUNT_ENABLED_ as TEMPRES_IS_COUNT_ENABLED_,
+    RES.EVT_SUBSCR_COUNT_ as TEMPRES_EVT_SUBSCR_COUNT_,
+    RES.TASK_COUNT_ as TEMPRES_TASK_COUNT_,
+    RES.JOB_COUNT_ as TEMPRES_JOB_COUNT_,
+    RES.TIMER_JOB_COUNT_ as TEMPRES_TIMER_JOB_,
+    RES.SUSP_JOB_COUNT_ as TEMPRES_SUSP_JOB_COUNT_,
+    RES.DEADLETTER_JOB_COUNT_ as TEMPRES_DEADLETTER_JOB_COUNT_,
+    RES.VAR_COUNT_ as TEMPRES_VAR_COUNT_,
+    RES.ID_LINK_COUNT_ as TEMPRES_ID_LINK_COUNT_,
+    
     VAR.ID_ as TEMPVAR_ID_, VAR.NAME_ as TEMPVAR_NAME_, VAR.TYPE_ as TEMPVAR_TYPE_, VAR.REV_ as TEMPVAR_REV_,
     VAR.PROC_INST_ID_ as TEMPVAR_PROC_INST_ID_, VAR.EXECUTION_ID_ as TEMPVAR_EXECUTION_ID_, VAR.TASK_ID_ as TEMPVAR_TASK_ID_,
     VAR.BYTEARRAY_ID_ as TEMPVAR_BYTEARRAY_ID_, VAR.DOUBLE_ as TEMPVAR_DOUBLE_, 
     VAR.TEXT_ as TEMPVAR_TEXT_, VAR.TEXT2_ as TEMPVAR_TEXT2_, VAR.LONG_ as TEMPVAR_LONG_
-    <include refid="selectProcessInstanceWithVariablesByQueryCriteriaSql"/> 
-    ${orderBy}
-    ${limitAfter}
-  </select>
+   </if>
+  </sql>
   
   <sql id="selectProcessInstanceWithVariablesByQueryCriteriaSql">  
     from ${prefix}ACT_RU_EXECUTION RES
@@ -413,7 +592,7 @@
       left outer join ${prefix}ACT_RE_PROCDEF DEPLOY_P ON RES.PROC_DEF_ID_ = DEPLOY_P.ID_
     </if>
     <if test="onlyProcessInstances &amp;&amp; withJobException">
-      left outer join ${prefix}ACT_RU_JOB JOB ON RES.PROC_INST_ID_ = JOB.PROCESS_INSTANCE_ID_
+      left outer join ${prefix}ACT_RU_TIMER_JOB JOB ON RES.PROC_INST_ID_ = JOB.PROCESS_INSTANCE_ID_
     </if>
     <where>
       <if test="onlyProcessInstances">
@@ -452,6 +631,9 @@
       <if test="processInstanceId != null">
         and RES.PROC_INST_ID_ = #{processInstanceId}
       </if>
+      <if test="rootProcessInstanceId != null">
+        and RES.ROOT_PROC_INST_ID_ = #{rootProcessInstanceId}
+      </if>
       <if test="processInstanceIds != null and !processInstanceIds.isEmpty()">
         and RES.PROC_INST_ID_ in
         <foreach item="item" index="index" collection="processInstanceIds" open="(" separator="," close=")">
@@ -469,6 +651,15 @@
       </if>
       <if test="parentId != null">
         and RES.PARENT_ID_ = #{parentId}
+      </if>
+      <if test="onlyChildExecutions">
+      	and RES.PARENT_ID_ is not null
+      </if>
+      <if test="onlySubProcessExecutions">
+        and ((RES.PARENT_ID_ is not null or RES.SUPER_EXEC_ is not null) and RES.IS_SCOPE_ = #{onlySubProcessExecutions,typeHandler=org.apache.ibatis.type.BooleanTypeHandler})
+      </if>
+      <if test="onlyProcessInstanceExecutions">
+        and RES.PARENT_ID_ is null
       </if>
       <if test="deploymentId != null">
         and DEPLOY_P.DEPLOYMENT_ID_ = #{deploymentId}
@@ -549,8 +740,8 @@
 	      </choose>
   	      #{queryVariableValue.textValue}
   	      <choose>
-  	        <when test="queryVariableValue.operator.equals('LIKE') || queryVariableValue.operator.equals('LIKE_IGNORE_CASE')">${wildcardEscapeClause}</when>
-  	      </choose>
+            <when test="queryVariableValue.operator.equals('LIKE') || queryVariableValue.operator.equals('LIKE_IGNORE_CASE')">${wildcardEscapeClause}</when>
+          </choose>
       	</if>
       	<if test="queryVariableValue.textValue2 != null">
 	      and A${index}.TEXT2_
@@ -559,9 +750,9 @@
 	        <otherwise><include refid="executionVariableOperator" /></otherwise>
 	      </choose>
 	        #{queryVariableValue.textValue2}
-	      <choose>
-	        <when test="queryVariableValue.operator.equals('LIKE')">${wildcardEscapeClause}</when>
-	      </choose>
+	        <choose>
+            <when test="queryVariableValue.operator.equals('LIKE')">${wildcardEscapeClause}</when>
+          </choose>
       	</if>
       	<if test="queryVariableValue.longValue != null">
 	      and A${index}.LONG_
@@ -722,9 +913,9 @@
                 <otherwise><include refid="executionVariableOperator" /></otherwise>
               </choose>
                 #{queryVariableValue.textValue}
-              <choose>
-                <when test="queryVariableValue.operator.equals('LIKE') || queryVariableValue.operator.equals('LIKE_IGNORE_CASE')">${wildcardEscapeClause}</when>
-              </choose>
+                <choose>
+                  <when test="queryVariableValue.operator.equals('LIKE') || queryVariableValue.operator.equals('LIKE_IGNORE_CASE')">${wildcardEscapeClause}</when>
+                </choose>
               </if>
               <if test="queryVariableValue.textValue2 != null">
               and A_OR${orIndex}.TEXT2_
@@ -763,7 +954,16 @@
         </trim>
       </foreach>
       <if test="onlyProcessInstances &amp;&amp; withJobException">
-        and (JOB.EXCEPTION_MSG_ is not null or  JOB.EXCEPTION_STACK_ID_ is not null)
+        and (JOB.EXCEPTION_MSG_ is not null or JOB.EXCEPTION_STACK_ID_ is not null)
+      </if>
+      <if test="startedBefore != null">
+        and RES.START_TIME_ &lt;= #{startedBefore}
+      </if>
+      <if test="startedAfter != null">
+        and RES.START_TIME_ &gt;= #{startedAfter}
+      </if>
+      <if test="startedBy != null">
+        and RES.START_USER_ID_ = #{startedBy}
       </if>
     </where>
   </sql>
@@ -788,23 +988,7 @@
   </select>
   
   <select id="selectExecutionByNativeQuery" parameterType="java.util.Map" resultMap="executionResultMap">
-  	<if test="resultType == 'LIST_PAGE'">
-  		${limitBefore}
-  	</if>
-    ${sql}
-    <if test="resultType == 'LIST_PAGE'">
-    	${limitAfter}
-    </if>
-  </select>
-  
-  <select id="selectExecutionByNativeQuery_mssql_or_db2" parameterType="java.util.Map" resultMap="executionResultMap">
-  	<if test="resultType == 'LIST_PAGE'">
-        ${limitBeforeNativeQuery}
-  	</if>
-  	${sql} 
-    <if test="resultType == 'LIST_PAGE'">
-  		${limitAfter}
-  	</if>
+  	<include refid="org.activiti.engine.db.common.selectByNativeQuery"/>
   </select>
 
   <select id="selectExecutionCountByNativeQuery" parameterType="java.util.Map" resultType="long">

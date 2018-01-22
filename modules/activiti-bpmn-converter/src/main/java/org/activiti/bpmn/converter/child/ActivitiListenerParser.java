@@ -23,11 +23,12 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author Tijs Rademakers
+ * @author Yvo Swillens
  */
 public abstract class ActivitiListenerParser extends BaseChildElementParser {
-  
+
   public void parseChildElement(XMLStreamReader xtr, BaseElement parentElement, BpmnModel model) throws Exception {
-    
+
     ActivitiListener listener = new ActivitiListener();
     BpmnXMLUtil.addXMLLocation(listener, xtr);
     if (StringUtils.isNotEmpty(xtr.getAttributeValue(null, ATTRIBUTE_LISTENER_CLASS))) {
@@ -41,9 +42,21 @@ public abstract class ActivitiListenerParser extends BaseChildElementParser {
       listener.setImplementationType(ImplementationType.IMPLEMENTATION_TYPE_DELEGATEEXPRESSION);
     }
     listener.setEvent(xtr.getAttributeValue(null, ATTRIBUTE_LISTENER_EVENT));
+    listener.setOnTransaction(xtr.getAttributeValue(null, ATTRIBUTE_LISTENER_ON_TRANSACTION));
+
+    if (StringUtils.isNotEmpty((xtr.getAttributeValue(null, ATTRIBUTE_LISTENER_CUSTOM_PROPERTIES_RESOLVER_CLASS)))) {
+      listener.setCustomPropertiesResolverImplementation(xtr.getAttributeValue(null, ATTRIBUTE_LISTENER_CUSTOM_PROPERTIES_RESOLVER_CLASS));
+      listener.setCustomPropertiesResolverImplementationType(ImplementationType.IMPLEMENTATION_TYPE_CLASS);
+    } else if (StringUtils.isNotEmpty(xtr.getAttributeValue(null, ATTRIBUTE_LISTENER_CUSTOM_PROPERTIES_RESOLVER_EXPRESSION))) {
+      listener.setCustomPropertiesResolverImplementation(xtr.getAttributeValue(null, ATTRIBUTE_LISTENER_CUSTOM_PROPERTIES_RESOLVER_EXPRESSION));
+      listener.setCustomPropertiesResolverImplementationType(ImplementationType.IMPLEMENTATION_TYPE_EXPRESSION);
+    } else if (StringUtils.isNotEmpty(xtr.getAttributeValue(null, ATTRIBUTE_LISTENER_CUSTOM_PROPERTIES_RESOLVER_DELEGATEEXPRESSION))) {
+      listener.setCustomPropertiesResolverImplementation(xtr.getAttributeValue(null, ATTRIBUTE_LISTENER_CUSTOM_PROPERTIES_RESOLVER_DELEGATEEXPRESSION));
+      listener.setCustomPropertiesResolverImplementationType(ImplementationType.IMPLEMENTATION_TYPE_DELEGATEEXPRESSION);
+    }
     addListenerToParent(listener, parentElement);
     parseChildElements(xtr, listener, model, new FieldExtensionParser());
   }
-  
+
   public abstract void addListenerToParent(ActivitiListener listener, BaseElement parentElement);
 }

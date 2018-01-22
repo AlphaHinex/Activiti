@@ -12,13 +12,13 @@
  */
 package org.activiti.engine.runtime;
 
+import java.util.Date;
 import java.util.Map;
 
 import org.activiti.engine.repository.ProcessDefinition;
 
-
-
-/** Represents one execution of a  {@link ProcessDefinition}.
+/**
+ * Represents one execution of a {@link ProcessDefinition}.
  * 
  * @author Tom Baeyens
  * @author Joram Barrez
@@ -26,57 +26,57 @@ import org.activiti.engine.repository.ProcessDefinition;
  * @author Tijs Rademakers
  */
 public interface ProcessInstance extends Execution {
-  
+
   /**
    * The id of the process definition of the process instance.
    */
   String getProcessDefinitionId();
-  
+
   /**
    * The name of the process definition of the process instance.
    */
   String getProcessDefinitionName();
-  
+
   /**
    * The key of the process definition of the process instance.
    */
   String getProcessDefinitionKey();
-  
+
   /**
    * The version of the process definition of the process instance.
    */
   Integer getProcessDefinitionVersion();
-  
+
   /**
    * The deployment id of the process definition of the process instance.
    */
   String getDeploymentId();
-  
+
   /**
    * The business key of this process instance.
    */
   String getBusinessKey();
-  
+
   /**
    * returns true if the process instance is suspended
    */
   boolean isSuspended();
-  
-  /** 
-   * Returns the process variables if requested in the process instance query 
+
+  /**
+   * Returns the process variables if requested in the process instance query
    */
   Map<String, Object> getProcessVariables();
-  
-  /** 
-   * The tenant identifier of this process instance 
+
+  /**
+   * The tenant identifier of this process instance
    */
   String getTenantId();
-  
+
   /**
-   * Returns the name of this process instance. 
+   * Returns the name of this process instance.
    */
   String getName();
-  
+
   /**
    * Returns the description of this process instance.
    */
@@ -91,4 +91,14 @@ public interface ProcessInstance extends Execution {
    * Returns the localized description of this process instance.
    */
   String getLocalizedDescription();
+
+  /**
+   * Returns the start time of this process instance.
+   */
+  Date getStartTime();
+
+  /**
+   * Returns the user id of this process instance.
+   */
+  String getStartUserId();
 }

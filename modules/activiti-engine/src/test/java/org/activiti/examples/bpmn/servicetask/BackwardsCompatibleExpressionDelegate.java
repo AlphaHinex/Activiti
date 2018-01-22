@@ -14,22 +14,21 @@
 package org.activiti.examples.bpmn.servicetask;
 
 import org.activiti.engine.delegate.DelegateExecution;
+import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.delegate.JavaDelegate;
-import org.activiti.engine.impl.el.Expression;
-
 
 /**
  * @author Tom Baeyens
  */
 public class BackwardsCompatibleExpressionDelegate implements JavaDelegate {
-  
+
   private Expression expression;
-  
+
   public void execute(DelegateExecution execution) {
     Object result = expression.getValue(execution);
     execution.setVariable("result", result);
   }
-  
+
   public void setExpression(Expression expression) {
     this.expression = expression;
   }

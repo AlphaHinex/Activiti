@@ -10,18 +10,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.activiti.engine.impl.cmd;
 
 import java.io.Serializable;
 
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
+import org.activiti.engine.impl.util.Activiti5Util;
+import org.activiti.engine.impl.util.ProcessDefinitionUtil;
 
 /**
  * @author Tijs Rademakers
  */
 public class IsProcessDefinitionSuspendedCmd implements Command<Boolean>, Serializable {
-  
+
   private static final long serialVersionUID = 1L;
   protected String processDefinitionId;
 
@@ -30,6 +34,12 @@ public class IsProcessDefinitionSuspendedCmd implements Command<Boolean>, Serial
   }
 
   public Boolean execute(CommandContext commandContext) {
-    return commandContext.getProcessEngineConfiguration().getDeploymentManager().isProcessDefinitionSuspended(processDefinitionId);
+    // Backwards compatibility
+    if (Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, processDefinitionId)) {
+      Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+      return activiti5CompatibilityHandler.isProcessDefinitionSuspended(processDefinitionId);
+    }
+    
+    return ProcessDefinitionUtil.isProcessDefinitionSuspended(processDefinitionId);
   }
 }

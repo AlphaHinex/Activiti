@@ -16,11 +16,15 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.activiti.engine.ActivitiObjectNotFoundException;
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.CommentEntity;
 import org.activiti.engine.impl.persistence.entity.CommentEntityManager;
+import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
+import org.activiti.engine.impl.util.Activiti5Util;
 import org.activiti.engine.task.Comment;
+import org.activiti.engine.task.Task;
 
 /**
  * @author Joram Barrez
@@ -40,27 +44,61 @@ public class DeleteCommentCmd implements Command<Void>, Serializable {
 
   public Void execute(CommandContext commandContext) {
     CommentEntityManager commentManager = commandContext.getCommentEntityManager();
-    
-    if(commentId != null) {
+
+    if (commentId != null) {
       // Delete for an individual comment
       Comment comment = commentManager.findComment(commentId);
-      if(comment == null) {
+      if (comment == null) {
         throw new ActivitiObjectNotFoundException("Comment with id '" + commentId + "' doesn't exists.", Comment.class);
       }
-      commentManager.delete((CommentEntity) comment);
       
+      if (comment.getProcessInstanceId() != null) {
+        ExecutionEntity execution = (ExecutionEntity) commandContext.getExecutionEntityManager().findById(comment.getProcessInstanceId());
+        if (execution != null && Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, execution.getProcessDefinitionId())) {
+          Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+          activiti5CompatibilityHandler.deleteComment(commentId, taskId, processInstanceId);
+          return null;
+        }
+      
+      } else if (comment.getTaskId() != null) {
+        Task task = commandContext.getTaskEntityManager().findById(comment.getTaskId());
+        if (task != null && task.getProcessDefinitionId() != null && Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, task.getProcessDefinitionId())) {
+          Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+          activiti5CompatibilityHandler.deleteComment(commentId, taskId, processInstanceId);
+          return null;
+        }
+      }
+      
+      commentManager.delete((CommentEntity) comment);
+
     } else {
       // Delete all comments on a task of process
       ArrayList<Comment> comments = new ArrayList<Comment>();
       if (processInstanceId != null) {
+        
+        ExecutionEntity execution = (ExecutionEntity) commandContext.getExecutionEntityManager().findById(processInstanceId);
+        if (execution != null && Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, execution.getProcessDefinitionId())) {
+          Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+          activiti5CompatibilityHandler.deleteComment(commentId, taskId, processInstanceId);
+          return null;
+        }
+        
         comments.addAll(commentManager.findCommentsByProcessInstanceId(processInstanceId));
       }
       if (taskId != null) {
+        
+        Task task = commandContext.getTaskEntityManager().findById(taskId);
+        if (task != null && task.getProcessDefinitionId() != null && Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, task.getProcessDefinitionId())) {
+          Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+          activiti5CompatibilityHandler.deleteComment(commentId, taskId, processInstanceId);
+          return null;
+        }
+        
         comments.addAll(commentManager.findCommentsByTaskId(taskId));
       }
 
       for (Comment comment : comments) {
-        commentManager.delete((CommentEntity)comment);
+        commentManager.delete((CommentEntity) comment);
       }
     }
     return null;

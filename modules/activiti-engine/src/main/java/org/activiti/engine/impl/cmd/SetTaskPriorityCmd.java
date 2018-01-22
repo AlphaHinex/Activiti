@@ -12,26 +12,35 @@
  */
 package org.activiti.engine.impl.cmd;
 
+import org.activiti.engine.compatibility.Activiti5CompatibilityHandler;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.TaskEntity;
-
+import org.activiti.engine.impl.util.Activiti5Util;
 
 /**
  * @author Joram Barrez
  */
 public class SetTaskPriorityCmd extends NeedsActiveTaskCmd<Void> {
-  
+
   private static final long serialVersionUID = 1L;
 
   protected int priority;
-  
+
   public SetTaskPriorityCmd(String taskId, int priority) {
     super(taskId);
     this.priority = priority;
   }
-  
+
   protected Void execute(CommandContext commandContext, TaskEntity task) {
-    task.setPriority(priority, true);
+    if (Activiti5Util.isActiviti5ProcessDefinitionId(commandContext, task.getProcessDefinitionId())) {
+      Activiti5CompatibilityHandler activiti5CompatibilityHandler = Activiti5Util.getActiviti5CompatibilityHandler(); 
+      activiti5CompatibilityHandler.setTaskPriority(taskId, priority);
+      return null;
+    }
+    
+    task.setPriority(priority);
+    commandContext.getHistoryManager().recordTaskPriorityChange(task.getId(), task.getPriority());
+    commandContext.getTaskEntityManager().update(task);
     return null;
   }
 

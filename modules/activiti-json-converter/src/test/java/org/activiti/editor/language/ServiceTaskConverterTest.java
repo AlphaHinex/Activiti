@@ -17,31 +17,31 @@ import org.junit.Test;
 public class ServiceTaskConverterTest extends AbstractConverterTest {
 
   @Test
-  public void connvertJsonToModel() throws Exception {
+  public void convertJsonToModel() throws Exception {
     BpmnModel bpmnModel = readJsonFile();
     validateModel(bpmnModel);
   }
-  
-  @Test 
+
+  @Test
   public void doubleConversionValidation() throws Exception {
     BpmnModel bpmnModel = readJsonFile();
     bpmnModel = convertToJsonAndBack(bpmnModel);
     validateModel(bpmnModel);
   }
-  
+
   protected String getResource() {
     return "test.servicetaskmodel.json";
   }
-  
+
   private void validateModel(BpmnModel model) {
-    FlowElement flowElement = model.getMainProcess().getFlowElement("servicetask");
+    FlowElement flowElement = model.getMainProcess().getFlowElement("servicetask", true);
     assertNotNull(flowElement);
     assertTrue(flowElement instanceof ServiceTask);
     assertEquals("servicetask", flowElement.getId());
     ServiceTask serviceTask = (ServiceTask) flowElement;
     assertEquals("servicetask", serviceTask.getId());
     assertEquals("Service task", serviceTask.getName());
-    
+
     List<FieldExtension> fields = serviceTask.getFieldExtensions();
     assertEquals(2, fields.size());
     FieldExtension field = (FieldExtension) fields.get(0);
@@ -50,7 +50,7 @@ public class ServiceTaskConverterTest extends AbstractConverterTest {
     field = (FieldExtension) fields.get(1);
     assertEquals("testField2", field.getFieldName());
     assertEquals("${test}", field.getExpression());
-    
+
     List<ActivitiListener> listeners = serviceTask.getExecutionListeners();
     assertEquals(3, listeners.size());
     ActivitiListener listener = (ActivitiListener) listeners.get(0);

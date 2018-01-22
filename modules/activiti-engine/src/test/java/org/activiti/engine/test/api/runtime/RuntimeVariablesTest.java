@@ -28,7 +28,7 @@ import org.activiti.engine.test.Deployment;
 /**
  * @author Daisuke Yoshimoto
  */
-public class RuntimeVariablesTest  extends PluggableActivitiTestCase {
+public class RuntimeVariablesTest extends PluggableActivitiTestCase {
 
   @Deployment
   public void testGetVariablesByExecutionIds(){
@@ -49,19 +49,19 @@ public class RuntimeVariablesTest  extends PluggableActivitiTestCase {
     
     // only 1 process
     Set<String> executionIds = new HashSet<String>();
-    executionIds.add(task1.getExecutionId());
+    executionIds.add(processInstance1.getId());
     List<VariableInstance> variables = runtimeService.getVariableInstancesByExecutionIds(executionIds);
     assertEquals(1, variables.size());
-    checkVariable(task1.getExecutionId(), "executionVar1", "helloWorld1", variables);
+    checkVariable(processInstance1.getId(), "executionVar1", "helloWorld1", variables);
     
     // 2 process
     executionIds = new HashSet<String>();
-    executionIds.add(task1.getExecutionId());
-    executionIds.add(task2.getExecutionId());
+    executionIds.add(processInstance1.getId());
+    executionIds.add(processInstance2.getId());
     variables = runtimeService.getVariableInstancesByExecutionIds(executionIds);
     assertEquals(2, variables.size());
-    checkVariable(task1.getExecutionId(), "executionVar1", "helloWorld1", variables);
-    checkVariable(task2.getExecutionId(), "executionVar2", "helloWorld2", variables);
+    checkVariable(processInstance1.getId(), "executionVar1", "helloWorld1", variables);
+    checkVariable(processInstance2.getId(), "executionVar2", "helloWorld2", variables);
   }
   
   @Deployment(resources={
@@ -72,8 +72,8 @@ public class RuntimeVariablesTest  extends PluggableActivitiTestCase {
     Task task1 = taskService.createTaskQuery().processInstanceId(processInstance1.getId()).singleResult();
     
     StringBuilder sb = new StringBuilder("a");
-    for(int i = 0; i < 4001; i++) {
-         sb.append("a");
+    for (int i = 0; i < 4001; i++) {
+      sb.append("a");
     }
     String serializableTypeVar = sb.toString();
     
@@ -82,7 +82,7 @@ public class RuntimeVariablesTest  extends PluggableActivitiTestCase {
     
     // only 1 process
     Set<String> executionIds = new HashSet<String>();
-    executionIds.add(task1.getExecutionId());
+    executionIds.add(processInstance1.getId());
     List<VariableInstance> variables = runtimeService.getVariableInstancesByExecutionIds(executionIds);
     assertEquals(serializableTypeVar, variables.get(0).getValue());
   }

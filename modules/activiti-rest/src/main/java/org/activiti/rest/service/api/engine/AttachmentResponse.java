@@ -13,12 +13,13 @@
 
 package org.activiti.rest.service.api.engine;
 
+import io.swagger.annotations.ApiModelProperty;
+
 import java.util.Date;
 
 import org.activiti.rest.common.util.DateToStringSerializer;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
 
 /**
  * @author Frederik Heremans
@@ -35,29 +36,29 @@ public class AttachmentResponse {
   private String processInstanceUrl;
   private String externalUrl;
   private String contentUrl;
-  @JsonSerialize(using = DateToStringSerializer.class, as=Date.class)
+  @JsonSerialize(using = DateToStringSerializer.class, as = Date.class)
   private Date time;
-  
+
   public String getId() {
     return id;
   }
-  
+
   public void setId(String id) {
     this.id = id;
   }
-  
+
   public String getUrl() {
     return url;
   }
-  
+
   public void setUrl(String url) {
     this.url = url;
   }
-  
+
   public String getName() {
     return name;
   }
-  
+
   public void setName(String name) {
     this.name = name;
   }
@@ -73,47 +74,48 @@ public class AttachmentResponse {
   public String getDescription() {
     return description;
   }
-  
+
   public void setDescription(String description) {
     this.description = description;
   }
-  
+
+  @ApiModelProperty(value = "Can be any arbitrary value. When a valid formatted media-type (e.g. application/xml, text/plain) is included, the binary content HTTP response content-type will be set the the given value.")
   public String getType() {
     return type;
   }
-  
+
   public void setType(String type) {
     this.type = type;
   }
-  
+
   public String getTaskUrl() {
     return taskUrl;
   }
-  
+
   public void setTaskUrl(String taskUrl) {
     this.taskUrl = taskUrl;
   }
-  
+
   public String getProcessInstanceUrl() {
     return processInstanceUrl;
   }
-  
+
   public void setProcessInstanceUrl(String processInstanceUrl) {
     this.processInstanceUrl = processInstanceUrl;
   }
-  
+  @ApiModelProperty(value = "contentUrl:In case the attachment is a link to an external resource, the externalUrl contains the URL to the external content. If the attachment content is present in the Activiti engine, the contentUrl will contain an URL where the binary content can be streamed from.")
   public String getExternalUrl() {
     return externalUrl;
   }
-  
+
   public void setExternalUrl(String externalUrl) {
     this.externalUrl = externalUrl;
   }
-  
+
   public String getContentUrl() {
     return contentUrl;
   }
-  
+
   public void setContentUrl(String contentUrl) {
     this.contentUrl = contentUrl;
   }

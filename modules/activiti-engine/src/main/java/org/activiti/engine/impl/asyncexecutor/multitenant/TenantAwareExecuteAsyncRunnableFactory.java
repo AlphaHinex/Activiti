@@ -14,9 +14,10 @@
 package org.activiti.engine.impl.asyncexecutor.multitenant;
 
 import org.activiti.engine.impl.asyncexecutor.ExecuteAsyncRunnableFactory;
+import org.activiti.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.activiti.engine.impl.cfg.multitenant.TenantInfoHolder;
-import org.activiti.engine.impl.interceptor.CommandExecutor;
 import org.activiti.engine.impl.persistence.entity.JobEntity;
+import org.activiti.engine.runtime.Job;
 
 /**
  * Factory that produces a {@link Runnable} that executes a {@link JobEntity}.
@@ -34,8 +35,8 @@ public class TenantAwareExecuteAsyncRunnableFactory implements ExecuteAsyncRunna
     this.tenantId = tenantId;
   }
 
-  public Runnable createExecuteAsyncRunnable(JobEntity jobEntity, CommandExecutor commandExecutor) {
-    return new TenantAwareExecuteAsyncRunnable(jobEntity, commandExecutor, tenantInfoHolder, tenantId);
+  public Runnable createExecuteAsyncRunnable(Job job, ProcessEngineConfigurationImpl processEngineConfiguration) {
+    return new TenantAwareExecuteAsyncRunnable(job, processEngineConfiguration, tenantInfoHolder, tenantId);
   }
 
 }

@@ -15,52 +15,52 @@ package org.activiti.engine.impl.bpmn.listener;
 
 import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.ExecutionListener;
+import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.impl.context.Context;
-import org.activiti.engine.impl.el.Expression;
 import org.activiti.engine.impl.scripting.ScriptingEngines;
 
 public class ScriptExecutionListener implements ExecutionListener {
-  
+
   private static final long serialVersionUID = 1L;
 
   protected Expression script;
 
-  protected Expression language = null;
+  protected Expression language;
 
-  protected Expression resultVariable = null;
+  protected Expression resultVariable;
 
-	@Override
-  public void notify(DelegateExecution execution) throws Exception {
-		validateParameters();
+  @Override
+  public void notify(DelegateExecution execution) {
 
-		ScriptingEngines scriptingEngines = Context.getProcessEngineConfiguration().getScriptingEngines();
+    validateParameters();
 
-		Object result = scriptingEngines.evaluate(script.getExpressionText(), language.getValue(execution).toString(), execution);
+    ScriptingEngines scriptingEngines = Context.getProcessEngineConfiguration().getScriptingEngines();
+    Object result = scriptingEngines.evaluate(script.getExpressionText(), language.getExpressionText(), execution);
 
-		if (resultVariable != null) {
-		  execution.setVariable(resultVariable.getExpressionText(), result);
-		}
-	}
-
+    if (resultVariable != null) {
+      execution.setVariable(resultVariable.getExpressionText(), result);
+    }
+  }
+  
   protected void validateParameters() {
     if (script == null) {
-			throw new IllegalArgumentException("The field 'script' should be set on the ExecutionListener");
-		}
+      throw new IllegalArgumentException("The field 'script' should be set on the ExecutionListener");
+    }
 
-		if (language == null) {
-			throw new IllegalArgumentException("The field 'language' should be set on the ExecutionListener");
-		}
+    if (language == null) {
+      throw new IllegalArgumentException("The field 'language' should be set on the ExecutionListener");
+    }
   }
 
-	public void setScript(Expression script) {
-		this.script = script;
-	}
+  public void setScript(Expression script) {
+    this.script = script;
+  }
 
-	public void setLanguage(Expression language) {
-		this.language = language;
-	}
+  public void setLanguage(Expression language) {
+    this.language = language;
+  }
 
-	public void setResultVariable(Expression resultVariable) {
-		this.resultVariable = resultVariable;
-	}
+  public void setResultVariable(Expression resultVariable) {
+    this.resultVariable = resultVariable;
+  }
 }

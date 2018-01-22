@@ -12,72 +12,23 @@
  */
 package org.activiti.engine.impl.persistence.entity;
 
-import java.io.Serializable;
-
-import org.activiti.engine.ActivitiException;
 import org.activiti.engine.impl.db.HasRevision;
-import org.activiti.engine.impl.db.PersistentObject;
-
-
 
 /**
  * @author Tom Baeyens
  */
-public class PropertyEntity implements PersistentObject, HasRevision, Serializable {
+public interface PropertyEntity extends Entity, HasRevision {
 
-  private static final long serialVersionUID = 1L;
+  String getName();
   
-  String name;
-  int revision;
-  String value;
+  void setName(String name);
 
-  public PropertyEntity() {
-  }
+  String getValue();
 
-  public PropertyEntity(String name, String value) {
-    this.name = name;
-    this.value = value;
-  }
+  void setValue(String value);
 
-  public String getName() {
-    return name;
-  }
-  public int getRevision() {
-    return revision;
-  }
-  public void setRevision(int revision) {
-    this.revision = revision;
-  }
-  public String getValue() {
-    return value;
-  }
-  public void setValue(String value) {
-    this.value = value;
-  }
-  
-  // persistent object methods ////////////////////////////////////////////////
+  String getId();
 
-  public String getId() {
-    return name;
-  }
-
-  public Object getPersistentState() {
-    return value;
-  }
-
-  public void setId(String id) {
-    throw new ActivitiException("only provided id generation allowed for properties");
-  }
-  
-  public int getRevisionNext() {
-    return revision+1;
-  }
-
-  // common methods  //////////////////////////////////////////////////////////
-
-  @Override
-  public String toString() {
-    return "PropertyEntity[name=" + name + ", value=" + value + "]";
-  }
+  Object getPersistentState();
 
 }

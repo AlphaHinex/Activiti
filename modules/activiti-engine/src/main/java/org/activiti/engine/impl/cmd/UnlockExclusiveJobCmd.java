@@ -18,10 +18,9 @@ import org.activiti.engine.ActivitiIllegalArgumentException;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
-import org.activiti.engine.impl.persistence.entity.JobEntity;
+import org.activiti.engine.runtime.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * @author Tijs Rademakers
@@ -32,32 +31,32 @@ public class UnlockExclusiveJobCmd implements Command<Object>, Serializable {
   private static final long serialVersionUID = 1L;
 
   private static Logger log = LoggerFactory.getLogger(UnlockExclusiveJobCmd.class);
-  
-  protected JobEntity job;
- 
-  public UnlockExclusiveJobCmd(JobEntity job) {
-  	this.job = job;
+
+  protected Job job;
+
+  public UnlockExclusiveJobCmd(Job job) {
+    this.job = job;
   }
 
   public Object execute(CommandContext commandContext) {
-    
+
     if (job == null) {
       throw new ActivitiIllegalArgumentException("job is null");
     }
-    
+
     if (log.isDebugEnabled()) {
       log.debug("Unlocking exclusive job {}", job.getId());
     }
-    
+
     if (job.isExclusive()) {
       if (job.getProcessInstanceId() != null) {
-        ExecutionEntity execution = commandContext.getExecutionEntityManager().findExecutionById(job.getProcessInstanceId());
+        ExecutionEntity execution = commandContext.getExecutionEntityManager().findById(job.getProcessInstanceId());
         if (execution != null) {
           commandContext.getExecutionEntityManager().clearProcessInstanceLockTime(execution.getId());
         } 
       }
     }
-    
+
     return null;
   }
 }

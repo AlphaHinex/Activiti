@@ -22,22 +22,19 @@ import java.beans.FeatureDescriptor;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.activiti.engine.impl.javax.el.ELContext;
-import org.activiti.engine.impl.javax.el.ELResolver;
+import javax.el.ELContext;
+import javax.el.ELResolver;
+
 import org.osgi.service.blueprint.container.BlueprintContainer;
 
 /**
- * Custom ELResolver to resolve beans defined in the activiti-engine host
- * bundle's blueprint context.
+ * Custom ELResolver to resolve beans defined in the activiti-engine host bundle's blueprint context.
  * 
  * @see org.activiti.spring.ApplicationContextElResolver
  * @author Prabhat_Tripathi
  * 
- *         blueprint context declaration syntax: 
- *         <bean id="blueprintContextELResolver" 
- *             class="org.activiti.osgi.blueprint.BlueprintContextELResolver">
- *           <property name="blueprintContainer" ref="blueprintContainer"/>
- *         </bean>
+ *         blueprint context declaration syntax: <bean id="blueprintContextELResolver" class="org.activiti.osgi.blueprint.BlueprintContextELResolver"> <property name="blueprintContainer"
+ *         ref="blueprintContainer"/> </bean>
  */
 public class BlueprintContextELResolver extends ELResolver {
 
@@ -75,16 +72,14 @@ public class BlueprintContextELResolver extends ELResolver {
     return true;
   }
 
-  public void setValue(ELContext context, Object base, Object property,
-      Object value) {
+  public void setValue(ELContext context, Object base, Object property, Object value) {
   }
 
   public Class<?> getCommonPropertyType(ELContext context, Object arg) {
     return Object.class;
   }
 
-  public Iterator<FeatureDescriptor> getFeatureDescriptors(ELContext context,
-      Object arg) {
+  public Iterator<FeatureDescriptor> getFeatureDescriptors(ELContext context, Object arg) {
     return null;
   }
 

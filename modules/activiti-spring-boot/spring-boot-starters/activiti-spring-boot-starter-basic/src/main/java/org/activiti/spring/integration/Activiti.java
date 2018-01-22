@@ -53,7 +53,7 @@ public class Activiti {
                         (String) message.getHeaders().get("executionId") : (String) null;
 
                 if (null != executionId)
-                    processEngine.getRuntimeService().signal(executionId);
+                    processEngine.getRuntimeService().trigger(executionId);
             }
         };
     }

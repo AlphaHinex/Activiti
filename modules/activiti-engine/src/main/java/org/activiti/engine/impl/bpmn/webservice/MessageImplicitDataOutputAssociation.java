@@ -12,20 +12,19 @@
  */
 package org.activiti.engine.impl.bpmn.webservice;
 
+import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.impl.bpmn.behavior.WebServiceActivityBehavior;
 import org.activiti.engine.impl.bpmn.data.AbstractDataAssociation;
 import org.activiti.engine.impl.bpmn.data.FieldBaseStructureInstance;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
 
 /**
- * An implicit data output association between a source and a target.
- * source is a property in the message and target is a variable in the current execution context
+ * An implicit data output association between a source and a target. source is a property in the message and target is a variable in the current execution context
  * 
  * @author Esteban Robles Luna
  */
 public class MessageImplicitDataOutputAssociation extends AbstractDataAssociation {
-	
+
   private static final long serialVersionUID = 1L;
 
   public MessageImplicitDataOutputAssociation(String targetRef, Expression sourceExpression) {
@@ -37,7 +36,7 @@ public class MessageImplicitDataOutputAssociation extends AbstractDataAssociatio
   }
 
   @Override
-  public void evaluate(ActivityExecution execution) {
+  public void evaluate(DelegateExecution execution) {
     MessageInstance message = (MessageInstance) execution.getVariable(WebServiceActivityBehavior.CURRENT_MESSAGE);
     if (message.getStructureInstance() instanceof FieldBaseStructureInstance) {
       FieldBaseStructureInstance structure = (FieldBaseStructureInstance) message.getStructureInstance();

@@ -30,7 +30,6 @@ import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.activiti.engine.impl.context.Context;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
@@ -50,9 +49,7 @@ public class MailActivityBehavior extends AbstractBpmnActivityBehavior {
 
   private static final Logger LOG = LoggerFactory.getLogger(MailActivityBehavior.class);
 
-  private static final Class<?>[] ALLOWED_ATT_TYPES = new Class<?>[]{
-      File.class, File[].class, String.class, String[].class, DataSource.class, DataSource[].class
-  };
+  private static final Class<?>[] ALLOWED_ATT_TYPES = new Class<?>[] { File.class, File[].class, String.class, String[].class, DataSource.class, DataSource[].class };
 
   protected Expression to;
   protected Expression from;
@@ -69,7 +66,7 @@ public class MailActivityBehavior extends AbstractBpmnActivityBehavior {
   protected Expression attachments;
 
   @Override
-  public void execute(ActivityExecution execution) {
+  public void execute(DelegateExecution execution) {
 
     boolean doIgnoreException = Boolean.parseBoolean(getStringFromField(ignoreException, execution));
     String exceptionVariable = getStringFromField(exceptionVariableName, execution);
@@ -80,10 +77,8 @@ public class MailActivityBehavior extends AbstractBpmnActivityBehavior {
       String ccStr = getStringFromField(cc, execution);
       String bccStr = getStringFromField(bcc, execution);
       String subjectStr = getStringFromField(subject, execution);
-      String textStr = textVar == null ? getStringFromField(text, execution)
-          : getStringFromField(getExpression(execution, textVar), execution);
-      String htmlStr = htmlVar == null ? getStringFromField(html, execution)
-          : getStringFromField(getExpression(execution, htmlVar), execution);
+      String textStr = textVar == null ? getStringFromField(text, execution) : getStringFromField(getExpression(execution, textVar), execution);
+      String htmlStr = htmlVar == null ? getStringFromField(html, execution) : getStringFromField(getExpression(execution, htmlVar), execution);
       String charSetStr = getStringFromField(charset, execution);
       List<File> files = new LinkedList<File>();
       List<DataSource> dataSources = new LinkedList<DataSource>();
@@ -365,7 +360,7 @@ public class MailActivityBehavior extends AbstractBpmnActivityBehavior {
         }
       }
     }
-    for (Iterator<File> it = files.iterator(); it.hasNext(); ) {
+    for (Iterator<File> it = files.iterator(); it.hasNext();) {
       File file = it.next();
       if (!fileExists(file)) {
         it.remove();
@@ -393,12 +388,12 @@ public class MailActivityBehavior extends AbstractBpmnActivityBehavior {
     return file != null && file.exists() && file.isFile() && file.canRead();
   }
 
-  protected Expression getExpression(ActivityExecution execution, Expression var) {
+  protected Expression getExpression(DelegateExecution execution, Expression var) {
     String variable = (String) execution.getVariable(var.getExpressionText());
     return Context.getProcessEngineConfiguration().getExpressionManager().createExpression(variable);
   }
 
-  protected void handleException(ActivityExecution execution, String msg, Exception e, boolean doIgnoreException, String exceptionVariable) {
+  protected void handleException(DelegateExecution execution, String msg, Exception e, boolean doIgnoreException, String exceptionVariable) {
     if (doIgnoreException) {
       LOG.info("Ignoring email send error: " + msg, e);
       if (exceptionVariable != null && exceptionVariable.length() > 0) {

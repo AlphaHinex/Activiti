@@ -16,15 +16,16 @@ import java.util.Arrays;
 
 import org.activiti.engine.impl.persistence.entity.VariableInstanceEntity;
 
-
 /**
  * @author Tom Baeyens
+ * @author Joram Barrez
  */
 public class DeserializedObject {
-  SerializableType type;
-  Object deserializedObject;
-  byte[] originalBytes;
-  VariableInstanceEntity variableInstanceEntity;
+  
+  protected SerializableType type;
+  protected Object deserializedObject;
+  protected byte[] originalBytes;
+  protected VariableInstanceEntity variableInstanceEntity;
 
   public DeserializedObject(SerializableType type, Object deserializedObject, byte[] serializedBytes, VariableInstanceEntity variableInstanceEntity) {
     this.type = type;
@@ -33,16 +34,16 @@ public class DeserializedObject {
     this.variableInstanceEntity = variableInstanceEntity;
   }
 
-  public void flush() {
+  public void verifyIfBytesOfSerializedObjectChanged() {
     // this first check verifies if the variable value was not overwritten with another object
     if (deserializedObject == variableInstanceEntity.getCachedValue() && !variableInstanceEntity.isDeleted()) {
       byte[] bytes = type.serialize(deserializedObject, variableInstanceEntity);
       if (!Arrays.equals(originalBytes, bytes)) {
-        
+
         // Add an additional check to prevent byte differences due to JDK changes etc
         Object originalObject = type.deserialize(originalBytes, variableInstanceEntity);
         byte[] refreshedOriginalBytes = type.serialize(originalObject, variableInstanceEntity);
-        
+
         if (!Arrays.equals(refreshedOriginalBytes, bytes)) {
           variableInstanceEntity.setBytes(bytes);
         }

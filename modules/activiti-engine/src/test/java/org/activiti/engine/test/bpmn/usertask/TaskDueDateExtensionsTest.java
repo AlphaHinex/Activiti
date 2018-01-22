@@ -13,9 +13,6 @@
 
 package org.activiti.engine.test.bpmn.usertask;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -30,60 +27,60 @@ import org.activiti.engine.task.Task;
 import org.activiti.engine.test.Deployment;
 import org.joda.time.Period;
 
-
 /**
  * @author Frederik Heremans
  */
 public class TaskDueDateExtensionsTest extends ResourceActivitiTestCase {
-
+  
   public TaskDueDateExtensionsTest() {
     super("org/activiti/engine/test/bpmn/usertask/TaskDueDateExtensionsTest.activiti.cfg.xml");
   }
 
   @Deployment
   public void testDueDateExtension() throws Exception {
-    
+
     Date date = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss").parse("06-07-1986 12:10:00");
     Map<String, Object> variables = new HashMap<String, Object>();
     variables.put("dateVariable", date);
-    
+
     // Start process-instance, passing date that should be used as dueDate
     ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("dueDateExtension", variables);
-    
+
     Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
-    
+
     assertNotNull(task.getDueDate());
     assertEquals(date, task.getDueDate());
   }
-  
+
   @Deployment
   public void testDueDateStringExtension() throws Exception {
-    
+
     Map<String, Object> variables = new HashMap<String, Object>();
     variables.put("dateVariable", "1986-07-06T12:10:00");
-    
+
     // Start process-instance, passing date that should be used as dueDate
     ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("dueDateExtension", variables);
-    
+
     Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
-    
+
     assertNotNull(task.getDueDate());
     Date date = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").parse("06-07-1986 12:10:00");
     assertEquals(date, task.getDueDate());
   }
-  
+
   @Deployment
   public void testRelativeDueDateStringExtension() throws Exception {
     Clock clock = processEngineConfiguration.getClock();
     clock.setCurrentCalendar(new GregorianCalendar(2015, 0, 1));
     Map<String, Object> variables = new HashMap<String, Object>();
     variables.put("dateVariable", "P2DT5H40M");
-    
-    // Start process-instance, passing ISO8601 duration formatted String that should be used to calculate dueDate
+
+    // Start process-instance, passing ISO8601 duration formatted String
+    // that should be used to calculate dueDate
     ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("dueDateExtension", variables);
-    
+
     Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
-    
+
     assertNotNull(task.getDueDate());
     Period period = new Period(task.getCreateTime().getTime(), task.getDueDate().getTime());
     assertEquals(2, period.getDays());
@@ -91,7 +88,7 @@ public class TaskDueDateExtensionsTest extends ResourceActivitiTestCase {
     assertEquals(40, period.getMinutes());
     clock.reset();
   }
-
+  
   @Deployment
   public void testRelativeDueDateStringWithCalendarNameExtension() throws Exception {
 
@@ -104,7 +101,7 @@ public class TaskDueDateExtensionsTest extends ResourceActivitiTestCase {
     Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
 
     assertNotNull(task.getDueDate());
-    assertThat(task.getDueDate(), is(new Date(0)));
+    assertEquals(task.getDueDate(), new Date(0));
   }
 
   public static class CustomBusinessCalendar implements BusinessCalendar {
@@ -130,5 +127,4 @@ public class TaskDueDateExtensionsTest extends ResourceActivitiTestCase {
     }
 
   }
-
 }

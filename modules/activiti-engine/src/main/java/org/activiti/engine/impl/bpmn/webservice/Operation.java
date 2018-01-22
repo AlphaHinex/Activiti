@@ -18,32 +18,31 @@ import java.util.concurrent.ConcurrentMap;
 import javax.xml.namespace.QName;
 
 /**
- * An Operation is part of an {@link BpmnInterface} and it defines Messages that are consumed and
- * (optionally) produced when the Operation is called.
+ * An Operation is part of an {@link BpmnInterface} and it defines Messages that are consumed and (optionally) produced when the Operation is called.
  * 
  * @author Joram Barrez
  */
 public class Operation {
-  
+
   protected String id;
-  
+
   protected String name;
-  
+
   protected MessageDefinition inMessage;
-  
+
   protected MessageDefinition outMessage;
-  
+
   protected OperationImplementation implementation;
-  
+
   /**
    * The interface to which this operations belongs
    */
   protected BpmnInterface bpmnInterface;
-  
+
   public Operation() {
-    
+
   }
-  
+
   public Operation(String id, String name, BpmnInterface bpmnInterface, MessageDefinition inMessage) {
     setId(id);
     setName(name);
@@ -51,10 +50,10 @@ public class Operation {
     setInMessage(inMessage);
   }
   
-  public MessageInstance sendMessage(MessageInstance message, final ConcurrentMap<QName, URL> overridenEndpointAddresses) throws Exception {
+  public MessageInstance sendMessage(MessageInstance message, ConcurrentMap<QName, URL> overridenEndpointAddresses) throws Exception {
     return this.implementation.sendFor(message, this, overridenEndpointAddresses);
   }
-  
+
   public String getId() {
     return id;
   }
@@ -70,7 +69,7 @@ public class Operation {
   public void setName(String name) {
     this.name = name;
   }
-  
+
   public BpmnInterface getInterface() {
     return bpmnInterface;
   }

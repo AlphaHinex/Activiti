@@ -13,23 +13,16 @@
 package org.activiti.engine.impl.persistence.entity;
 
 import org.activiti.engine.impl.db.HasRevision;
-import org.activiti.engine.impl.db.PersistentObject;
 import org.activiti.engine.impl.variable.ValueFields;
 
 /**
  * @author Tijs Rademakers
+ * 
+ * Generic variable class that can be reused for Activiti 6 and 5 engine
  */
-public interface VariableInstance extends ValueFields, PersistentObject, HasRevision {
+public interface VariableInstance extends ValueFields, Entity, HasRevision {
   
   void setName(String name);
-  
-  String getLocalizedName();
-  
-  void setLocalizedName(String name);
-  
-  String getLocalizedDescription();
-
-  void setLocalizedDescription(String description);
 
   void setProcessInstanceId(String processInstanceId);
 

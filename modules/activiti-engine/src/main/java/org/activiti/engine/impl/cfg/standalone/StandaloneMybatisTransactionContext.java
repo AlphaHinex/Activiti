@@ -30,35 +30,33 @@ import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * @author Tom Baeyens
- * @author Joram Barrez
  */
 public class StandaloneMybatisTransactionContext implements TransactionContext {
-  
+
   private static Logger log = LoggerFactory.getLogger(StandaloneMybatisTransactionContext.class);
 
   protected CommandContext commandContext;
-  protected Map<TransactionState,List<TransactionListener>> stateTransactionListeners = null;
-  
+  protected Map<TransactionState, List<TransactionListener>> stateTransactionListeners;
+
   public StandaloneMybatisTransactionContext(CommandContext commandContext) {
     this.commandContext = commandContext;
   }
 
   public void addTransactionListener(TransactionState transactionState, TransactionListener transactionListener) {
-    if (stateTransactionListeners==null) {
+    if (stateTransactionListeners == null) {
       stateTransactionListeners = new HashMap<TransactionState, List<TransactionListener>>();
     }
     List<TransactionListener> transactionListeners = stateTransactionListeners.get(transactionState);
-    if (transactionListeners==null) {
+    if (transactionListeners == null) {
       transactionListeners = new ArrayList<TransactionListener>();
       stateTransactionListeners.put(transactionState, transactionListeners);
     }
     transactionListeners.add(transactionListener);
   }
-  
-  public void commit() {
+
+ public void commit() {
     
     log.debug("firing event committing...");
     fireTransactionEvent(TransactionState.COMMITTING, false);
@@ -76,7 +74,7 @@ public class StandaloneMybatisTransactionContext implements TransactionContext {
    * @param transactionState The {@link TransactionState} for which the listeners will be called.
    * @param executeInNewContext If true, the listeners will be called in a new command context.
    *                            This is needed for example when firing the {@link TransactionState#COMMITTED}
-   *                            event: the transaction is already committed and executing logic in the same
+   *                            event: the transacation is already committed and executing logic in the same
    *                            context could lead to strange behaviour (for example doing a {@link SqlSession#update(String)}
    *                            would actually roll back the update (as the MyBatis context is already committed
    *                            and the internal flags have not been correctly set).
@@ -104,15 +102,15 @@ public class StandaloneMybatisTransactionContext implements TransactionContext {
     }
     
   }
-
+  
   protected void executeTransactionListeners(List<TransactionListener> transactionListeners, CommandContext commandContext) {
     for (TransactionListener transactionListener : transactionListeners) {
       transactionListener.execute(commandContext);
     }
   }
-  
+
   protected DbSqlSession getDbSqlSession() {
-    return commandContext.getSession(DbSqlSession.class);
+    return commandContext.getDbSqlSession();
   }
 
   public void rollback() {
@@ -120,17 +118,17 @@ public class StandaloneMybatisTransactionContext implements TransactionContext {
       try {
         log.debug("firing event rolling back...");
         fireTransactionEvent(TransactionState.ROLLINGBACK, false);
-        
+
       } catch (Throwable exception) {
-        log.info("Exception during transaction: {}",exception.getMessage());
+        log.info("Exception during transaction: {}", exception.getMessage());
         commandContext.exception(exception);
       } finally {
         log.debug("rolling back ibatis sql session...");
         getDbSqlSession().rollback();
       }
-      
+
     } catch (Throwable exception) {
-      log.info("Exception during transaction: {}",exception.getMessage());
+      log.info("Exception during transaction: {}", exception.getMessage());
       commandContext.exception(exception);
 
     } finally {

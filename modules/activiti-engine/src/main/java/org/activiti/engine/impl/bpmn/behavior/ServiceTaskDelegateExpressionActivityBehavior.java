@@ -14,9 +14,11 @@ package org.activiti.engine.impl.bpmn.behavior;
 
 import java.util.List;
 
+import org.activiti.engine.ActivitiException;
 import org.activiti.engine.ActivitiIllegalArgumentException;
 import org.activiti.engine.DynamicBpmnConstants;
 import org.activiti.engine.delegate.BpmnError;
+import org.activiti.engine.delegate.DelegateExecution;
 import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.delegate.JavaDelegate;
 import org.activiti.engine.impl.bpmn.helper.DelegateExpressionUtil;
@@ -24,19 +26,16 @@ import org.activiti.engine.impl.bpmn.helper.ErrorPropagation;
 import org.activiti.engine.impl.bpmn.helper.SkipExpressionUtil;
 import org.activiti.engine.impl.bpmn.parser.FieldDeclaration;
 import org.activiti.engine.impl.context.Context;
+import org.activiti.engine.impl.delegate.ActivityBehavior;
 import org.activiti.engine.impl.delegate.ActivityBehaviorInvocation;
-import org.activiti.engine.impl.delegate.JavaDelegateInvocation;
-import org.activiti.engine.impl.pvm.delegate.ActivityBehavior;
-import org.activiti.engine.impl.pvm.delegate.ActivityExecution;
-import org.activiti.engine.impl.pvm.delegate.SignallableActivityBehavior;
+import org.activiti.engine.impl.delegate.TriggerableActivityBehavior;
+import org.activiti.engine.impl.delegate.invocation.JavaDelegateInvocation;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-
 /**
- * {@link ActivityBehavior} used when 'delegateExpression' is used
- * for a serviceTask.
+ * {@link ActivityBehavior} used when 'delegateExpression' is used for a serviceTask.
  * 
  * @author Joram Barrez
  * @author Josh Long
@@ -44,6 +43,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author Falko Menge
  */
 public class ServiceTaskDelegateExpressionActivityBehavior extends TaskActivityBehavior {
+
+  private static final long serialVersionUID = 1L;
   
   protected String serviceTaskId;
   protected Expression expression;
@@ -58,20 +59,19 @@ public class ServiceTaskDelegateExpressionActivityBehavior extends TaskActivityB
   }
 
   @Override
-  public void signal(ActivityExecution execution, String signalName, Object signalData) throws Exception {
+  public void trigger(DelegateExecution execution, String signalName, Object signalData) {
     Object delegate = DelegateExpressionUtil.resolveDelegateExpression(expression, execution, fieldDeclarations);
-    if( delegate instanceof SignallableActivityBehavior){
-      ((SignallableActivityBehavior) delegate).signal( execution , signalName , signalData);
+    if (delegate instanceof TriggerableActivityBehavior) {
+      ((TriggerableActivityBehavior) delegate).trigger(execution, signalName, signalData);
     }
   }
 
-	public void execute(ActivityExecution execution) throws Exception {
+  public void execute(DelegateExecution execution) {
 
     try {
-      boolean isSkipExpressionEnabled = SkipExpressionUtil.isSkipExpressionEnabled(execution, skipExpression); 
-      if (!isSkipExpressionEnabled || 
-              (isSkipExpressionEnabled && !SkipExpressionUtil.shouldSkipFlowElement(execution, skipExpression))) {
-        
+      boolean isSkipExpressionEnabled = SkipExpressionUtil.isSkipExpressionEnabled(execution, skipExpression);
+      if (!isSkipExpressionEnabled || (isSkipExpressionEnabled && !SkipExpressionUtil.shouldSkipFlowElement(execution, skipExpression))) {
+
         if (Context.getProcessEngineConfiguration().isEnableProcessDefinitionInfoCache()) {
           ObjectNode taskElementProperties = Context.getBpmnOverrideElementProperties(serviceTaskId, execution.getProcessDefinitionId());
           if (taskElementProperties != null && taskElementProperties.has(DynamicBpmnConstants.SERVICE_TASK_DELEGATE_EXPRESSION)) {
@@ -85,20 +85,18 @@ public class ServiceTaskDelegateExpressionActivityBehavior extends TaskActivityB
         Object delegate = DelegateExpressionUtil.resolveDelegateExpression(expression, execution, fieldDeclarations);
         if (delegate instanceof ActivityBehavior) {
 
-          if(delegate instanceof AbstractBpmnActivityBehavior){
+          if (delegate instanceof AbstractBpmnActivityBehavior) {
             ((AbstractBpmnActivityBehavior) delegate).setMultiInstanceActivityBehavior(getMultiInstanceActivityBehavior());
           }
 
-          Context.getProcessEngineConfiguration().getDelegateInterceptor()
-                  .handleInvocation(new ActivityBehaviorInvocation((ActivityBehavior) delegate, execution));
+          Context.getProcessEngineConfiguration().getDelegateInterceptor().handleInvocation(new ActivityBehaviorInvocation((ActivityBehavior) delegate, execution));
 
         } else if (delegate instanceof JavaDelegate) {
           Context.getProcessEngineConfiguration().getDelegateInterceptor().handleInvocation(new JavaDelegateInvocation((JavaDelegate) delegate, execution));
           leave(execution);
 
         } else {
-          throw new ActivitiIllegalArgumentException("Delegate expression " + expression + " did neither resolve to an implementation of "
-                  + ActivityBehavior.class + " nor " + JavaDelegate.class);
+          throw new ActivitiIllegalArgumentException("Delegate expression " + expression + " did neither resolve to an implementation of " + ActivityBehavior.class + " nor " + JavaDelegate.class);
         }
       } else {
         leave(execution);
@@ -118,7 +116,7 @@ public class ServiceTaskDelegateExpressionActivityBehavior extends TaskActivityB
       if (error != null) {
         ErrorPropagation.propagateError(error, execution);
       } else {
-        throw exc;
+        throw new ActivitiException(exc.getMessage(), exc);
       }
 
     }

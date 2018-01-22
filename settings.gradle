@@ -1,1 +1,4 @@
-include 'modules/activiti-webapp-explorer2'
+include 'modules/activiti-bpmn-converter'
+include 'modules/activiti-bpmn-model'
+include 'modules/activiti-json-converter'
+include 'modules/activiti-ui/activiti-app'

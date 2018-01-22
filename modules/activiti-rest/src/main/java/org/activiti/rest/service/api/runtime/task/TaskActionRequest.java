@@ -13,7 +13,6 @@
 
 package org.activiti.rest.service.api.runtime.task;
 
-
 import java.util.List;
 
 import org.activiti.rest.service.api.RestActionRequest;
@@ -31,21 +30,36 @@ public class TaskActionRequest extends RestActionRequest {
   public static final String ACTION_CLAIM = "claim";
   public static final String ACTION_DELEGATE = "delegate";
   public static final String ACTION_RESOLVE = "resolve";
-  
+
   private String assignee;
   private List<RestVariable> variables;
-  
+  private List<RestVariable> transientVariables;
+
   public void setAssignee(String assignee) {
     this.assignee = assignee;
   }
+
   public String getAssignee() {
     return assignee;
   }
+
   public void setVariables(List<RestVariable> variables) {
     this.variables = variables;
   }
-  @JsonTypeInfo(use=Id.CLASS, defaultImpl=RestVariable.class)
+
+  @JsonTypeInfo(use = Id.CLASS, defaultImpl = RestVariable.class)
   public List<RestVariable> getVariables() {
     return variables;
   }
+
+  public List<RestVariable> getTransientVariables() {
+    return transientVariables;
+  }
+
+  @JsonTypeInfo(use = Id.CLASS, defaultImpl = RestVariable.class)
+  public void setTransientVariables(List<RestVariable> transientVariables) {
+    this.transientVariables = transientVariables;
+  }
+  
+  
 }

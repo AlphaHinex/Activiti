@@ -16,23 +16,19 @@ import java.util.concurrent.RejectedExecutionException;
 
 import org.activiti.engine.impl.asyncexecutor.DefaultAsyncJobExecutor;
 import org.activiti.engine.impl.asyncexecutor.ExecuteAsyncRunnable;
-import org.activiti.engine.impl.jobexecutor.JobExecutor;
-import org.activiti.engine.impl.jobexecutor.RejectedJobsHandler;
 import org.activiti.engine.impl.persistence.entity.JobEntity;
+import org.activiti.engine.runtime.Job;
 import org.springframework.core.task.TaskExecutor;
 
 /**
  * <p>
- * This is a spring based implementation of the {@link JobExecutor} using spring
- * abstraction {@link TaskExecutor} for performing background task execution.
+ * This is a spring based implementation of the {@link JobExecutor} using spring abstraction {@link TaskExecutor} for performing background task execution.
  * </p>
  * <p>
- * The idea behind this implementation is to externalize the configuration of
- * the task executor, so it can leverage to Application servers controller
- * thread pools, for example using the commonj API. The use of unmanaged thread
- * in application servers is discouraged by the Java EE spec.
+ * The idea behind this implementation is to externalize the configuration of the task executor, so it can leverage to Application servers controller thread pools, for example using the commonj API.
+ * The use of unmanaged thread in application servers is discouraged by the Java EE spec.
  * </p>
- *
+ * 
  * @author Pablo Ganga
  */
 public class SpringAsyncExecutor extends DefaultAsyncJobExecutor {
@@ -53,47 +49,41 @@ public class SpringAsyncExecutor extends DefaultAsyncJobExecutor {
   }
 
   /**
-   * Required spring injected {@link TaskExecutor} implementation that will be
-   * used to execute runnable jobs.
-   *
+   * Required spring injected {@link TaskExecutor} implementation that will be used to execute runnable jobs.
+   * 
    * @param taskExecutor
    */
   public void setTaskExecutor(TaskExecutor taskExecutor) {
     this.taskExecutor = taskExecutor;
   }
-  
+
   public SpringRejectedJobsHandler getRejectedJobsHandler() {
     return rejectedJobsHandler;
   }
 
   /**
-   * Required spring injected {@link RejectedJobsHandler} implementation that will be
-   * used when jobs were rejected by the task executor.
-   *
+   * Required spring injected {@link RejectedJobsHandler} implementation that will be used when jobs were rejected by the task executor.
+   * 
    * @param taskExecutor
    */
   public void setRejectedJobsHandler(SpringRejectedJobsHandler rejectedJobsHandler) {
     this.rejectedJobsHandler = rejectedJobsHandler;
   }
 
-	@Override
-  public boolean executeAsyncJob(JobEntity job) {
-	  try {
-      taskExecutor.execute(new ExecuteAsyncRunnable(job, commandExecutor));
+  @Override
+  public boolean executeAsyncJob(Job job) {
+    try {
+      taskExecutor.execute(new ExecuteAsyncRunnable((JobEntity) job, processEngineConfiguration));
+      return true;
     } catch (RejectedExecutionException e) {
       rejectedJobsHandler.jobRejected(this, job);
       return false;
     }
-	  return true;
   }
-
+  
   @Override
-  protected void startExecutingAsyncJobs() {
-    startJobAcquisitionThread();
+  protected void initAsyncJobExecutionThreadPool() {
+    // Do nothing, using the Spring taskExecutor 
   }
-
-  @Override
-  protected void stopExecutingAsyncJobs() {
-    stopJobAcquisitionThread();
-  }
+  
 }

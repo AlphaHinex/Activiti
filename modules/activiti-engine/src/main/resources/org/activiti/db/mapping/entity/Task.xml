@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?> 
+<?xml version="1.0" encoding="UTF-8" ?>
 
 <!--
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,13 +17,13 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
   
-<mapper namespace="org.activiti.engine.impl.persistence.entity.TaskEntity">
+<mapper namespace="org.activiti.engine.impl.persistence.entity.TaskEntityImpl">
 
   <!-- TASK INSERT -->
   
-  <insert id="insertTask" parameterType="org.activiti.engine.impl.persistence.entity.TaskEntity">
+  <insert id="insertTask" parameterType="org.activiti.engine.impl.persistence.entity.TaskEntityImpl">
     insert into ${prefix}ACT_RU_TASK (ID_, REV_, NAME_, PARENT_TASK_ID_, DESCRIPTION_, PRIORITY_, CREATE_TIME_, OWNER_,
-                      ASSIGNEE_, DELEGATION_, EXECUTION_ID_, PROC_INST_ID_, PROC_DEF_ID_, TASK_DEF_KEY_, DUE_DATE_, CATEGORY_, SUSPENSION_STATE_, TENANT_ID_, FORM_KEY_)
+                      ASSIGNEE_, DELEGATION_, EXECUTION_ID_, PROC_INST_ID_, PROC_DEF_ID_, TASK_DEF_KEY_, DUE_DATE_, CATEGORY_, SUSPENSION_STATE_, TENANT_ID_, FORM_KEY_, CLAIM_TIME_)
     values (#{id, jdbcType=VARCHAR},
             1,
             #{name, jdbcType=VARCHAR},
@@ -42,13 +42,14 @@
             #{category, jdbcType=VARCHAR},
             #{suspensionState, jdbcType=INTEGER},
             #{tenantId, jdbcType=VARCHAR},
-            #{formKey, jdbcType=VARCHAR}
+            #{formKey, jdbcType=VARCHAR},
+            #{claimTime, jdbcType=TIMESTAMP}
            )
   </insert>
 
   <insert id="bulkInsertTask" parameterType="java.util.List">
     INSERT INTO ${prefix}ACT_RU_TASK (ID_, REV_, NAME_, PARENT_TASK_ID_, DESCRIPTION_, PRIORITY_, CREATE_TIME_, OWNER_,
-                      ASSIGNEE_, DELEGATION_, EXECUTION_ID_, PROC_INST_ID_, PROC_DEF_ID_, TASK_DEF_KEY_, DUE_DATE_, CATEGORY_, SUSPENSION_STATE_, TENANT_ID_, FORM_KEY_)
+                      ASSIGNEE_, DELEGATION_, EXECUTION_ID_, PROC_INST_ID_, PROC_DEF_ID_, TASK_DEF_KEY_, DUE_DATE_, CATEGORY_, SUSPENSION_STATE_, TENANT_ID_, FORM_KEY_, CLAIM_TIME_)
     VALUES 
       <foreach collection="list" item="task" index="index" separator=","> 
         (#{task.id, jdbcType=VARCHAR},
@@ -69,16 +70,17 @@
          #{task.category, jdbcType=VARCHAR},
          #{task.suspensionState, jdbcType=INTEGER},
          #{task.tenantId, jdbcType=VARCHAR},
-         #{task.formKey, jdbcType=VARCHAR})
+         #{task.formKey, jdbcType=VARCHAR},
+         #{task.claimTime, jdbcType=TIMESTAMP})
     </foreach>
   </insert>
 
-  <insert id="bulkInsertTask_oracle" parameterType="java.util.List">
+  <insert id="bulkInsertTask" databaseId="oracle" parameterType="java.util.List">
     INSERT ALL 
       <foreach collection="list" item="task" index="index">
         INTO ${prefix}ACT_RU_TASK (ID_, REV_, NAME_, PARENT_TASK_ID_, DESCRIPTION_, PRIORITY_, CREATE_TIME_, OWNER_,
              ASSIGNEE_, DELEGATION_, EXECUTION_ID_, PROC_INST_ID_, PROC_DEF_ID_, TASK_DEF_KEY_, DUE_DATE_, CATEGORY_,
-             SUSPENSION_STATE_, TENANT_ID_, FORM_KEY_) VALUES 
+             SUSPENSION_STATE_, TENANT_ID_, FORM_KEY_, CLAIM_TIME_) VALUES
         (#{task.id, jdbcType=VARCHAR},
          1,
          #{task.name, jdbcType=VARCHAR},
@@ -97,14 +99,15 @@
          #{task.category, jdbcType=VARCHAR},
          #{task.suspensionState, jdbcType=INTEGER},
          #{task.tenantId, jdbcType=VARCHAR},
-         #{task.formKey, jdbcType=VARCHAR})
+         #{task.formKey, jdbcType=VARCHAR},
+         #{task.claimTime, jdbcType=TIMESTAMP})
     </foreach>
     SELECT * FROM dual
   </insert>
   
   <!-- TASK UPDATE -->
   
-  <update id="updateTask" parameterType="org.activiti.engine.impl.persistence.entity.TaskEntity">
+  <update id="updateTask" parameterType="org.activiti.engine.impl.persistence.entity.TaskEntityImpl">
     update ${prefix}ACT_RU_TASK
     <set>
       REV_ = #{revisionNext, jdbcType=INTEGER},
@@ -121,7 +124,8 @@
       DUE_DATE_ = #{dueDate, jdbcType=TIMESTAMP},
       CATEGORY_ = #{category, jdbcType=VARCHAR},
       SUSPENSION_STATE_ = #{suspensionState, jdbcType=INTEGER},
-      FORM_KEY_ = #{formKey, jdbcType=INTEGER}
+      FORM_KEY_ = #{formKey, jdbcType=INTEGER},
+      CLAIM_TIME_ = #{claimTime, jdbcType=TIMESTAMP}
     </set>
     where ID_= #{id, jdbcType=VARCHAR}
       and REV_ = #{revision, jdbcType=INTEGER}
@@ -141,7 +145,7 @@
   
     <!-- See http://stackoverflow.com/questions/4429319/you-cant-specify-target-table-for-update-in-from-clause
        Tested this on MySQL 5.6: does NOT use a temporary table (so good, performance0 -->
-  <update id="updateTaskTenantIdForDeployment_mysql" parameterType="java.util.Map">
+  <update id="updateTaskTenantIdForDeployment" databaseId="mysql" parameterType="java.util.Map">
     update ${prefix}ACT_RU_TASK set
       TENANT_ID_ = #{tenantId, jdbcType=VARCHAR}
     where
@@ -161,7 +165,7 @@
   </update>
   
   <!-- TASK DELETE -->
-  <delete id="deleteTask" parameterType="org.activiti.engine.impl.persistence.entity.TaskEntity">
+  <delete id="deleteTask" parameterType="org.activiti.engine.impl.persistence.entity.TaskEntityImpl">
     delete from ${prefix}ACT_RU_TASK where ID_ = #{id} and REV_ = #{revision}
   </delete>
   
@@ -174,49 +178,51 @@
   
   <!-- TASK RESULTMAP -->
   
-  <resultMap id="taskResultMap" type="org.activiti.engine.impl.persistence.entity.TaskEntity">
+  <resultMap id="taskResultMap" type="org.activiti.engine.impl.persistence.entity.TaskEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR"/>
     <result property="revision" column="REV_" jdbcType="INTEGER"/>
-    <result property="nameWithoutCascade" column="NAME_" jdbcType="VARCHAR"/>
-    <result property="parentTaskIdWithoutCascade" column="PARENT_TASK_ID_" jdbcType="VARCHAR"/>
-    <result property="descriptionWithoutCascade" column="DESCRIPTION_" jdbcType="VARCHAR"/>
-    <result property="priorityWithoutCascade" column="PRIORITY_" jdbcType="INTEGER"/>
+    <result property="name" column="NAME_" jdbcType="VARCHAR"/>
+    <result property="parentTaskId" column="PARENT_TASK_ID_" jdbcType="VARCHAR"/>
+    <result property="description" column="DESCRIPTION_" jdbcType="VARCHAR"/>
+    <result property="priority" column="PRIORITY_" jdbcType="INTEGER"/>
     <result property="createTime" column="CREATE_TIME_" jdbcType="TIMESTAMP" />
-    <result property="ownerWithoutCascade" column="OWNER_" jdbcType="VARCHAR"/>
-    <result property="assigneeWithoutCascade" column="ASSIGNEE_" jdbcType="VARCHAR"/>
+    <result property="owner" column="OWNER_" jdbcType="VARCHAR"/>
+    <result property="assignee" column="ASSIGNEE_" jdbcType="VARCHAR"/>
     <result property="delegationStateString" column="DELEGATION_" jdbcType="VARCHAR"/>
     <result property="executionId" column="EXECUTION_ID_" jdbcType="VARCHAR" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
     <result property="processDefinitionId" column="PROC_DEF_ID_" jdbcType="VARCHAR"/>
-    <result property="taskDefinitionKeyWithoutCascade" column="TASK_DEF_KEY_" jdbcType="VARCHAR"/>
-    <result property="dueDateWithoutCascade" column="DUE_DATE_" jdbcType="TIMESTAMP"/>
-    <result property="categoryWithoutCascade" column="CATEGORY_" jdbcType="VARCHAR" />
+    <result property="taskDefinitionKey" column="TASK_DEF_KEY_" jdbcType="VARCHAR"/>
+    <result property="dueDate" column="DUE_DATE_" jdbcType="TIMESTAMP"/>
+    <result property="category" column="CATEGORY_" jdbcType="VARCHAR" />
     <result property="suspensionState" column="SUSPENSION_STATE_" jdbcType="INTEGER" />
     <result property="tenantId" column="TENANT_ID_" jdbcType="VARCHAR" />
-    <result property="formKeyWithoutCascade" column="FORM_KEY_" jdbcType="VARCHAR" />
+    <result property="formKey" column="FORM_KEY_" jdbcType="VARCHAR" />
+    <result property="claimTime" column="CLAIM_TIME_" jdbcType="TIMESTAMP" />
   </resultMap>
   
-  <resultMap id="taskAndVariablesResultMap" type="org.activiti.engine.impl.persistence.entity.TaskEntity">
+  <resultMap id="taskAndVariablesResultMap" type="org.activiti.engine.impl.persistence.entity.TaskEntityImpl">
     <id property="id" column="ID_" jdbcType="VARCHAR"/>
     <result property="revision" column="REV_" jdbcType="INTEGER"/>
-    <result property="nameWithoutCascade" column="NAME_" jdbcType="VARCHAR"/>
-    <result property="parentTaskIdWithoutCascade" column="PARENT_TASK_ID_" jdbcType="VARCHAR"/>
-    <result property="descriptionWithoutCascade" column="DESCRIPTION_" jdbcType="VARCHAR"/>
-    <result property="priorityWithoutCascade" column="PRIORITY_" jdbcType="INTEGER"/>
+    <result property="name" column="NAME_" jdbcType="VARCHAR"/>
+    <result property="parentTaskId" column="PARENT_TASK_ID_" jdbcType="VARCHAR"/>
+    <result property="description" column="DESCRIPTION_" jdbcType="VARCHAR"/>
+    <result property="priority" column="PRIORITY_" jdbcType="INTEGER"/>
     <result property="createTime" column="CREATE_TIME_" jdbcType="TIMESTAMP" />
-    <result property="ownerWithoutCascade" column="OWNER_" jdbcType="VARCHAR"/>
-    <result property="assigneeWithoutCascade" column="ASSIGNEE_" jdbcType="VARCHAR"/>
+    <result property="owner" column="OWNER_" jdbcType="VARCHAR"/>
+    <result property="assignee" column="ASSIGNEE_" jdbcType="VARCHAR"/>
     <result property="delegationStateString" column="DELEGATION_" jdbcType="VARCHAR"/>
     <result property="executionId" column="EXECUTION_ID_" jdbcType="VARCHAR" />
     <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
     <result property="processDefinitionId" column="PROC_DEF_ID_" jdbcType="VARCHAR"/>
-    <result property="taskDefinitionKeyWithoutCascade" column="TASK_DEF_KEY_" jdbcType="VARCHAR"/>
-    <result property="dueDateWithoutCascade" column="DUE_DATE_" jdbcType="TIMESTAMP"/>
-    <result property="categoryWithoutCascade" column="CATEGORY_" jdbcType="VARCHAR" />
+    <result property="taskDefinitionKey" column="TASK_DEF_KEY_" jdbcType="VARCHAR"/>
+    <result property="dueDate" column="DUE_DATE_" jdbcType="TIMESTAMP"/>
+    <result property="category" column="CATEGORY_" jdbcType="VARCHAR" />
     <result property="suspensionState" column="SUSPENSION_STATE_" jdbcType="INTEGER" />
     <result property="tenantId" column="TENANT_ID_" jdbcType="VARCHAR" />
-    <result property="formKeyWithoutCascade" column="FORM_KEY_" jdbcType="VARCHAR" />
-    <collection property="queryVariables" column="TASK_ID_" javaType="ArrayList" ofType="org.activiti.engine.impl.persistence.entity.VariableInstanceEntity">
+    <result property="formKey" column="FORM_KEY_" jdbcType="VARCHAR" />
+    <result property="claimTime" column="CLAIM_TIME_" jdbcType="TIMESTAMP" />
+    <collection property="queryVariables" column="TASK_ID_" javaType="ArrayList" ofType="org.activiti.engine.impl.persistence.entity.VariableInstanceEntityImpl">
       <id property="id" column="VAR_ID_"/>
       <result property="name" column="VAR_NAME_" javaType="String" jdbcType="VARCHAR" />
       <result property="type" column="VAR_TYPE_" javaType="org.activiti.engine.impl.variable.VariableType" jdbcType="VARCHAR" />
@@ -235,7 +241,7 @@
   <!-- TASK SELECT -->  
 
   <select id="selectTask" parameterType="string" resultMap="taskResultMap">
-   select * from ${prefix}ACT_RU_TASK where ID_ = #{id}
+   select * from ${prefix}ACT_RU_TASK where ID_ = #{id, jdbcType=VARCHAR}
   </select>
   
   <select id="selectTasksByParentTaskId" parameterType="org.activiti.engine.impl.db.ListQueryParameterObject" resultMap="taskResultMap">
@@ -274,26 +280,29 @@
   </sql>
   
   <select id="selectTaskWithVariablesByQueryCriteria" parameterType="org.activiti.engine.impl.TaskQueryImpl" resultMap="taskAndVariablesResultMap">
+    <include refid="selectTaskWithVariablesByQueryCriteriaColumns"/> 
+    <include refid="selectTaskWithVariablesByQueryCriteriaSql"/> 
+    ${orderBy}
+    ${limitAfter}
+  </select>
+  
+  <sql id="selectTaskWithVariablesByQueryCriteriaColumns">
     ${limitBefore}
+  	<if test="_databaseId != 'db2' and _databaseId != 'mssql'">
     select RES.*,
     VAR.ID_ as VAR_ID_, VAR.NAME_ as VAR_NAME_, VAR.TYPE_ as VAR_TYPE_, VAR.REV_ as VAR_REV_,
     VAR.PROC_INST_ID_ as VAR_PROC_INST_ID_, VAR.EXECUTION_ID_ as VAR_EXECUTION_ID_, VAR.TASK_ID_ as VAR_TASK_ID_,
     VAR.BYTEARRAY_ID_ as VAR_BYTEARRAY_ID_, VAR.DOUBLE_ as VAR_DOUBLE_, 
     VAR.TEXT_ as VAR_TEXT_, VAR.TEXT2_ as VAR_TEXT2_, VAR.LONG_ as VAR_LONG_
     ${limitBetween}
-    <include refid="selectTaskWithVariablesByQueryCriteriaSql"/> 
-    ${orderBy}
-    ${limitAfter}
-  </select>
-  
-  <select id="selectTaskWithVariablesByQueryCriteria_mssql_or_db2" parameterType="org.activiti.engine.impl.TaskQueryImpl" resultMap="taskAndVariablesResultMap">
-    ${limitBefore}
+    </if>
+    <if test="_databaseId == 'db2' || _databaseId == 'mssql'">
     select distinct TEMPRES_ID_ as ID_, TEMPRES_REV_ as REV_, TEMPRES_NAME_ as NAME_,
     TEMPRES_PARENT_TASK_ID_ as PARENT_TASK_ID_, TEMPRES_DESCRIPTION_ as DESCRIPTION_,
     TEMPRES_PRIORITY_ as PRIORITY_, TEMPRES_CREATE_TIME_ as CREATE_TIME_,
     TEMPRES_OWNER_ as OWNER_, TEMPRES_ASSIGNEE_ as ASSIGNEE_, TEMPRES_DELEGATION_ as DELEGATION_,
-    TEMPRES_FORM_KEY_ as FORM_KEY_, TEMPRES_EXECUTION_ID_ as EXECUTION_ID_, TEMPRES_PROC_INST_ID_ as PROC_INST_ID_,
-    TEMPRES_PROC_DEF_ID_ as PROC_DEF_ID_, TEMPRES_TASK_DEF_KEY_ as TASK_DEF_KEY_,
+    TEMPRES_FORM_KEY_ as FORM_KEY_, TEMPRES_CLAIM_TIME_ as CLAIM_TIME_, TEMPRES_EXECUTION_ID_ as EXECUTION_ID_,
+    TEMPRES_PROC_INST_ID_ as PROC_INST_ID_, TEMPRES_PROC_DEF_ID_ as PROC_DEF_ID_, TEMPRES_TASK_DEF_KEY_ as TASK_DEF_KEY_,
     TEMPRES_DUE_DATE_ as DUE_DATE_, TEMPRES_SUSPENSION_STATE_ as SUSPENSION_STATE_, TEMPRES_CATEGORY_ as CATEGORY_,
     TEMPVAR_ID_ as VAR_ID_, TEMPVAR_NAME_ as VAR_NAME_, TEMPVAR_TYPE_ as VAR_TYPE_, TEMPVAR_REV_ as VAR_REV_,
     TEMPVAR_PROC_INST_ID_ as VAR_PROC_INST_ID_, TEMPVAR_EXECUTION_ID_ as VAR_EXECUTION_ID_, TEMPVAR_TASK_ID_ as VAR_TASK_ID_,
@@ -304,17 +313,15 @@
     RES.PARENT_TASK_ID_ as TEMPRES_PARENT_TASK_ID_, RES.DESCRIPTION_ as TEMPRES_DESCRIPTION_,
     RES.PRIORITY_ as TEMPRES_PRIORITY_, RES.CREATE_TIME_ as TEMPRES_CREATE_TIME_,
     RES.OWNER_ as TEMPRES_OWNER_, RES.ASSIGNEE_ as TEMPRES_ASSIGNEE_, RES.DELEGATION_ as TEMPRES_DELEGATION_,
-    RES.FORM_KEY_ as TEMPRES_FORM_KEY_, RES.EXECUTION_ID_ as TEMPRES_EXECUTION_ID_, RES.PROC_INST_ID_ as TEMPRES_PROC_INST_ID_, 
-    RES.PROC_DEF_ID_ as TEMPRES_PROC_DEF_ID_, RES.TASK_DEF_KEY_ as TEMPRES_TASK_DEF_KEY_,
+    RES.FORM_KEY_ as TEMPRES_FORM_KEY_, RES.CLAIM_TIME_ as TEMPRES_CLAIM_TIME_, RES.EXECUTION_ID_ as TEMPRES_EXECUTION_ID_,
+    RES.PROC_INST_ID_ as TEMPRES_PROC_INST_ID_, RES.PROC_DEF_ID_ as TEMPRES_PROC_DEF_ID_, RES.TASK_DEF_KEY_ as TEMPRES_TASK_DEF_KEY_,
     RES.DUE_DATE_ as TEMPRES_DUE_DATE_, RES.SUSPENSION_STATE_ as TEMPRES_SUSPENSION_STATE_, RES.CATEGORY_ as TEMPRES_CATEGORY_,
     VAR.ID_ as TEMPVAR_ID_, VAR.NAME_ as TEMPVAR_NAME_, VAR.TYPE_ as TEMPVAR_TYPE_, VAR.REV_ as TEMPVAR_REV_,
     VAR.PROC_INST_ID_ as TEMPVAR_PROC_INST_ID_, VAR.EXECUTION_ID_ as TEMPVAR_EXECUTION_ID_, VAR.TASK_ID_ as TEMPVAR_TASK_ID_,
     VAR.BYTEARRAY_ID_ as TEMPVAR_BYTEARRAY_ID_, VAR.DOUBLE_ as TEMPVAR_DOUBLE_, 
     VAR.TEXT_ as TEMPVAR_TEXT_, VAR.TEXT2_ as TEMPVAR_TEXT2_, VAR.LONG_ as TEMPVAR_LONG_
-    <include refid="selectTaskWithVariablesByQueryCriteriaSql"/> 
-    ${orderBy}
-    ${limitAfter}
-  </select>
+    </if>
+  </sql>
   
   <sql id="selectTaskWithVariablesByQueryCriteriaSql">  
     from ${prefix}ACT_RU_TASK RES
@@ -335,7 +342,7 @@
   </sql>
   
   <sql id="commonSelectTaskByQueryCriteriaSql">
-    <if test="candidateUser != null || candidateGroups != null || bothCandidateAndAssigned">
+    <if test="candidateUser != null || candidateGroups != null || bothCandidateAndAssigned || involvedGroups != null">
       <choose>
         <when test="bothCandidateAndAssigned">left</when>
         <otherwise>inner</otherwise>
@@ -353,13 +360,14 @@
       </choose>       
     </foreach>
     <foreach collection="orQueryObjects" index="orIndex" item="orQueryObject">
-      <if test="orQueryObject.candidateUser != null || orQueryObject.candidateGroups != null || orQueryObject.bothCandidateAndAssigned">
+      <if test="orQueryObject.candidateUser != null || orQueryObject.candidateGroups != null || orQueryObject.bothCandidateAndAssigned || orQueryObject.involvedGroups != null">
         <choose>
-          <when test="orQueryObject.bothCandidateAndAssigned">left</when>
+          <when test="orQueryObject.bothCandidateAndAssigned || orQueryObject.involvedGroups != null">left</when>
           <otherwise>inner</otherwise>
         </choose>
         join ${prefix}ACT_RU_IDENTITYLINK I_OR${orIndex} on I_OR${orIndex}.TASK_ID_ = RES.ID_
       </if>
+
       <if test="orQueryObject.queryVariableValues.size() &gt; 0">
         <if test="orQueryObject.hasLocalQueryVariableValue()">
           left outer join ${prefix}ACT_RU_VARIABLE A_L_OR${orIndex} on RES.ID_ = A_L_OR${orIndex}.TASK_ID_
@@ -445,6 +453,13 @@
       <if test="assigneeLikeIgnoreCase != null">
         and lower(RES.ASSIGNEE_) like #{assigneeLikeIgnoreCase}${wildcardEscapeClause}
       </if>
+      <if test="assigneeIds != null &amp;&amp; assigneeIds.size() &gt; 0">
+        and RES.ASSIGNEE_ IN
+        <foreach item="assigneeId" index="index" collection="assigneeIds" 
+                 open="(" separator="," close=")">
+          #{assigneeId}
+        </foreach>
+	  </if>
       <if test="owner != null">
         and RES.OWNER_ = #{owner}
       </if>
@@ -510,7 +525,7 @@
         and D.KEY_ like #{processDefinitionKeyLike}${wildcardEscapeClause}
       </if>
       <if test="processDefinitionKeyLikeIgnoreCase != null">
-        and lower(D.KEY_) like #{processDefinitionKeyLikeIgnoreCase}
+        and lower(D.KEY_) like #{processDefinitionKeyLikeIgnoreCase}${wildcardEscapeClause}
       </if>
       <if test="processDefinitionKeys != null &amp;&amp; processDefinitionKeys.size() &gt; 0">
         and D.KEY_ in
@@ -590,11 +605,23 @@
         )
       </if>
       <if test="involvedUser != null">
-        and (
+        and
+        (
           exists(select LINK.USER_ID_ from ${prefix}ACT_RU_IDENTITYLINK LINK where USER_ID_ = #{involvedUser} and LINK.TASK_ID_ = RES.ID_)
           or RES.ASSIGNEE_ = #{involvedUser}
           or RES.OWNER_ = #{involvedUser}
-          )
+        )
+      </if>
+      <if test="involvedGroups != null &amp;&amp; involvedGroups.size() &gt; 0">
+        and
+        (
+          I.TYPE_ = 'participant'
+          and
+          I.GROUP_ID_ IN
+          <foreach item="group" index="index" collection="involvedGroups" open="(" separator="," close=")">
+            #{group}
+          </foreach>
+        )
       </if>
       <foreach item="var" collection="queryVariableValues" index="index">
         <if test="!var.local">
@@ -762,6 +789,13 @@
             <if test="orQueryObject.assigneeLikeIgnoreCase != null">
               or lower(RES.ASSIGNEE_) like #{orQueryObject.assigneeLikeIgnoreCase}${wildcardEscapeClause}
             </if>
+             <if test="orQueryObject.assigneeIds != null &amp;&amp; orQueryObject.assigneeIds.size() &gt; 0">
+		      or RES.ASSIGNEE_ IN
+		      <foreach item="assigneeId" index="index" collection="orQueryObject.assigneeIds" 
+		               open="(" separator="," close=")">
+		        #{assigneeId}
+		      </foreach>
+			</if>
             <if test="orQueryObject.owner != null">
               or RES.OWNER_ = #{orQueryObject.owner}
             </if>
@@ -905,11 +939,23 @@
               ))
             </if>
             <if test="orQueryObject.involvedUser != null">
-              or (
-                exists(select LINK.USER_ID_ from ${prefix}ACT_RU_IDENTITYLINK LINK where USER_ID_ = #{orQueryObject.involvedUser} and LINK.TASK_ID_ = RES.ID_)
-                or RES.ASSIGNEE_ = #{orQueryObject.involvedUser}
-                or RES.OWNER_ = #{orQueryObject.involvedUser}
+              or
+                (
+                  exists(select LINK.USER_ID_ from ${prefix}ACT_RU_IDENTITYLINK LINK where USER_ID_ =
+                  #{orQueryObject.involvedUser} and LINK.TASK_ID_ = RES.ID_)
+                  or RES.ASSIGNEE_ = #{orQueryObject.involvedUser}
+                  or RES.OWNER_ = #{orQueryObject.involvedUser}
                 )
+            </if>
+            <if test="orQueryObject.involvedGroups != null &amp;&amp; orQueryObject.involvedGroups.size() &gt; 0">
+              or (
+                I_OR${orIndex}.TYPE_ = 'participant'
+                and
+                I_OR${orIndex}.GROUP_ID_ IN
+                <foreach item="group" index="index" collection="orQueryObject.involvedGroups" open="(" separator="," close=")">
+                  #{group}
+                </foreach>
+              )
             </if>
             <foreach item="var" collection="orQueryObject.queryVariableValues" index="index">
               or 
@@ -950,7 +996,7 @@
                 </choose>          
                 #{var.textValue}
                 <choose>
-                    <when test="var.operator.equals('LIKE') || var.operator.equals('LIKE_IGNORE_CASE')">${wildcardEscapeClause}</when>
+                  <when test="var.operator.equals('LIKE') || var.operator.equals('LIKE_IGNORE_CASE')">${wildcardEscapeClause}</when>
                 </choose>
               </if>
               <if test="var.textValue2 != null">
@@ -1048,25 +1094,9 @@
   </sql>  
 
   <select id="selectTaskByNativeQuery" parameterType="java.util.Map" resultMap="taskResultMap">
-  	<if test="resultType == 'LIST_PAGE'">
-  		${limitBefore}
-  	</if>
-    ${sql}
-    <if test="resultType == 'LIST_PAGE'">
-  		${limitAfter}
-  	</if>
+  	<include refid="org.activiti.engine.db.common.selectByNativeQuery"/>
   </select>
   
-  <select id="selectTaskByNativeQuery_mssql_or_db2" parameterType="java.util.Map" resultMap="taskResultMap">
-  	<if test="resultType == 'LIST_PAGE'">
-  		${limitBeforeNativeQuery}
-  	</if>
-  	${sql} 
-    <if test="resultType == 'LIST_PAGE'">
-  		${limitAfter}
-  	</if>
-  </select>
-
   <select id="selectTaskCountByNativeQuery" parameterType="java.util.Map" resultType="long">
      ${sql}
   </select>

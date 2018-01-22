@@ -3,6 +3,7 @@ package org.activiti.editor.language.xml;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 import org.activiti.bpmn.model.BoundaryEvent;
@@ -15,7 +16,7 @@ import org.junit.Test;
 public class TimerDefinitionConverterTest extends AbstractConverterTest {
   
   @Test
-  public void connvertXMLToModel() throws Exception {
+  public void convertXMLToModel() throws Exception {
     BpmnModel bpmnModel = readXMLFile();
     validateModel(bpmnModel);
   }
@@ -51,5 +52,6 @@ public class TimerDefinitionConverterTest extends AbstractConverterTest {
     TimerEventDefinition boundaryTimerEvent = (TimerEventDefinition) boundaryTimer.getEventDefinitions().get(0);
     assertThat(boundaryTimerEvent.getCalendarName(), is("custom"));
     assertEquals("PT10S", boundaryTimerEvent.getTimeDuration());
+    assertNull(boundaryTimerEvent.getEndDate());
   }
 }

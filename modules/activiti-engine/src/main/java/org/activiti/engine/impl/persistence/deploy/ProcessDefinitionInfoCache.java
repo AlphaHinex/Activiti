@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.activiti.engine.ActivitiException;
+import org.activiti.engine.impl.context.Context;
 import org.activiti.engine.impl.interceptor.Command;
 import org.activiti.engine.impl.interceptor.CommandContext;
 import org.activiti.engine.impl.interceptor.CommandExecutor;
@@ -44,7 +45,7 @@ public class ProcessDefinitionInfoCache {
   /** Cache with no limit */
   public ProcessDefinitionInfoCache(CommandExecutor commandExecutor) {
     this.commandExecutor = commandExecutor;
-    this.cache = Collections.synchronizedMap(new HashMap<String, ProcessDefinitionInfoCacheObject>()); 
+    this.cache = Collections.synchronizedMap(new HashMap<String, ProcessDefinitionInfoCacheObject>());
   }
   
   /** Cache which has a hard limit: no more elements will be cached than the limit. */
@@ -69,35 +70,20 @@ public class ProcessDefinitionInfoCache {
   
   public ProcessDefinitionInfoCacheObject get(final String processDefinitionId) {
     ProcessDefinitionInfoCacheObject infoCacheObject = null;
-    if (cache.containsKey(processDefinitionId)) {
-      infoCacheObject = commandExecutor.execute(new Command<ProcessDefinitionInfoCacheObject>() {
+    Command<ProcessDefinitionInfoCacheObject> cacheCommand = new Command<ProcessDefinitionInfoCacheObject>() {
 
-        @Override
-        public ProcessDefinitionInfoCacheObject execute(CommandContext commandContext) {
-          ProcessDefinitionInfoEntityManager infoEntityManager = commandContext.getProcessDefinitionInfoEntityManager();
-          ObjectMapper objectMapper = commandContext.getProcessEngineConfiguration().getObjectMapper();
-          
-          ProcessDefinitionInfoCacheObject cacheObject = cache.get(processDefinitionId);
-          ProcessDefinitionInfoEntity infoEntity = infoEntityManager.findProcessDefinitionInfoByProcessDefinitionId(processDefinitionId);
-          if (infoEntity != null && infoEntity.getRevision() != cacheObject.getRevision()) {
-            cacheObject.setRevision(infoEntity.getRevision());
-            if (infoEntity.getInfoJsonId() != null) {
-              byte[] infoBytes = infoEntityManager.findInfoJsonById(infoEntity.getInfoJsonId());
-              try {
-                ObjectNode infoNode = (ObjectNode) objectMapper.readTree(infoBytes);
-                cacheObject.setInfoNode(infoNode);
-              } catch (Exception e) {
-                throw new ActivitiException("Error reading json info node for process definition " + processDefinitionId, e);
-              }
-            }
-          } else if (infoEntity == null) {
-            cacheObject.setRevision(0);
-            cacheObject.setInfoNode(objectMapper.createObjectNode());
-          }
-          return cacheObject;
-        }
-      });
-    }
+      @Override
+      public ProcessDefinitionInfoCacheObject execute(CommandContext commandContext) {
+        return retrieveProcessDefinitionInfoCacheObject(processDefinitionId, commandContext);
+      }
+    };
+    
+    if (Context.getCommandContext() != null) {
+      infoCacheObject = retrieveProcessDefinitionInfoCacheObject(processDefinitionId, Context.getCommandContext());
+    } else {
+      infoCacheObject = commandExecutor.execute(cacheCommand);
+    } 
+    
     return infoCacheObject;
   }
   
@@ -116,6 +102,39 @@ public class ProcessDefinitionInfoCache {
   // For testing purposes only
   public int size() {
     return cache.size();
+  }
+  
+  protected ProcessDefinitionInfoCacheObject retrieveProcessDefinitionInfoCacheObject(String processDefinitionId, CommandContext commandContext) {
+    ProcessDefinitionInfoEntityManager infoEntityManager = commandContext.getProcessDefinitionInfoEntityManager();
+    ObjectMapper objectMapper = commandContext.getProcessEngineConfiguration().getObjectMapper();
+    
+    ProcessDefinitionInfoCacheObject cacheObject = null;
+    if (cache.containsKey(processDefinitionId)) {
+      cacheObject = cache.get(processDefinitionId);
+    } else {
+      cacheObject = new ProcessDefinitionInfoCacheObject();
+      cacheObject.setRevision(0);
+      cacheObject.setInfoNode(objectMapper.createObjectNode());
+    }
+    
+    ProcessDefinitionInfoEntity infoEntity = infoEntityManager.findProcessDefinitionInfoByProcessDefinitionId(processDefinitionId);
+    if (infoEntity != null && infoEntity.getRevision() != cacheObject.getRevision()) {
+      cacheObject.setRevision(infoEntity.getRevision());
+      if (infoEntity.getInfoJsonId() != null) {
+        byte[] infoBytes = infoEntityManager.findInfoJsonById(infoEntity.getInfoJsonId());
+        try {
+          ObjectNode infoNode = (ObjectNode) objectMapper.readTree(infoBytes);
+          cacheObject.setInfoNode(infoNode);
+        } catch (Exception e) {
+          throw new ActivitiException("Error reading json info node for process definition " + processDefinitionId, e);
+        }
+      }
+    } else if (infoEntity == null) {
+      cacheObject.setRevision(0);
+      cacheObject.setInfoNode(objectMapper.createObjectNode());
+    }
+    
+    return cacheObject;
   }
   
 }
